@@ -1,0 +1,31 @@
+---
+title: "bioecon-model"
+author: "Leonardo Feitosa"
+date: "02/05/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(janitor)
+library(vroom)
+library(ramlegacy)
+```
+
+```{r}
+# file paths
+basedir <- file.path("G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Bioeconomic model of multispecies fishery/analyses")
+ramdir <- file.path(basedir, "RAMLDB v4.495", "Excel")
+outidr <- file.path(basedir, "outputs")
+```
+
+```{r}
+# read in the data
+ram_leg <- vroom::vroom(file.path(ramdir, "RAMLDB v4.495 (assessment data only).xlsx"))
+
+ram <- load_ramlegacy(version = "4.44",
+               tables = c("area", "stock", "bioparams_values_views", "bioparams_units_views",
+                          "bioparams_sources_views"))
+```
+
