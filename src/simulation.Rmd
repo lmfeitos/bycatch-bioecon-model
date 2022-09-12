@@ -1,0 +1,189 @@
+---
+title: "simulation-model"
+author: "Leonardo Feitosa"
+date: "12/09/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Establishing values for parameters
+
+### List of parameters:
+- K = carrying capacity
+- r = per capita growth rate
+- q = catchability of stocks
+- c = cost of fishing
+
+### List of variables:
+- N = population size
+- P = price
+
+#### Base equations:
+
+- Strong stock size (Ns):
+
+$$
+N_s = \frac{K_s * (c * q_s * r_w + K_w * p_w * q_w * (q_w * r_s - q_s * r_w))} {K_w * p_w * q_w^2 * r_s + K_s * p_s * q_s^2 * r_w}
+$$
+
+- Weak stock size (Nw):
+
+$$
+N_w = \frac{K_w * (c * q_w * r_s + K_s * p_s * q_s * (- q_w * r_s + q_s * r_w))} {K_w * p_w * q_w^2 * r_s + K_s * p_s * q_s^2 * r_w}
+$$
+
+- Effort (e):
+
+$$
+e = \frac{(-c + K_s * p_s * q_s + K_w * p_w * q_w) * r_s * r_w} {K_w * p_w * q_w^2 r_s + K_s * p_s * q_s^2 * r_w}
+$$
+
+- Price function
+
+$$
+P = A * c^-f
+$$
+Where P is price, A is a constant, c is the cost of harvest, and **f** is the price flexibility.
+
+## First model
+
+In this first model, I'll write out the dynamics of a fishery with two species having the same **r** and different catchability coefficients (qw > qs). The price for the weak stock will be dependent on the abundance of the strong stock, the abundance of the weak stock, and the level of fishing effort.
+
+```{r}
+# Parameter values:
+r_s = 1
+r_w = 1
+r_w2 = 0.5
+k_s = 1
+k_w = 1
+q_s = 0.1
+q_w = 0.15
+c = 0.05
+```
+
+
+```{r}
+# for loop to run the model
+
+## create price value ranges
+pw_set <- seq(from = 0, to = 10, length.out = 100)
+ps_set <- seq(from = 0, to = 10, length.out = 100)
+
+## create holding vectors
+N_w_simu1 <- NaN*pw_set; N_w_simu1[1] <- 1
+N_s_simu1 <- NaN*ps_set; N_s_simu1[1] <- 1
+e_simu1 <- NaN*pw_set; e_simu1[1] <- 1
+
+for(i in 2:length(pw_set)) {
+  # calculate change in price
+  d_p <- pw_set[i]
+  
+  # Holding vectors
+  p_w <- N_w_simu1[i - 1]
+  p_s <- N_s_simu1[i - 1]
+  e_1 <- e_simu1[i -1]
+  
+  # Set equations
+  N_s <- k_s * (c * q_s * r_w + k_w * d_p * q_w * (q_w * r_s - q_s * r_w))/
+    k_w * d_p * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w
+  
+  N_w <- k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))/
+    k_w * d_p * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w
+  
+  e <- (-c + k_s * p_s * q_s + k_w * d_p * q_w) * r_s * r_w/
+    k_w * d_p * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w
+  
+  # Calculate stock size
+  N_w_simu1[i] <- p_w + N_w 
+  N_s_simu1[i] <- p_s + N_s 
+  e_simu1[i] <- e_1 + e
+}
+head(N_w_simu1)
+```
+
+```{r}
+plot(x = pw_set, y = N_w_simu1,
+     type = "l", lwd = 2, las = 1, col = "black",
+     xlab = "Effort", ylab = "Weak stock size")
+```
+
+```{r}
+
+N_w_simu2 <- NaN*pw_set; N_w_simu2[1] <- 1
+N_s_simu2 <- NaN*ps_set; N_s_simu2[1] <- 1
+e_simu2 <- NaN*pw_set; e_simu2[1] <- 1
+
+for(i in 2:length(pw_set)) {
+  # calculate change in price
+  d_p <- pw_set[i]
+  
+  # Holding vectors
+  p_w_2 <- N_w_simu2[i - 1]
+  p_s_2 <- N_s_simu2[i - 1]
+  e_1_2 <- e_simu2[i -1]
+  
+  # Set equations
+  N_s_2 <- (0.1 * c + 0.0075 * d_p) / (0.01 + 0.0225 * d_p)
+  
+  N_w_2 <- (-0.005 + 0.15 * c) / (0.01 + 0.0255 * d_p)
+  
+  e_2 <- (0.1 - c + 0.15 * d_p) / (0.01 + 0.0255 * d_p)
+  
+  # Calculate stock size
+  N_w_simu2[i] <- p_w_2 + N_w_2 
+  N_s_simu2[i] <- p_s_2 + N_s_2
+  e_simu2[i] <- e_1_2 + e_2
+}
+head(N_w_simu1)
+```
+
+```{r}
+plot(x = pw_set, y = N_w_simu2,
+     type = "l", lwd = 2, las = 1, col = "black",
+     xlab = "Price", ylab = "Weak stock size")
+```
+
+
+## Second model
+
+In this second model, I'll write out the dynamics of a fishery with two species having different values of **r**, with the weak stock having a smaller **r** than the strong stock, and different catchability coefficients (qw > qs). The price for the weak stock will be dependent on the abundance of the strong stock, the abundance of the weak stock, and the level of fishing effort.
+
+```{r}
+## create holding vectors
+N_w_simu2 <- NaN*pw_set; N_w_simu2[1] <- 1
+N_s_simu2 <- NaN*ps_set; N_s_simu2[1] <- 1
+
+for(i in 2:length(pw_set)) {
+  # calculate change in price
+  d_pw <- pw_set[i] - pw_set[i - 1]
+  
+  # Holding vectors
+  p_w2 <- N_w_simu2[i]
+  p_s2 <- N_s_simu2[i]
+  
+  # Set equations
+  N_s2 <- (k_s * (c * q_s * r_w2 + k_w * p_w * q_w * (q_w * r_s - q_s * r_w2))/
+    k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w2) * d_pw
+  
+  N_w2 <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w2))/
+    k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w2) * d_pw
+  
+  # Calculate stock size
+  N_w_simu2[i] <- p_w2 + N_w2 
+  N_s_simu2[i] <- p_s2 + N_s2 
+  
+}
+```
+
+
+
+
+
+
+
+
+
+

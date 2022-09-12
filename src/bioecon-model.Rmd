@@ -29,3 +29,4 @@ ram <- load_ramlegacy(version = "4.44",
                           "bioparams_sources_views"))
 ```
 
+- stock, bioparams, bioparams_values_views, bioparams_units_views, timeseries_values_views, timeseries.
