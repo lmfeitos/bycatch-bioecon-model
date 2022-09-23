@@ -1,15 +1,37 @@
 ---
-title: "simulation-model"
+title: "bioeconomic model simulation - Chapter 1"
 author: "Leonardo Feitosa"
 date: "12/09/2022"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE)
 ```
 
-# Establishing values for parameters
+# Introduction
+
+Fisheries management strategies have traditionally focused on the target species, thus leaving the secondary target and bycatch species under significantly weaker management (Hall & Mainprize, 2005). Recently, efforts for managing the whole catch of fisheries have been made, which led to conflicts with fishers due to fisheries closures (Gilman, 2011), significant economic losses, and social conflicts between managers and stakeholders (Gilman et al., 2019), while incidentally caught species continue to face high extinction risk. 
+
+These species are often considered to be weak stocks, since they generally have low reproductive rates, high longevity, and late sexual maturity (Hastings et al., 2017). Therefore, they have a weak capacity to withstand fishing pressure regardless of how strong it is. This is the case for several marine megafauna species, including sharks, rays, mammals, sea birds, turtles, and several species of large bony fishes (Burgess et al., 2018; Dulvy et al., 2014). However, some of these incidentally caught species have also become highly valuable to fishers because of new market demands, which makes holistic fisheries management an increasingly complex and important task (Costello et al., 2016). This recent increased value has the potential to shift fishing effort from already depleted stocks to other relatively less exploited ones, thus creating new pressures on other populations.
+
+While price-abundance relationships are widespreadly known as the effect that the interaction between supply and demand have on end prices of goods and services, their effect on the exploitation patterns of commercially important species is relatively poorly understood. One of the main theories about the effect of price-abundance relationships to the conservation of exploited species is the Anthropogenic Allee Effect (AAE), which states that the individual price of a species or one of its byproducts increases as they become rarer (Courchamp et al 2006). Indeed, this is the case for several luxury goods such as rhino horns, elephant tusks, fish swim bladders, sea cucumbers, etc (refs).
+
+Although the traditional fisheries literature treats harvesting to be limited by the economic costs involved in catching fish, species subjected to the AAE are more likely to have continued fishery harvests, since its catch becomes more lucrative as stocks are depleted. Therefore, this scenario is extremely difficult for fisheries management to be effective. A recent study by Holden & McDonald-Madden (2017) modeled the effect of harvest levels and initial population sizes on a species subjected to price-abundance relationships and harvesting intensity, and found that regardless of the initial population size, if harvest profits were higher than costs, the population would become extinct. 
+
+However, the interaction between luxurious and non-luxurious species in a harvest system with poor selectivity still needs to be explored. Our goals with this study are to model such a multispecies harvesting system with differential price-abundance relationships for each species. With this model we intend to estimate the effect of the price-abundance relationships on the harvesting patterns for the species in the system and the effect that different management strategies can have on the stock outcomes. Finally, we use real-world data from species known to be part of the luxury seafood trade as validation to our model.
+
+# Research question:
+- What are the effects of price abundance relationships on the harvest patterns of a multispecies fishery under different management scenarios?
+
+# Objectives:
+
+- Develop a bioeconomic model to explore the effect of price abundance relationships on the harvest scenarios of a multispecies fishery under different management strategies (open access/no management; management for the target (strong) stock; management for the bycatch (weak) stock; ecosystem-based management).
+- Compare the predicted effects with real-world examples and the conservation statuses of such stocks.
+- Fit known weak stock species in a gradient of value categories and compare their position in the gradient with their conservation statuses assessed by IUCN.
+- Discuss potential management/market strategies to ensure long-term sustainability and rebuilding of depleted stocks.
 
 ### List of parameters:
 - K = carrying capacity
@@ -23,160 +45,255 @@ knitr::opts_chunk$set(echo = TRUE)
 
 #### Base equations:
 
-- Strong stock size (Ns):
+- Strong stock size ($Ns$):
 
 $$
-N_s = \frac{K_s * (c * q_s * r_w + K_w * p_w * q_w * (q_w * r_s - q_s * r_w))} {K_w * p_w * q_w^2 * r_s + K_s * p_s * q_s^2 * r_w}
+N_s = \frac{K_s * (c * q_s * r_w + K_w * p_w * q_w * (q_w * r_s - q_s * r_w))} {(K_w * p_w * q_w^2 * r_s) + (K_s * p_s * q_s^2 * r_w)}
 $$
 
-- Weak stock size (Nw):
+- Weak stock size ($Nw$):
 
 $$
-N_w = \frac{K_w * (c * q_w * r_s + K_s * p_s * q_s * (- q_w * r_s + q_s * r_w))} {K_w * p_w * q_w^2 * r_s + K_s * p_s * q_s^2 * r_w}
+N_w = \frac{K_w * (c * q_w * r_s + K_s * p_s * q_s * (- q_w * r_s + q_s * r_w))} {(K_w * p_w * q_w^2 * r_s) + (K_s * p_s * q_s^2 * r_w)}
 $$
 
-- Effort (e):
+- Effort ($e$):
 
 $$
-e = \frac{(-c + K_s * p_s * q_s + K_w * p_w * q_w) * r_s * r_w} {K_w * p_w * q_w^2 r_s + K_s * p_s * q_s^2 * r_w}
+e = \frac{(-c + K_s * p_s * q_s + K_w * p_w * q_w) * r_s * r_w} {(K_w * p_w * q_w^2 r_s) + (K_s * p_s * q_s^2 * r_w)}
 $$
 
-- Price function
+- Price function ($P$)
 
 $$
 P = A * c^-f
 $$
-Where P is price, A is a constant, c is the cost of harvest, and **f** is the price flexibility.
+Where $P$ is price, $A$ is a constant, $c$ is the cost of harvest, and *f* is the price flexibility.
+
+#### Model assumptions:
+- The relative price of the target and bycatch species, whichever is the highest, drives fisheries targeting.
+- Strong stocks can sustain higher fishing pressure than weak stocks.
+- Bycatch weak stocks have worse conservation statuses than target strong stocks.
+- Open access fisheries are more prone to suffer from economic losses than managed fisheries.
+- Open access fisheries are more likely to deplete their stocks due to overharvesting than managed ones.
+- Prices of fishing products are affected by price-abundance relationships.
+- The Anthropogenic Allee Effect (AAE) can only occur in open access scenarios.
+- Multispecies systems where the bycatch species has higher value than the target species are bound to suffer an AAE, regardless of the management strategies in place.
+
+#### Extinction assumptions:
+- Extinction occurs if and only if profits ($\pi$) > 0 at the level of effort that drives the species of interest extinct.
+- If *f* > $\beta$, then profits increase with declining abundance when the stock is small. This can drive the species extinct, but won't necessarily be the only equilibrium.  
+
 
 ## First model
 
 In this first model, I'll write out the dynamics of a fishery with two species having the same **r** and different catchability coefficients (qw > qs). The price for the weak stock will be dependent on the abundance of the strong stock, the abundance of the weak stock, and the level of fishing effort.
 
-```{r}
+```{r, include = TRUE}
 # Parameter values:
-r_s = 1
-r_w = 1
-r_w2 = 0.5
-k_s = 1
-k_w = 1
-q_s = 0.1
-q_w = 0.15
-c = 0.05
+r_s = 1 # intrinsic growth rate of the strong stock
+r_w = 1 # intrinsic growth rate of the weak stock
+k_s = 1 # carrying capacity of the strong stock
+k_w = 1 # carrying capacity of the weak stock
+q_s = 0.1 # catchability of the strong stock
+q_w = 0.15 # catchability of the weak stock
+c = 0.05 # overall harvesting costs
+p_s = 1 # price for the strong stock
 ```
 
-
 ```{r}
-# for loop to run the model
-
-## create price value ranges
-pw_set <- seq(from = 0, to = 10, length.out = 100)
-ps_set <- seq(from = 0, to = 10, length.out = 100)
-
-## create holding vectors
-N_w_simu1 <- NaN*pw_set; N_w_simu1[1] <- 1
-N_s_simu1 <- NaN*ps_set; N_s_simu1[1] <- 1
-e_simu1 <- NaN*pw_set; e_simu1[1] <- 1
-
-for(i in 2:length(pw_set)) {
-  # calculate change in price
-  d_p <- pw_set[i]
-  
-  # Holding vectors
-  p_w <- N_w_simu1[i - 1]
-  p_s <- N_s_simu1[i - 1]
-  e_1 <- e_simu1[i -1]
-  
-  # Set equations
-  N_s <- k_s * (c * q_s * r_w + k_w * d_p * q_w * (q_w * r_s - q_s * r_w))/
-    k_w * d_p * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w
-  
-  N_w <- k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))/
-    k_w * d_p * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w
-  
-  e <- (-c + k_s * p_s * q_s + k_w * d_p * q_w) * r_s * r_w/
-    k_w * d_p * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w
-  
-  # Calculate stock size
-  N_w_simu1[i] <- p_w + N_w 
-  N_s_simu1[i] <- p_s + N_s 
-  e_simu1[i] <- e_1 + e
+# model equations
+## Strong stock
+n_strong <- function(K_s, K_w, r_s, r_w, q_s, q_w, p_s, p_w, c){
+  N_s <- ( K_s * (c * q_s * r_w + K_w * p_w * q_w * (q_w * r_s - q_s * r_w)  ) ) / (K_w * p_w * q_w^2 * r_s) + (K_s * p_s * q_s^2 * r_w )
+  return(N_s)
 }
-head(N_w_simu1)
-```
 
-```{r}
-plot(x = pw_set, y = N_w_simu1,
-     type = "l", lwd = 2, las = 1, col = "black",
-     xlab = "Effort", ylab = "Weak stock size")
-```
-
-```{r}
-
-N_w_simu2 <- NaN*pw_set; N_w_simu2[1] <- 1
-N_s_simu2 <- NaN*ps_set; N_s_simu2[1] <- 1
-e_simu2 <- NaN*pw_set; e_simu2[1] <- 1
-
-for(i in 2:length(pw_set)) {
-  # calculate change in price
-  d_p <- pw_set[i]
-  
-  # Holding vectors
-  p_w_2 <- N_w_simu2[i - 1]
-  p_s_2 <- N_s_simu2[i - 1]
-  e_1_2 <- e_simu2[i -1]
-  
-  # Set equations
-  N_s_2 <- (0.1 * c + 0.0075 * d_p) / (0.01 + 0.0225 * d_p)
-  
-  N_w_2 <- (-0.005 + 0.15 * c) / (0.01 + 0.0255 * d_p)
-  
-  e_2 <- (0.1 - c + 0.15 * d_p) / (0.01 + 0.0255 * d_p)
-  
-  # Calculate stock size
-  N_w_simu2[i] <- p_w_2 + N_w_2 
-  N_s_simu2[i] <- p_s_2 + N_s_2
-  e_simu2[i] <- e_1_2 + e_2
+## Weak stock
+n_weak <- function(K_s, K_w, r_s, r_w, q_s, q_w, p_s, p_w, c){
+  N_s <- ( K_w * (c * q_w * r_s + K_s * p_s * q_s * (- q_w * r_s + q_s * r_w)  ) ) / (K_w * p_w * q_w^2 * r_s) + (K_s * p_s * q_s^2 * r_w )
+  return(N_s)
 }
-head(N_w_simu1)
+
+## Fishing effort
+e <- function(K_s, K_w, r_s, r_w, q_s, q_w, p_s, p_w, c){
+  e <- ( (-c + K_s * p_s * q_s + K_w * p_w * q_w) * r_s * r_w ) / (K_w * p_w * q_w^2 * r_s) + (K_s * p_s * q_s^2 * r_w)
+  return(e)
+}
 ```
 
 ```{r}
-plot(x = pw_set, y = N_w_simu2,
-     type = "l", lwd = 2, las = 1, col = "black",
-     xlab = "Price", ylab = "Weak stock size")
+# Simulation 1
+p_w_vec <- seq(0, 10, 0.1)
+n_weak_vec <- n_weak(k_s, k_w, r_s, r_w, q_s, q_w, p_s, p_w = p_w_vec, c)
+n_strong_vec <- n_strong(k_s, k_w, r_s, r_w, q_s, q_w, p_s, p_w = p_w_vec, c)
 ```
 
+```{r, message = FALSE, warning = FALSE}
+plot(x = p_w_vec, y = n_strong_vec,
+     type = "l", col = "black",
+     lwd = 2, las = 1, ylim = c(0, 3),
+     xlab = "Weak stock price", ylab = "Stock size")
+lines(x = p_w_vec, y = n_weak_vec,
+      col = "blue", lwd = 2)
+title(main = "Same parameter values")
+legend(x = 6, y = 2.5,
+       legend = c("Strong stock, q = 0.1", "Weak stock, q = 0.15"),
+       col = c("black", "blue"),
+       lty = c(1,1))
+```
 
 ## Second model
 
-In this second model, I'll write out the dynamics of a fishery with two species having different values of **r**, with the weak stock having a smaller **r** than the strong stock, and different catchability coefficients (qw > qs). The price for the weak stock will be dependent on the abundance of the strong stock, the abundance of the weak stock, and the level of fishing effort.
+In this second model, I'll write out the dynamics of a fishery with two species having different **r** values (r_s > r_w) and the same catchability coefficient (qw = qs). The price for the weak stock will be dependent on the abundance of the strong stock, the abundance of the weak stock, and the level of fishing effort.
 
 ```{r}
-## create holding vectors
-N_w_simu2 <- NaN*pw_set; N_w_simu2[1] <- 1
-N_s_simu2 <- NaN*ps_set; N_s_simu2[1] <- 1
-
-for(i in 2:length(pw_set)) {
-  # calculate change in price
-  d_pw <- pw_set[i] - pw_set[i - 1]
-  
-  # Holding vectors
-  p_w2 <- N_w_simu2[i]
-  p_s2 <- N_s_simu2[i]
-  
-  # Set equations
-  N_s2 <- (k_s * (c * q_s * r_w2 + k_w * p_w * q_w * (q_w * r_s - q_s * r_w2))/
-    k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w2) * d_pw
-  
-  N_w2 <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w2))/
-    k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w2) * d_pw
-  
-  # Calculate stock size
-  N_w_simu2[i] <- p_w2 + N_w2 
-  N_s_simu2[i] <- p_s2 + N_s2 
-  
-}
+r_w2 = 0.8
+q_w2 <- q_s
+n_weak_vec_2 <- n_weak(k_s, k_w, r_s, r_w2, q_s, q_w2, p_s, p_w = p_w_vec, c)
 ```
+
+```{r, message= FALSE, warning = FALSE}
+plot(x = p_w_vec, y = n_strong_vec,
+     type = "l", col = "black",
+     lwd = 2, las = 1, ylim = c(0, 3),
+     xlab = "Weak stock price", ylab = "Stock size")
+lines(x = p_w_vec, y = n_weak_vec_2,
+      col = "blue", lwd = 2)
+title(main = "Different values for r")
+legend(x = 6, y = 2.5,
+       legend = c("Strong stock, r = 1", "Weak stock, r = 0.8"),
+       col = c("black", "blue"),
+       lty = c(1,1))
+```
+
+
+## Third model
+
+In this third model, I'll write out the dynamics of a fishery with two species having different **r** values (r_s > r_w) and the same catchability coefficient (qw = qs). The price for the weak stock will be dependent on the abundance of the strong stock, the abundance of the weak stock, and the level of fishing effort.
+
+```{r}
+r_w3 = 0.6
+n_weak_vec_3 <- n_weak(k_s, k_w, r_s, r_w3, q_s, q_w2, p_s, p_w = p_w_vec, c)
+```
+
+```{r, message= FALSE, warning = FALSE}
+plot(x = p_w_vec, y = n_strong_vec,
+     type = "l", col = "black",
+     lwd = 2, las = 1, ylim = c(0, 3),
+     xlab = "Weak stock price", ylab = "Stock size")
+lines(x = p_w_vec, y = n_weak_vec_3,
+      col = "blue", lwd = 2)
+title(main = "Different values for r")
+legend(x = 6, y = 2.5,
+       legend = c("Strong stock, r = 1", "Weak stock, r = 0.6"),
+       col = c("black", "blue"),
+       lty = c(1,1))
+```
+
+## Fourth model
+
+In this fourth model, I'll test the result of using an **r** value of 0.5 on the weak stock dynamics as a function of price.
+
+
+```{r}
+r_w4 = 0.5
+n_weak_vec_4 <- n_weak(k_s, k_w, r_s, r_w4, q_s, q_w2, p_s, p_w = p_w_vec, c)
+```
+
+```{r, message= FALSE, warning = FALSE}
+plot(x = p_w_vec, y = n_weak_vec_4,
+     type = "l", col = "black",
+     lwd = 2, las = 1, 
+     xlab = "Weak stock price", ylab = "Stock size")
+title(main = "Weak stock with r = 0.5")
+#lines(x = p_w_vec, y = n_weak_vec_4,
+#      col = "blue", lwd = 2)
+#title(main = "Different values for r")
+#legend(x = 6, y = 4.5,
+#       legend = c("Strong stock, r = 1", "Weak stock, r = 0.4"),
+#       col = c("black", "blue"),
+#       lty = c(1,1))
+```
+
+## Fifth model
+
+In this fifth model, I'll test the result of using an **r** value of 0.3 on the weak stock dynamics as a function of price
+
+```{r}
+r_w5 = 0.3
+n_weak_vec_5 <- n_weak(k_s, k_w, r_s, r_w5, q_s, q_w2, p_s, p_w = p_w_vec, c)
+```
+
+```{r, message= FALSE, warning = FALSE}
+plot(x = p_w_vec, y = n_weak_vec_5,
+     type = "l", col = "black",
+     lwd = 2, las = 1, 
+     xlab = "Weak stock price", ylab = "Stock size")
+title(main = "Weak stock with r = 0.3")
+#lines(x = p_w_vec, y = n_weak_vec_4,
+#      col = "blue", lwd = 2)
+#title(main = "Different values for r")
+#legend(x = 6, y = 4.5,
+#       legend = c("Strong stock, r = 1", "Weak stock, r = 0.4"),
+#       col = c("black", "blue"),
+#       lty = c(1,1))
+```
+
+
+- For values of `r_w` < 0.5 the curve becomes concave and negative. For `r_w` equal 0.5 the curve is flat. For `r_w` > 0.5 the curve is convex and positive.
+
+
+## Species equilibria as a function of effort
+
+Introducing the concept of vulnerability:
+
+$$V_i = \frac{q_i}{r_i}$$
+
+$$n_i = \frac{N_i}{K_i}$$
+```{r}
+v_s = 0.1
+v_w = 0.15
+e_vec = seq(0, 10, 0.1)
+ns_vec <- 1 - e_vec * v_s
+nw_vec <- 1 - e_vec * v_w
+```
+
+```{r}
+plot(x = e_vec, y = ns_vec,
+     type = "l", col = "brown",
+     lwd = 2, las = 1, ylim = c(-1, 1),
+     xlab = "Effort", ylab = "Equilibrium scaled abundances, ni")
+lines(x = e_vec, y = nw_vec,
+      col = "blue", lwd = 2)
+abline(h = 0, col = "black", lwd = 1)
+legend(x = 1, y = -0.5,
+       legend = c("Strong stock", "Weak stock"),
+       col = c("brown", "blue"),
+       lty = c(1,1))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
