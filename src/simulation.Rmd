@@ -2,7 +2,7 @@
 title: "bioeconomic model simulation - Chapter 1"
 author: "Leonardo Feitosa"
 date: "12/09/2022"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -243,6 +243,29 @@ title(main = "Weak stock with r = 0.3")
 
 - For values of `r_w` < 0.5 the curve becomes concave and negative. For `r_w` equal 0.5 the curve is flat. For `r_w` > 0.5 the curve is convex and positive.
 
+## What happens if r is smaller for both species?
+
+```{r}
+r_s2 = 0.09
+r_w2 = 0.07
+p_w_vec <- seq(0, 10, 0.1)
+n_weak_vec_2 <- n_weak(k_s, k_w, r_s2, r_w2, q_s, q_w, p_s, p_w = p_w_vec, c)
+n_strong_vec_2 <- n_strong(k_s, k_w, r_s2, r_w2, q_s, q_w, p_s, p_w = p_w_vec, c)
+```
+
+```{r}
+plot(x = p_w_vec, y = n_strong_vec_2,
+     type = "l", col = "black",
+     lwd = 2, las = 1,ylim = c(0, 2),
+     xlab = "Weak stock price", ylab = "Stock size")
+lines(x = p_w_vec, y = n_weak_vec_2,
+      col = "blue", lwd = 2)
+title(main = "Lower values of r")
+legend(x = 6, y = 2.5,
+       legend = c("Strong stock, r = 0.09", "Weak stock, r = 0.07"),
+       col = c("black", "blue"),
+       lty = c(1,1))
+```
 
 ## Species equilibria as a function of effort
 
