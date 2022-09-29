@@ -1,7 +1,8 @@
 ---
-title: "bioeconomic model simulation - Chapter 1"
+title: "Interaction between species life history and sale price is crucial for holistic fisheries management"
+subtitle: "Bioeconomic simulation modeling - Chapter 1"
 author: "Leonardo Feitosa"
-date: "12/09/2022"
+date: "09/29/2022"
 output: pdf_document
 ---
 
@@ -17,11 +18,11 @@ Fisheries management strategies have traditionally focused on the target species
 
 These species are often considered to be weak stocks, since they generally have low reproductive rates, high longevity, and late sexual maturity (Hastings et al., 2017). Therefore, they have a weak capacity to withstand fishing pressure regardless of how strong it is. This is the case for several marine megafauna species, including sharks, rays, mammals, sea birds, turtles, and several species of large bony fishes (Burgess et al., 2018; Dulvy et al., 2014). However, some of these incidentally caught species have also become highly valuable to fishers because of new market demands, which makes holistic fisheries management an increasingly complex and important task (Costello et al., 2016). This recent increased value has the potential to shift fishing effort from already depleted stocks to other relatively less exploited ones, thus creating new pressures on other populations.
 
-While price-abundance relationships are widespreadly known as the effect that the interaction between supply and demand have on end prices of goods and services, their effect on the exploitation patterns of commercially important species is relatively poorly understood. One of the main theories about the effect of price-abundance relationships to the conservation of exploited species is the Anthropogenic Allee Effect (AAE), which states that the individual price of a species or one of its byproducts increases as they become rarer (Courchamp et al 2006). Indeed, this is the case for several luxury goods such as rhino horns, elephant tusks, fish swim bladders, sea cucumbers, etc (refs).
+While price-abundance relationships are mostly known as the effect that the interaction between supply and demand have on end prices of goods and services, their effect on the exploitation patterns of commercially important species is relatively poorly understood. One of the main theories about the effect of price-abundance relationships to the conservation of exploited species is the Anthropogenic Allee Effect (AAE), which states that the individual price of a species or one of its byproducts increases as they become rarer (Courchamp et al 2006). Indeed, this is the case for several luxury goods such as rhino horns, elephant tusks, fish swim bladders, sea cucumbers, etc (refs).
 
 Although the traditional fisheries literature treats harvesting to be limited by the economic costs involved in catching fish, species subjected to the AAE are more likely to have continued fishery harvests, since its catch becomes more lucrative as stocks are depleted. Therefore, this scenario is extremely difficult for fisheries management to be effective. A recent study by Holden & McDonald-Madden (2017) modeled the effect of harvest levels and initial population sizes on a species subjected to price-abundance relationships and harvesting intensity, and found that regardless of the initial population size, if harvest profits were higher than costs, the population would become extinct. 
 
-However, the interaction between luxurious and non-luxurious species in a harvest system with poor selectivity still needs to be explored. Our goals with this study are to model such a multispecies harvesting system with differential price-abundance relationships for each species. With this model we intend to estimate the effect of the price-abundance relationships on the harvesting patterns for the species in the system and the effect that different management strategies can have on the stock outcomes. Finally, we use real-world data from species known to be part of the luxury seafood trade as validation to our model.
+However, the interaction between luxurious and non-luxurious species in a harvest system with poor selectivity still needs to be explored. Our goals with this study are to model such a multi-species harvesting system with differential price-abundance relationships for each species. With this model we intend to estimate the effect of the price-abundance relationships on the harvesting patterns for the species in the system and the effect that different management strategies can have on the stock outcomes. Finally, we use real-world data from species known to be part of the luxury seafood trade as validation to our model.
 
 # Research question:
 - What are the effects of price abundance relationships on the harvest patterns of a multispecies fishery under different management scenarios?
@@ -84,12 +85,34 @@ Where $P$ is price, $A$ is a constant, $c$ is the cost of harvest, and *f* is th
 - Extinction occurs if and only if profits ($\pi$) > 0 at the level of effort that drives the species of interest extinct.
 - If *f* > $\beta$, then profits increase with declining abundance when the stock is small. This can drive the species extinct, but won't necessarily be the only equilibrium.  
 
+- General extinction criteria (G)
 
-## First model
+$$
+\lim_{w\to0} (\pi = E (p_w * q_w * N_w + p_s * q_s * N_s)) > 0
+$$
+
+- Courchamp et al (2006) extinction criteria (C) - Anthropogenic Allee Effect
+
+Weak stock would go extinct even without the strong stock.
+
+$$
+\lim_{w\to0}; \pi > 0; p_w * q_w * N_w > 0
+$$
+
+- Bycatch criteria (B)
+
+$$
+\lim_{w\to0}; \pi > 0; p_s * q_s * N_s - c > 0
+$$
+
+If the Courchamp criteria is not true, than the general extinction criteria is true if and only if the bycatch criteria is also true. This means that if the weak stock wouldn't go extinct on its own, the species can only become extinct through G if it is a weak stock and suffers enough bycatch from the fishery targeting the strong stock.
+
+## Initial exploratory models
+### First model
 
 In this first model, I'll write out the dynamics of a fishery with two species having the same **r** and different catchability coefficients (qw > qs). The price for the weak stock will be dependent on the abundance of the strong stock, the abundance of the weak stock, and the level of fishing effort.
 
-```{r, include = TRUE}
+```{r, echo = TRUE}
 # Parameter values:
 r_s = 1 # intrinsic growth rate of the strong stock
 r_w = 1 # intrinsic growth rate of the weak stock
@@ -137,13 +160,13 @@ plot(x = p_w_vec, y = n_strong_vec,
 lines(x = p_w_vec, y = n_weak_vec,
       col = "blue", lwd = 2)
 title(main = "Same parameter values")
-legend(x = 6, y = 2.5,
+legend(x = 5, y = 2.5,
        legend = c("Strong stock, q = 0.1", "Weak stock, q = 0.15"),
        col = c("black", "blue"),
        lty = c(1,1))
 ```
 
-## Second model
+### Second model
 
 In this second model, I'll write out the dynamics of a fishery with two species having different **r** values (r_s > r_w) and the same catchability coefficient (qw = qs). The price for the weak stock will be dependent on the abundance of the strong stock, the abundance of the weak stock, and the level of fishing effort.
 
@@ -168,7 +191,7 @@ legend(x = 6, y = 2.5,
 ```
 
 
-## Third model
+### Third model
 
 In this third model, I'll write out the dynamics of a fishery with two species having different **r** values (r_s > r_w) and the same catchability coefficient (qw = qs). The price for the weak stock will be dependent on the abundance of the strong stock, the abundance of the weak stock, and the level of fishing effort.
 
@@ -191,7 +214,7 @@ legend(x = 6, y = 2.5,
        lty = c(1,1))
 ```
 
-## Fourth model
+### Fourth model
 
 In this fourth model, I'll test the result of using an **r** value of 0.5 on the weak stock dynamics as a function of price.
 
@@ -216,7 +239,7 @@ title(main = "Weak stock with r = 0.5")
 #       lty = c(1,1))
 ```
 
-## Fifth model
+### Fifth model
 
 In this fifth model, I'll test the result of using an **r** value of 0.3 on the weak stock dynamics as a function of price
 
@@ -243,7 +266,7 @@ title(main = "Weak stock with r = 0.3")
 
 - For values of `r_w` < 0.5 the curve becomes concave and negative. For `r_w` equal 0.5 the curve is flat. For `r_w` > 0.5 the curve is convex and positive.
 
-## What happens if r is smaller for both species?
+### What happens if r is smaller for both species?
 
 ```{r}
 r_s2 = 0.09
@@ -267,7 +290,7 @@ legend(x = 6, y = 2.5,
        lty = c(1,1))
 ```
 
-## Species equilibria as a function of effort
+### Species equilibria as a function of effort
 
 Introducing the concept of vulnerability:
 
@@ -297,16 +320,126 @@ legend(x = 1, y = -0.5,
 ```
 
 
+# Model scenarios
+- two species, the target (strong stock) with value and the bycatch (weak stock) without any value
+- two species, the target (strong stock) with a higher value than the bycatch (weak stock) and both having the exponential price function
+- two species, the target (strong stock) with a higher value than the bycatch (weak stock) but only the bycatch has an exponential price function.
+- two species, the weak stock with higher value than the strong stock and the same price function
+- only one species, the weak stock with the same price function
+
+
+### First scenario
+*weak stock price = 0.1*
+
+```{r, echo = TRUE}
+# Parameter values
+r_s2 = 1
+r_w2 = 0.9
+p_w1 <- 0.1
+```
+
+
+```{r}
+p_s_vec <- seq(0, 10, 0.1)
+n_strong_vec_1 <- n_strong(k_s, k_w, r_s2, r_w2, q_s, q_w, p_s = p_s_vec, p_w1, c)
+n_weak_vec_1 <- n_weak(k_s, k_w, r_s2, r_w2, q_s, q_w, p_s = p_s_vec, p_w1, c)
+```
+
+```{r}
+plot(x = p_s_vec, y = n_strong_vec_1,
+     type = "l", col = "black",
+     lwd = 2, las = 1, ylim = c(0, 4),
+     xlab = "Strong stock price", ylab = "Stock size")
+lines(x = p_s_vec, y = n_weak_vec_1,
+      col = "blue", lwd = 2)
+title(main = "Weak stock price = 0.1")
+legend(x = 6, y = 3.9,
+       legend = c("Strong stock, r = 1", "Weak stock, r = 0.9"),
+       col = c("black", "blue"),
+       lty = c(1,1))
+```
+
+- Conclusion: the weak stock goes extinct even for extremely small values of the strong stock price, while the strong stock doesn't really change meaningfully.
+
+### Second scenario
+*strong stock has a higher value than the weak stock*
+
+```{r}
+r_s2 = 1
+r_w2 = 0.9
+p_s_vec_2 <- seq(0, 10, 0.1)
+p_w_vec_2 <- seq(0, 9, 0.1)
+n_strong_vec_2 <- n_strong(k_s, k_w, r_s2, r_w2, q_s, q_w, p_s = p_s_vec_2, p_w = p_w_vec_2, c)
+n_weak_vec_2 <- n_weak(k_s, k_w, r_s2, r_w2, q_s, q_w, p_s = p_s_vec_2, p_w = p_w_vec_2, c)
+```
+
+
+```{r}
+plot(x = p_s_vec_2, y = n_strong_vec_2,
+     type = "l", col = "black",
+     lwd = 2, las = 1, ylim = c(0, 4), xlim = c(0, 8.8),
+     xlab = "Strong stock price", ylab = "Stock size")
+lines(x = p_s_vec_2, y = n_weak_vec_2,
+      col = "blue", lwd = 2)
+title(main = "Strong stock price > Weak stock price")
+legend(x = 5.5, y = 3.9,
+       legend = c("Strong stock, r = 1", "Weak stock, r = 0.9"),
+       col = c("black", "blue"),
+       lty = c(1,1))
+```
+
+**this is weird, probably wrong**
+
+- Conclusion: the weak stock goes extinct and the strong stock price has a more intense effect on the weak stock size than on the strong stock size.
+
+### Third scenario
+
+*strong stock with a higher value than the weak stock but only the bycatch has an exponential price function.* NO IDEA HOW TO DO THIS
+
+```{r}
+
+```
 
 
 
 
+### Fourth scenario
+
+*The weak stock with higher price than the strong stock*
+
+```{r}
+r_s2 = 1
+r_w2 = 0.9
+p_s_vec_4 <- seq(0, 9, 0.1)
+p_w_vec_4 <- seq(0, 10, 0.1)
+n_strong_vec_4 <- n_strong(k_s, k_w, r_s2, r_w2, q_s, q_w, p_s = p_s_vec_4, p_w = p_w_vec_4, c)
+n_weak_vec_4 <- n_weak(k_s, k_w, r_s2, r_w2, q_s, q_w, p_s = p_s_vec_4, p_w = p_w_vec_4, c)
+```
 
 
+```{r}
+plot(x = p_w_vec_4, y = n_strong_vec_4,
+     type = "l", col = "black",
+     lwd = 2, las = 1, ylim = c(0, 4), xlim = c(0, 10),
+     xlab = "Weak stock price", ylab = "Stock size")
+lines(x = p_w_vec_4, y = n_weak_vec_4,
+      col = "blue", lwd = 2)
+title(main = "Weak stock price > Strong stock price")
+legend(x = 5.5, y = 3.9,
+       legend = c("Strong stock, r = 1", "Weak stock, r = 0.9"),
+       col = c("black", "blue"),
+       lty = c(1,1))
+```
+
+**this is weird, probably wrong**
+
+### Fifth scenario
+only one species (weak stock) with the same price function. *I believe this would require a few modifications to the model*
 
 
+```{r}
 
-
+```
 
 
 
