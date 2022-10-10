@@ -444,7 +444,49 @@ only one species (weak stock) with the same price function. *I believe this woul
 
 
 
+## Simulation for each variable and parameter variations
 
+```{r}
+# Paremeter settings
+r1 <- 0.2
+k1 <- 1
+r2 <- 0.4
+k2 <- 1.5
+t < 1:100
+```
+
+```{r}
+df <- tibble(year=1:100,
+             sp=NA,
+             biomass=NA,
+             effort=NA,
+             catch=NA)
+df$biomass[1] <- k
+```
+
+```{r}
+# Exploitation rate (catch/biomass)
+er <- 0.1
+# Simulate population
+i <- 1
+# Bt+1 = Bt + rBt(1-Bt/K) - Ct
+for(i in 1:nrow(df)){
+  # Get this year biomass
+  b_curr <- df$biomass[i]
+  # Calculate catch
+  catch <- er * b_curr
+  # Calculate surplus production
+  sp <- r*b_curr*(1-b_curr/k)
+  # Calculate next years biomass
+  b_next <- b_curr + sp - catch
+  # Record everything
+  df$biomass[i+1] <- b_next
+  df$sp[i] <- sp
+  df$catch[i] <- catch
+}
+#
+plot(biomass ~ year, df, ylim=c(0, 1))
+```
 
 
 
