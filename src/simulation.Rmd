@@ -119,7 +119,7 @@ r_w = 1 # intrinsic growth rate of the weak stock
 k_s = 1 # carrying capacity of the strong stock
 k_w = 1 # carrying capacity of the weak stock
 q_s = 0.1 # catchability of the strong stock
-q_w = 0.15 # catchability of the weak stock
+q_w = 0.1 # catchability of the weak stock
 c = 0.05 # overall harvesting costs
 p_s = 1 # price for the strong stock
 ```
@@ -152,19 +152,6 @@ n_weak_vec <- n_weak(k_s, k_w, r_s, r_w, q_s, q_w, p_s, p_w = p_w_vec, c)
 n_strong_vec <- n_strong(k_s, k_w, r_s, r_w, q_s, q_w, p_s, p_w = p_w_vec, c)
 ```
 
-```{r, message = FALSE, warning = FALSE}
-plot(x = p_w_vec, y = n_strong_vec,
-     type = "l", col = "black",
-     lwd = 2, las = 1, ylim = c(0, 3),
-     xlab = "Weak stock price", ylab = "Stock size")
-lines(x = p_w_vec, y = n_weak_vec,
-      col = "blue", lwd = 2)
-title(main = "Same parameter values")
-legend(x = 5, y = 2.5,
-       legend = c("Strong stock, q = 0.1", "Weak stock, q = 0.15"),
-       col = c("black", "blue"),
-       lty = c(1,1))
-```
 
 ### Second model
 
@@ -176,19 +163,6 @@ q_w2 <- q_s
 n_weak_vec_2 <- n_weak(k_s, k_w, r_s, r_w2, q_s, q_w2, p_s, p_w = p_w_vec, c)
 ```
 
-```{r, message= FALSE, warning = FALSE}
-plot(x = p_w_vec, y = n_strong_vec,
-     type = "l", col = "black",
-     lwd = 2, las = 1, ylim = c(0, 3),
-     xlab = "Weak stock price", ylab = "Stock size")
-lines(x = p_w_vec, y = n_weak_vec_2,
-      col = "blue", lwd = 2)
-title(main = "Different values for r")
-legend(x = 6, y = 2.5,
-       legend = c("Strong stock, r = 1", "Weak stock, r = 0.8"),
-       col = c("black", "blue"),
-       lty = c(1,1))
-```
 
 
 ### Third model
@@ -198,20 +172,6 @@ In this third model, I'll write out the dynamics of a fishery with two species h
 ```{r}
 r_w3 = 0.6
 n_weak_vec_3 <- n_weak(k_s, k_w, r_s, r_w3, q_s, q_w2, p_s, p_w = p_w_vec, c)
-```
-
-```{r, message= FALSE, warning = FALSE}
-plot(x = p_w_vec, y = n_strong_vec,
-     type = "l", col = "black",
-     lwd = 2, las = 1, ylim = c(0, 3),
-     xlab = "Weak stock price", ylab = "Stock size")
-lines(x = p_w_vec, y = n_weak_vec_3,
-      col = "blue", lwd = 2)
-title(main = "Different values for r")
-legend(x = 6, y = 2.5,
-       legend = c("Strong stock, r = 1", "Weak stock, r = 0.6"),
-       col = c("black", "blue"),
-       lty = c(1,1))
 ```
 
 ### Fourth model
@@ -224,57 +184,49 @@ r_w4 = 0.5
 n_weak_vec_4 <- n_weak(k_s, k_w, r_s, r_w4, q_s, q_w2, p_s, p_w = p_w_vec, c)
 ```
 
-```{r, message= FALSE, warning = FALSE}
-plot(x = p_w_vec, y = n_weak_vec_4,
-     type = "l", col = "black",
-     lwd = 2, las = 1, 
-     xlab = "Weak stock price", ylab = "Stock size")
-title(main = "Weak stock with r = 0.5")
-#lines(x = p_w_vec, y = n_weak_vec_4,
-#      col = "blue", lwd = 2)
-#title(main = "Different values for r")
-#legend(x = 6, y = 4.5,
-#       legend = c("Strong stock, r = 1", "Weak stock, r = 0.4"),
-#       col = c("black", "blue"),
-#       lty = c(1,1))
-```
-
-### Fifth model
-
-In this fifth model, I'll test the result of using an **r** value of 0.3 on the weak stock dynamics as a function of price
-
-```{r}
-r_w5 = 0.3
-n_weak_vec_5 <- n_weak(k_s, k_w, r_s, r_w5, q_s, q_w2, p_s, p_w = p_w_vec, c)
-```
-
-```{r, message= FALSE, warning = FALSE}
-plot(x = p_w_vec, y = n_weak_vec_5,
-     type = "l", col = "black",
-     lwd = 2, las = 1, 
-     xlab = "Weak stock price", ylab = "Stock size")
-title(main = "Weak stock with r = 0.3")
-#lines(x = p_w_vec, y = n_weak_vec_4,
-#      col = "blue", lwd = 2)
-#title(main = "Different values for r")
-#legend(x = 6, y = 4.5,
-#       legend = c("Strong stock, r = 1", "Weak stock, r = 0.4"),
-#       col = c("black", "blue"),
-#       lty = c(1,1))
-```
-
-
-- For values of `r_w` < 0.5 the curve becomes concave and negative. For `r_w` equal 0.5 the curve is flat. For `r_w` > 0.5 the curve is convex and positive.
-
 ### What happens if r is smaller for both species?
 
 ```{r}
 r_s2 = 0.09
 r_w2 = 0.07
 p_w_vec <- seq(0, 10, 0.1)
-n_weak_vec_2 <- n_weak(k_s, k_w, r_s2, r_w2, q_s, q_w, p_s, p_w = p_w_vec, c)
+n_weak_vec_5 <- n_weak(k_s, k_w, r_s2, r_w2, q_s, q_w, p_s, p_w = p_w_vec, c)
 n_strong_vec_2 <- n_strong(k_s, k_w, r_s2, r_w2, q_s, q_w, p_s, p_w = p_w_vec, c)
 ```
+
+
+## Model results for varying values of r
+
+```{r, message= FALSE, warning = FALSE}
+plot(x = p_w_vec, y = n_strong_vec,
+     type = "l", col = "black",
+     lwd = 2, las = 1, ylim = c(0, 4),
+     xlab = "Weak stock price", ylab = "Stock size")
+lines(x = p_w_vec, y = n_strong_vec_2,
+      col = "gray50", lwd = 2)
+lines(x = p_w_vec, y = n_weak_vec,
+      col = "blue", lwd = 2)
+lines(x = p_w_vec, y = n_weak_vec_2,
+      col = "goldenrod4", lwd = 2)
+lines(x = p_w_vec, y = n_weak_vec_3,
+      col = "darkgreen", lwd = 2)
+lines(x = p_w_vec, y = n_weak_vec_4,
+      col = "darkred", lwd = 2)
+lines(x = p_w_vec, y = n_weak_vec_5,
+      col = "brown", lwd = 2)
+legend(x = 6, y = 3.7,
+       legend = c("Strong stock, r = 1", "Strong stock, r = 0.09",
+                  "Weak stock 1, r = 1", 
+                  "Weak stock 2, r = 0.8", "Weak stock 3, r = 0.6", 
+                  "Weak stock 4, r = 0.5", "Weak stock 5, 5 = 0.07"),
+       col = c("black", "gray50", "blue", "goldenrod4", "darkgreen", "darkred", "brown"),
+       lty = c(1,1))
+```
+
+- For values of `r_w` < 0.5 the curve becomes concave and negative. For `r_w` equal 0.5 the curve is flat. For `r_w` > 0.5 the curve is convex and positive.
+
+
+
 
 ```{r}
 plot(x = p_w_vec, y = n_strong_vec_2,
@@ -284,7 +236,7 @@ plot(x = p_w_vec, y = n_strong_vec_2,
 lines(x = p_w_vec, y = n_weak_vec_2,
       col = "blue", lwd = 2)
 title(main = "Lower values of r")
-legend(x = 6, y = 2.5,
+legend(x = 6, y = 1.5,
        legend = c("Strong stock, r = 0.09", "Weak stock, r = 0.07"),
        col = c("black", "blue"),
        lty = c(1,1))
@@ -346,7 +298,7 @@ n_weak_vec_1 <- n_weak(k_s, k_w, r_s2, r_w2, q_s, q_w, p_s = p_s_vec, p_w1, c)
 ```
 
 ```{r}
-plot(x = p_s_vec, y = n_strong_vec_1,
+plot(x = p_s_vec, y = n_strong_vec_1-2,
      type = "l", col = "black",
      lwd = 2, las = 1, ylim = c(0, 4),
      xlab = "Strong stock price", ylab = "Stock size")
@@ -446,51 +398,127 @@ only one species (weak stock) with the same price function. *I believe this woul
 
 ## Simulation for each variable and parameter variations
 
-```{r}
+```{r, include = FALSE}
 # Paremeter settings
-r1 <- 0.2
-k1 <- 1
-r2 <- 0.4
-k2 <- 1.5
-t < 1:100
+# r1 <- 0.2
+# k1 <- 1
+# r2 <- 0.4
+# k2 <- 1.5
+# t <- 1:100
 ```
 
-```{r}
-df <- tibble(year=1:100,
-             sp=NA,
-             biomass=NA,
-             effort=NA,
-             catch=NA)
-df$biomass[1] <- k
+```{r, include = FALSE}
+# library(tidyverse)
+# df <- tibble(year=1:100,
+#              sp=NA,
+#              biomass=NA,
+#              effort=NA,
+#              catch=NA)
+# 
+# df$biomass[1] <- k1
 ```
 
-```{r}
-# Exploitation rate (catch/biomass)
-er <- 0.1
-# Simulate population
-i <- 1
-# Bt+1 = Bt + rBt(1-Bt/K) - Ct
-for(i in 1:nrow(df)){
-  # Get this year biomass
-  b_curr <- df$biomass[i]
-  # Calculate catch
-  catch <- er * b_curr
-  # Calculate surplus production
-  sp <- r*b_curr*(1-b_curr/k)
-  # Calculate next years biomass
-  b_next <- b_curr + sp - catch
-  # Record everything
-  df$biomass[i+1] <- b_next
-  df$sp[i] <- sp
-  df$catch[i] <- catch
+```{r, include = FALSE}
+# # Exploitation rate (catch/biomass)
+# er <- 0.1
+# # Simulate population
+# i <- 1
+# # Bt+1 = Bt + rBt(1-Bt/K) - Ct
+# for(i in 1:nrow(df)){
+#   # Get this year biomass
+#   b_curr <- df$biomass[i]
+#   # Calculate catch
+#   catch <- er * b_curr
+#   # Calculate surplus production
+#   sp <- r1*b_curr*(1-b_curr/k1)
+#   # Calculate next years biomass
+#   b_next <- b_curr + sp - catch
+#   # Record everything
+#   df$biomass[i+1] <- b_next
+#   df$sp[i] <- sp
+#   df$catch[i] <- catch
+# }
+# #
+# plot(biomass ~ year, df, ylim=c(0, 1))
+```
+
+```{r scenario simulations}
+# Building df of scenarios
+scenarios_df <- expand.grid(r_s = seq(0.2, 1, 0.2),
+                            k_s = seq(1, 5, 1),
+                            q_s = seq(0.01, 0.5, 0.1),
+                            p_s = seq(1, 10, 1),
+                            r_w = seq(0.05, 0.5, 0.1),
+                            k_w = seq(0.5, 2.5, 0.5),
+                            q_w = seq(0.01, 0.1, 0.1),
+                            p_w = seq(1, 20, 2),
+                            c = 0.05)
+
+
+run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
+ 
+  # Derive effort
+ e <- ((-c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w ) /
+   (k_w * p_w * q_w^2 * r_s) + (k_s * p_s * q_s^2 * r_w)
+  
+  # Derive weak stock biomass
+ 
+  N_w <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) /
+   (k_w * p_w * q_w^2 * r_s) + (k_s * p_s * q_s^2 * r_w)
+  
+ # Derive strong stock biomass
+ 
+   N_s <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
+   (k_w * p_w * q_w^2 * r_s) + (k_s * p_s * q_s^2 * r_w)
+  
+ # Build effort dataframe
+  effort_df <- data.frame(r_s = r_s, k_s = k_s, q_s = q_s, p_s = p_s,
+                          r_w = r_w, k_w = k_w, q_w = q_w, p_w = p_w, c = c)
+ 
+  # Build weak stock data frame
+  n_weak_df <- data.frame(r_s = r_s, k_s = k_s, q_s = q_s, p_s = p_s,
+                          r_w = r_w, k_w = k_w, q_w = q_w, p_w = p_w, c = c)
+   
+  # Build strong stock data frame
+  n_strong_df <- data.frame(r_s = r_s, k_s = k_s, q_s = q_s, p_s = p_s,
+                          r_w = r_w, k_w = k_w, q_w = q_w, p_w = p_w, c = c)
+  
+  # Build output
+  output <- list(effort_df, n_weak_df, n_strong_df)
+ 
+  # Plot outout
+  #if(plot==F){
+  # 
+  #}
+ 
+  # Return
+  return(output)
+ 
+ 
 }
-#
-plot(biomass ~ year, df, ylim=c(0, 1))
+
+
+
+for(i in 1:nrow(scenarios_df)){
+ 
+  # Extract params
+  r_s <- scenarios_df$r_s[i]
+  r_w <- scenarios_df$r_w[i]
+  k_s <- scenarios_df$k_s[i]
+  k_w <- scenarios_df$k_w[i]
+  q_s <- scenarios_df$q_s[i]
+  q_w <- scenarios_df$q_w[i]
+  p_s <- scenarios_df$p_s[i]
+  p_w <- scenarios_df$p_w[i]
+ 
+  # Run model
+  output <- run_model(r_s = r_s, k_s = k_s, q_s = q_s, p_s = p_s,
+                          r_w = r_w, k_w = k_w, q_w = q_w, p_w = p_w, c = c)
+ 
+ 
+ 
+}
 ```
-
-
-
-
 
 
 
