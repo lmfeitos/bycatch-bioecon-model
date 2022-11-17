@@ -585,32 +585,75 @@ output_q <- output_tidy %>%
 #write_csv(output_growth, file = file.path(outdir, "growth_ranges.csv"), col_names = T)
 #write_csv(output_k, file = file.path(outdir, "k_ranges.csv"), col_names = T)
 #write_csv(output_q, file = file.path(outdir, "q_ranges.csv"), col_names = T)
+
+# read in the output .csvs
+output_price <- read_csv(file.path(outdir, "price_ranges.csv"))
+
+output_growth <- read_csv(file.path(outdir, "growth_ranges.csv"))
+
+output_k <- read_csv(file.path(outdir, "k_ranges.csv"))
+
+output_q <- read_csv(file.path(outdir, "q_ranges.csv"))
 ```
 
 
 ```{r}
 ggplot() +
-  geom_col(data = output_tidy, aes(x = prices, y = values, fill = variables)) +
+  geom_col(data = output_price %>% filter(stock_prices == "p_w"), 
+           aes(x = prices, y = values/1000000, fill = variables)) +
   facet_wrap(~ variables,
              scales = "free_y") +
   labs(x = "Price ranges",
-       y = "Variable size") +
+       y = "Variable size (mil)") +
   theme_bw() +
   theme(strip.background = element_rect(fill = "transparent"))
 ```
 
 
 ```{r}
-ggplot(data = output_tidy %>% filter(variables == "N_w")) +
+output_gp <- output_price %>% 
+  left_join(output_growth, by = c("scenario_id", "variables", "values"))
+
+
+ggplot(data = output_gp %>% filter(variables == "N_w")) +
   geom_point(aes(x = price_ratio, y = prod_ratio, color = variables)) +
   labs(x = "Price ratio (s:w)",
        y = "Productivity ratio (s:w)") +
   theme_bw()
 ```
 
+```{r}
+ggplot() +
+  geom_col(data = output_growth, aes(x = r, y = values/1000000, fill = variables)) +
+  facet_wrap(~ variables,
+             scales = "free_y") +
+  labs(x = "Intrinsic growth rate (r) ranges",
+       y = "Variable size (mil)") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "transparent"))
+```
 
+```{r}
+ggplot() +
+  geom_col(data = output_k, aes(x = k, y = values/1000000, fill = variables)) +
+  facet_wrap(~ variables,
+             scales = "free_y") +
+  labs(x = "Carrying capacity (K) ranges",
+       y = "Variable size (mil)") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "transparent"))
+```
 
-
+```{r}
+ggplot() +
+  geom_col(data = output_q, aes(x = q, y = values/1000000, fill = variables)) +
+  facet_wrap(~ variables,
+             scales = "free_y") +
+  labs(x = "Catchability (q) ranges",
+       y = "Variable size (mil)") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "transparent"))
+```
 
 
 
