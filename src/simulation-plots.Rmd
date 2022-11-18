@@ -30,7 +30,7 @@ output_q <- read_csv(file.path(outdir, "q_ranges.csv"))
 ```{r, echo = FALSE}
 ggplot() +
   geom_col(data = output_price %>% filter(stock_prices == "p_w"), 
-           aes(x = prices, y = values/1000000, fill = variables)) +
+           aes(x = prices, y = values/100000, fill = variables)) +
   facet_wrap(~ variables,
              scales = "free_y") +
   labs(x = "Price ranges",
@@ -43,10 +43,11 @@ ggplot() +
 
 ```{r, echo = FALSE}
 output_gp <- output_price %>% 
-  left_join(output_growth, by = c("scenario_id", "variables", "values"))
+  left_join(output_growth, by = c("scenario_id", "variables", "values")) %>% 
+  left_join(output_q, by = c("scenario_id", "variables", "values"))
 
 
-ggplot(data = output_gp %>% filter(variables == "N_w")) +
+ggplot(data = output_gp %>% filter(variables %in% c("N_w", "N_s"))) +
   geom_point(aes(x = price_ratio, y = prod_ratio, color = variables),
              alpha = 0.5) +
   labs(x = "Price ratio (s:w)",
@@ -90,3 +91,15 @@ ggplot() +
   theme_bw() +
   theme(strip.background = element_rect(fill = "transparent"))
 ```
+
+
+```{r}
+ggplot(data = output_gp %>% filter(variables %in% c("N_w", "N_s"))) +
+  geom_point(aes(x = price_ratio, y = q_ratio, color = variables),
+             alpha = 0.5) +
+  labs(x = "Price ratio (s:w)",
+       y = "Productivity ratio (s:w)",
+       title = "Simulation of the distribution of catchability and price ratios") +
+  theme_bw()
+```
+
