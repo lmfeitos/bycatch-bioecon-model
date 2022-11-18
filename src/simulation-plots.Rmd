@@ -1,0 +1,92 @@
+---
+title: "simulation-plots"
+author: "Leonardo Feitosa"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+
+# file path
+basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses/"
+outdir <- file.path(basedir, "model_outs") # calls present data from raster files
+```
+
+```{r, include = FALSE}
+# read in the output .csvs
+output_price <- read_csv(file.path(outdir, "price_ranges.csv"))
+
+output_growth <- read_csv(file.path(outdir, "growth_ranges.csv"))
+
+output_k <- read_csv(file.path(outdir, "k_ranges.csv"))
+
+output_q <- read_csv(file.path(outdir, "q_ranges.csv"))
+
+```
+
+```{r, echo = FALSE}
+ggplot() +
+  geom_col(data = output_price %>% filter(stock_prices == "p_w"), 
+           aes(x = prices, y = values/1000000, fill = variables)) +
+  facet_wrap(~ variables,
+             scales = "free_y") +
+  labs(x = "Price ranges",
+       y = "Variable size (mil)",
+       title = "Simulation of price ranges on variable size") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "transparent"))
+```
+
+
+```{r, echo = FALSE}
+output_gp <- output_price %>% 
+  left_join(output_growth, by = c("scenario_id", "variables", "values"))
+
+
+ggplot(data = output_gp %>% filter(variables == "N_w")) +
+  geom_point(aes(x = price_ratio, y = prod_ratio, color = variables),
+             alpha = 0.5) +
+  labs(x = "Price ratio (s:w)",
+       y = "Productivity ratio (s:w)",
+       title = "Simulation of the distribution of productivity and price ratios") +
+  theme_bw()
+```
+
+```{r, echo = FALSE}
+ggplot() +
+  geom_col(data = output_growth, aes(x = r, y = values/1000000, fill = variables)) +
+  facet_wrap(~ variables,
+             scales = "free_y") +
+  labs(x = "Intrinsic growth rate (r) ranges",
+       y = "Variable size (mil)",
+       title = "Simulation of intrinsic growth ranges on variable size") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "transparent"))
+```
+
+```{r, echo = FALSE}
+ggplot() +
+  geom_col(data = output_k, aes(x = k, y = values/1000000, fill = variables)) +
+  facet_wrap(~ variables,
+             scales = "free_y") +
+  labs(x = "Carrying capacity (K) ranges",
+       y = "Variable size (mil)",
+       title = "Simulation of carrying capacity ranges on variable size") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "transparent"))
+```
+
+```{r, echo = FALSE}
+ggplot() +
+  geom_col(data = output_q, aes(x = q, y = values/1000000, fill = variables)) +
+  facet_wrap(~ variables,
+             scales = "free_y") +
+  labs(x = "Catchability (q) ranges",
+       y = "Variable size (mil)",
+       title = "Simulation of catchability ranges on variable size") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "transparent"))
+```

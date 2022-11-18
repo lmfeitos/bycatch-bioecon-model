@@ -452,16 +452,16 @@ only one species (weak stock) with the same price function. *I believe this woul
 
 ```{r scenario simulations}
 # Building df of scenarios
-scenarios_df <- expand.grid(r_s = seq(0.2, 1, 0.2),
+scenarios_df <- expand.grid(r_s = seq(0.1, 1, 0.2),
+                            r_w = seq(0.1, 1, 0.2),
                             k_s = seq(1, 5, 1),
-                            q_s = seq(0.01, 0.5, 0.1),
-                            p_s = seq(1, 10, 1),
-                            r_w = seq(0.05, 0.5, 0.1),
-                            k_w = seq(0.5, 2.5, 0.5),
-                            q_w = seq(0.01, 0.1, 0.1),
-                            p_w = seq(1, 20, 2),
+                            k_w = seq(1, 5, 1),
+                            q_s = seq(0.1, 1, 0.2),
+                            q_w = seq(0.1, 1, 0.2),
+                            p_s = seq(1, 10, 2),
+                            p_w = seq(1, 10, 2),
                             c = 0.05) %>% 
-  mutate(scenario_id = 1:nrow(.))
+  mutate(scenario_id = 1:nrow(.)) 
 
 # test scenario
 r_s <- scenarios_df$r_s[1]
@@ -586,74 +586,9 @@ output_q <- output_tidy %>%
 #write_csv(output_k, file = file.path(outdir, "k_ranges.csv"), col_names = T)
 #write_csv(output_q, file = file.path(outdir, "q_ranges.csv"), col_names = T)
 
-# read in the output .csvs
-output_price <- read_csv(file.path(outdir, "price_ranges.csv"))
-
-output_growth <- read_csv(file.path(outdir, "growth_ranges.csv"))
-
-output_k <- read_csv(file.path(outdir, "k_ranges.csv"))
-
-output_q <- read_csv(file.path(outdir, "q_ranges.csv"))
 ```
 
 
-```{r}
-ggplot() +
-  geom_col(data = output_price %>% filter(stock_prices == "p_w"), 
-           aes(x = prices, y = values/1000000, fill = variables)) +
-  facet_wrap(~ variables,
-             scales = "free_y") +
-  labs(x = "Price ranges",
-       y = "Variable size (mil)") +
-  theme_bw() +
-  theme(strip.background = element_rect(fill = "transparent"))
-```
-
-
-```{r}
-output_gp <- output_price %>% 
-  left_join(output_growth, by = c("scenario_id", "variables", "values"))
-
-
-ggplot(data = output_gp %>% filter(variables == "N_w")) +
-  geom_point(aes(x = price_ratio, y = prod_ratio, color = variables)) +
-  labs(x = "Price ratio (s:w)",
-       y = "Productivity ratio (s:w)") +
-  theme_bw()
-```
-
-```{r}
-ggplot() +
-  geom_col(data = output_growth, aes(x = r, y = values/1000000, fill = variables)) +
-  facet_wrap(~ variables,
-             scales = "free_y") +
-  labs(x = "Intrinsic growth rate (r) ranges",
-       y = "Variable size (mil)") +
-  theme_bw() +
-  theme(strip.background = element_rect(fill = "transparent"))
-```
-
-```{r}
-ggplot() +
-  geom_col(data = output_k, aes(x = k, y = values/1000000, fill = variables)) +
-  facet_wrap(~ variables,
-             scales = "free_y") +
-  labs(x = "Carrying capacity (K) ranges",
-       y = "Variable size (mil)") +
-  theme_bw() +
-  theme(strip.background = element_rect(fill = "transparent"))
-```
-
-```{r}
-ggplot() +
-  geom_col(data = output_q, aes(x = q, y = values/1000000, fill = variables)) +
-  facet_wrap(~ variables,
-             scales = "free_y") +
-  labs(x = "Catchability (q) ranges",
-       y = "Variable size (mil)") +
-  theme_bw() +
-  theme(strip.background = element_rect(fill = "transparent"))
-```
 
 
 
