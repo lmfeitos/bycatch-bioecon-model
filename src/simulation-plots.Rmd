@@ -28,16 +28,18 @@ output_q <- read_csv(file.path(outdir, "q_ranges.csv"))
 ```
 
 ```{r, echo = FALSE}
-ggplot() +
-  geom_col(data = output_price %>% filter(stock_prices == "p_w"), 
-           aes(x = prices, y = values/100000, fill = variables)) +
-  facet_wrap(~ variables,
-             scales = "free_y") +
+output_price %>% 
+  filter(stock_prices == "p_w") %>% 
+  ggplot() +
+  geom_col(aes(x = prices, y = values, fill = variables),
+           position = "dodge") +
+  geom_hline(yintercept = 0, color = "black", size = 0.5,
+             alpha = 0.5, linetype = "dashed") +
+  scale_x_continuous(breaks = seq(0, 10, 1)) +
   labs(x = "Price ranges",
        y = "Variable size (mil)",
        title = "Simulation of price ranges on variable size") +
-  theme_bw() +
-  theme(strip.background = element_rect(fill = "transparent"))
+  theme_bw() 
 ```
 
 
@@ -47,11 +49,11 @@ output_gp <- output_price %>%
   left_join(output_q, by = c("scenario_id", "variables", "values"))
 
 
-ggplot(data = output_gp %>% filter(variables %in% c("N_w", "N_s"))) +
+ggplot(data = output_gp %>% filter(variables == "N_w")) +
   geom_point(aes(x = price_ratio, y = prod_ratio, color = variables),
              alpha = 0.5) +
   labs(x = "Price ratio (s:w)",
-       y = "Productivity ratio (s:w)",
+       y = "Vulnerability ratio (s:w)",
        title = "Simulation of the distribution of productivity and price ratios") +
   theme_bw()
 ```
