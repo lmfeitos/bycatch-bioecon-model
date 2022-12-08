@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(here)
+library(patchwork)
 
 # file path
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses/"
@@ -31,9 +32,9 @@ output_test <- read_csv(file.path(outdir, "output_ranges_test.csv"))
 
 # Results from the parameter per parameter simulation
 
-### Price range simulation
 
-```{r, echo = FALSE}
+
+```{r, include = FALSE}
 output_price_ranges %>%
   pivot_wider(names_from = "stock_prices",
               values_from = "prices") %>% 
@@ -51,7 +52,7 @@ output_price_ranges %>%
   theme_bw() 
 ```
 
-```{r, echo = FALSE}
+```{r, include = FALSE}
 output_price_ranges %>%
   pivot_wider(names_from = "stock_prices",
               values_from = "prices") %>% 
@@ -70,9 +71,9 @@ output_price_ranges %>%
 ```
 
 
-### Growth range simulation
 
-```{r, echo = FALSE}
+
+```{r, include = FALSE}
 output_price_ranges %>%
   pivot_wider(names_from = "stock_prices",
               values_from = "prices") %>% 
@@ -91,9 +92,8 @@ output_price_ranges %>%
 ```
 
 
-### Catchability range simulation
 
-```{r, echo = FALSE}
+```{r, include = FALSE}
 output_q_ranges %>%   
   pivot_wider(names_from = "stock_q",
               values_from = "q") %>%  
@@ -110,9 +110,9 @@ output_q_ranges %>%
   theme_bw() 
 ```
 
-### Price ratio vs Vulnerability test
 
-```{r, echo = FALSE}
+
+```{r, include = FALSE}
 output_full %>% 
   filter(variables %in% c("N_w", "N_s")) %>% 
   pivot_longer(cols = starts_with("values_"),
@@ -129,15 +129,20 @@ output_full %>%
   theme_bw()
 ```
 
-# New tests with the other parameters also being varied
 
 - Catchability (q) varies from 0.1 to 0.5 at intervals of 0.2.
-- Growth rate (r) varies from 0.1 to 1 at intervals of 0.5.
+- Growth rate (r) varies from 0.1 to 1 at intervals of 0.4.
 - Carrying capacity (k) varies from 1 to 5 at intervals of 2.
-- Price ranges (p) from 0.1 to 10 at intervals of 0.3
+- Price ranges (p) from 0.1 to 10 at intervals of 0.4.
+
+### Catchability range simulation
+
 
 ```{r, echo = FALSE}
+# New tests with the other parameters also being varied
+
 output_test %>% 
+  filter(values >= 0) %>% 
   ggplot() +
   geom_raster(aes(x = q_w, y = q_s, fill = values)) +
   facet_wrap(~ variables,
@@ -151,11 +156,11 @@ output_test %>%
   theme_bw()
 ```
 
+### Price range simulation
+
 ```{r, echo = FALSE}
 output_test %>% 
-  pivot_wider(names_from = "stock_prices",
-              values_from = "prices") %>% 
-  filter(variables %in% c("N_s", "N_w")) %>% 
+  filter(values >= 0) %>% 
   ggplot() +
   geom_raster(aes(x = p_w, y = p_s, fill = values)) +
   facet_wrap(~ variables,
@@ -169,9 +174,11 @@ output_test %>%
   theme_bw()
 ```
 
+### Growth range simulation
+
 ```{r, echo = FALSE}
 output_test %>% 
-  filter(variables %in% c("N_s", "N_w")) %>% 
+  filter(variables %in% c("N_s", "N_w") & values >= 0) %>% 
   ggplot() +
   geom_raster(aes(x = r_w, y = r_s, fill = values)) +
   facet_wrap(~ variables,
@@ -185,8 +192,11 @@ output_test %>%
   theme_bw()
 ```
 
+### Carrying capacity range simulation
+
 ```{r, echo = FALSE}
 output_test %>% 
+  filter(values >= 0) %>% 
   ggplot() +
   geom_raster(aes(x = k_w, y = k_s, fill = values)) +
   facet_wrap(~ variables,
@@ -201,7 +211,8 @@ output_test %>%
 ```
 
 ```{r, echo = FALSE}
-output_test %>% 
+vul_full <- 
+  output_test %>% 
   filter(variables %in% c("N_w", "N_s")) %>% 
   mutate(prod_ratio = (q_s/r_s) / (q_w/r_w)) %>% 
   ggplot() +
@@ -210,7 +221,197 @@ output_test %>%
   scale_color_gradientn(name = "stock size", colors = RColorBrewer::brewer.pal(5, "YlOrRd")) +
   labs(x = "Price ratio (p_s/p_w)",
        y = "Vulnerability ratio log(q_s/r_s)/(q_w/r_w)",
-       title = "Simulation of the distribution of productivity and price ratios") +
+       title = "All values") +
   theme_bw()
 ```
+
+```{r, echo = FALSE}
+vul_pos <- 
+  output_test %>% 
+  filter(variables %in% c("N_w", "N_s") & values >= 0) %>% 
+  mutate(prod_ratio = (q_s/r_s) / (q_w/r_w)) %>% 
+  ggplot() +
+  geom_point(aes(x = price_ratio, y = log(prod_ratio + 1), color = values),
+             alpha = 0.6) +
+  scale_color_gradientn(name = "stock size", colors = RColorBrewer::brewer.pal(5, "YlOrRd")) +
+  labs(x = "Price ratio (p_s/p_w)",
+       y = "Vulnerability ratio log(q_s/r_s)/(q_w/r_w)",
+       title = "Only positive values") +
+  theme_bw()
+```
+
+```{r, echo = FALSE}
+vul_neg <- 
+  output_test %>% 
+  filter(variables %in% c("N_w", "N_s") & values <= 0) %>% 
+  mutate(prod_ratio = (q_s/r_s) / (q_w/r_w)) %>% 
+  ggplot() +
+  geom_point(aes(x = price_ratio, y = log(prod_ratio + 1), color = values),
+             alpha = 0.6) +
+  scale_color_gradientn(name = "stock size", colors = RColorBrewer::brewer.pal(5, "YlOrRd"),
+                        breaks = seq(-60, 0, 10)) +
+  labs(x = "Price ratio (p_s/p_w)",
+       y = "Vulnerability ratio log(q_s/r_s)/(q_w/r_w)",
+       title = "Only negative values") +
+  theme_bw()
+```
+
+### Price ratio vs Vulnerability test
+
+```{r, fig.height = 10, fig.width=9, echo = FALSE}
+(vul_neg + vul_pos) /
+  vul_full +
+  plot_annotation(title = "Simulation of the distribution of vulnerability and price ratios")
+```
+
+
+
+```{r, echo = FALSE}
+q_neg <- 
+  output_test %>% 
+  filter(values < 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = q_w, y = q_s, fill = values)) +
+  facet_wrap(~ variables) +
+#  scale_fill_continuous(breaks = seq(-10, 0, 2)) +
+  labs(title = "Negative values") +
+  theme_bw()
+```
+
+```{r, echo = FALSE}
+q_pos <-
+  output_test %>% 
+  filter(values >= 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = q_w, y = q_s, fill = values)) +
+  facet_wrap(~ variables) +
+  scale_fill_continuous(breaks = seq(0, 5, 1)) +
+  labs(title = "Positive values") +
+  theme_bw()
+```
+
+
+```{r, fig.width=9, echo = FALSE}
+(q_neg + q_pos) +
+  plot_annotation(title = "Catchability ranges")
+```
+
+
+```{r, echo = FALSE}
+r_neg <- 
+  output_test %>% 
+  filter(values <= 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = r_w, y = r_s, fill = values)) +
+  facet_wrap(~ variables) +
+  labs(title = "Negative values for r scenarios") +
+  theme_bw()
+```
+
+```{r, echo = FALSE}
+r_pos <- 
+  output_test %>% 
+  filter(values >= 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = r_w, y = r_s, fill = values)) +
+  facet_wrap(~ variables) +
+  labs(title = "Positive values for r scenarios") +
+  theme_bw()
+```
+
+```{r, fig.width=8, echo = FALSE}
+r_neg + r_pos +
+  plot_annotation(title = "Range of values for r scenarios")
+```
+
+
+```{r, echo = FALSE}
+k_neg <-
+  output_test %>% 
+  filter(values <= 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = k_w, y = k_s, fill = values)) +
+  facet_wrap(~ variables) +
+  labs(title = "Negative values for K ranges") +
+  theme_bw()
+```
+
+```{r, echo = FALSE}
+k_pos <-
+  output_test %>% 
+  filter(values >= 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = k_w, y = k_s, fill = values)) +
+  facet_wrap(~ variables) +
+  labs(title = "Positive values for K ranges") +
+  theme_bw()
+```
+
+```{r, fig.width=8, echo = FALSE}
+k_neg + k_pos +
+  plot_annotation(title = "Range of values for K scenarios")
+```
+
+```{r, echo = FALSE}
+price_neg <-
+  output_test %>% 
+  filter(values <= 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = p_w, y = p_s, fill = values)) +
+  facet_wrap(~ variables) +
+  scale_x_continuous(breaks = seq(0, 10, 2)) +
+  labs(title = "Negative values for the range of prices") +
+  theme_bw()
+```
+
+```{r, echo = FALSE}
+pos_price <- 
+  output_test %>% 
+  filter(values >= 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = p_w, y = p_s, fill = values)) +
+  facet_wrap(~ variables) +
+  scale_x_continuous(breaks = seq(0, 10, 2)) +
+  labs(title = "Positive values for the range of prices") +
+  theme_bw()
+```
+
+```{r, fig.width=8, echo = FALSE}
+price_neg + pos_price +
+  plot_annotation(title = "Values for the range of prices")
+```
+
+### Distribution of variable values
+
+```{r, echo = FALSE, message = FALSE}
+output_test %>% 
+  ggplot() +
+  geom_histogram(aes(x = values, fill = variables),
+                 show.legend = F) +
+  facet_wrap(~ variables,
+             scales = "free_x") +
+  theme_bw()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
