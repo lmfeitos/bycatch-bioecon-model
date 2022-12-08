@@ -1,0 +1,575 @@
+---
+title: "simulation scenarios"
+author: "Leonardo Feitosa"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+
+basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses/"
+outdir <- file.path(basedir, "model_outs") # calls present data from raster files
+
+```
+
+```{r model function}
+run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
+ 
+  # Derive effort
+ e <- (- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w  /
+   k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w 
+  
+  # Derive weak stock biomass
+ 
+  N_w <- k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w)) / 
+    k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w
+  
+ # Derive strong stock biomass
+ 
+   N_s <- k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w)) /
+     k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w
+  
+  # Build output
+  output <- data.frame(e = e, N_s = N_s, N_w = N_w)
+ 
+  # Return
+  return(output)
+ 
+ 
+}
+
+```
+
+
+```{r scenario simulations}
+# Building df of scenarios
+scenarios_df <- expand.grid(r_s = seq(0.1, 1, 0.1),
+                            r_w = seq(0.1, 1, 0.1),
+                            k_s = seq(1, 5, .5),
+                            k_w = seq(1, 5, .5),
+                            q_s = seq(0.1, 1, 0.1),
+                            q_w = seq(0.1, 1, 0.1),
+                            p_s = seq(0, 10, 1),
+                            p_w = seq(0, 10, 1),
+                            c = 0.05) %>% 
+  mutate(scenario_id = 1:nrow(.)) 
+
+# test scenario
+r_s <- scenarios_df$r_s[1]
+k_s <- scenarios_df$k_s[1]
+q_s <- scenarios_df$q_s[1]
+p_s <- scenarios_df$p_s[1]
+r_w <- scenarios_df$r_w[1]
+k_w <- scenarios_df$k_w[1]
+q_w <- scenarios_df$q_w[1]
+p_w <- scenarios_df$p_w[1]
+c <- scenarios_df$c[1]
+
+i = 1
+
+# test with purrr
+#scenarios_df %>% 
+#  pmap(~ run_model(scenarios_df$r_s, scenarios_df$r_w,
+#                   scenarios_df$k_s, scenarios_df$k_w,
+#                   scenarios_df$q_s, scenarios_df$q_w,
+#                   scenarios_df$p_s, scenarios_df$p_w,
+#                   scenarios_df$c)) %>% 
+#    mutate(sc_id = sc_id)
+
+for(i in 1:nrow(scenarios_df)){
+ 
+  # Extract params
+  r_s <- scenarios_df$r_s[i]
+  r_w <- scenarios_df$r_w[i]
+  k_s <- scenarios_df$k_s[i]
+  k_w <- scenarios_df$k_w[i]
+  q_s <- scenarios_df$q_s[i]
+  q_w <- scenarios_df$q_w[i]
+  p_s <- scenarios_df$p_s[i]
+  p_w <- scenarios_df$p_w[i]
+  c <- scenarios_df$c[i]
+  sc_id <- scenarios_df$scenario_id[i]
+ 
+  # Run model
+  output <- run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                      q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, c = c) %>% 
+    mutate(sc_id = sc_id)
+  
+  if(i == 1){
+    output_1 <- output
+  }
+  else{
+    output_1 <- rbind(output_1, output)
+  }
+
+}
+```
+
+```{r output wrangling}
+output_join <- output_1 %>% 
+  rename(scenario_id = sc_id) %>% 
+  left_join(scenarios_df, by = "scenario_id") %>% 
+  relocate(scenario_id, .before = e)
+
+output_tidy <- output_join %>% 
+  mutate(price_ratio = p_s / p_w) %>% 
+  mutate(prod_ratio = q_s / r_s / q_w / r_w) %>% 
+  mutate(k_ratio = k_s / k_w) %>% 
+  mutate(q_ratio = q_s / q_w) %>% 
+  pivot_longer(cols = e:N_w,
+               names_to = "variables",
+               values_to = "values") %>% 
+  pivot_longer(cols = c(p_s, p_w),
+               names_to = "stock_prices",
+               values_to = "prices") %>% 
+  pivot_longer(cols = c(r_s, r_w),
+               names_to = "stock_growth_r",
+               values_to = "r") %>% 
+  pivot_longer(cols = c(q_s, q_w),
+               names_to = "stock_q",
+               values_to = "q") %>% 
+  pivot_longer(cols = c(k_w, k_s),
+               names_to = "stock_k",
+               values_to = "k") 
+
+output_price <- output_tidy %>% 
+  select(scenario_id, variables, values, stock_prices, prices, price_ratio) %>% 
+  distinct_all()
+
+output_growth <- output_tidy %>% 
+  select(scenario_id, variables, values, stock_growth_r, r, prod_ratio) %>% 
+  distinct_all()
+
+output_k <- output_tidy %>% 
+  select(scenario_id, variables, values, stock_k, k, k_ratio) %>% 
+  distinct_all()
+
+output_q <- output_tidy %>% 
+  select(scenario_id, variables, values, stock_q, q, q_ratio) %>% 
+  distinct_all()
+
+#write_csv(output_price, file = file.path(outdir, "price_ranges.csv"), col_names = T)
+#write_csv(output_growth, file = file.path(outdir, "growth_ranges.csv"), col_names = T)
+#write_csv(output_k, file = file.path(outdir, "k_ranges.csv"), col_names = T)
+#write_csv(output_q, file = file.path(outdir, "q_ranges.csv"), col_names = T)
+
+```
+
+
+```{r}
+# Building df of price range scenarios
+p_scenarios_df <- expand.grid(p_s = seq(0.1, 10, 0.2),
+                            p_w = seq(0.1, 10, 0.2),
+                            r_s = 1,
+                            r_w = 1,
+                            q_s = 0.1,
+                            q_w = 0.1,
+                            k_s = 1,
+                            k_w = 1,
+                            c = 0.05) %>% 
+  mutate(scenario_id = 1:nrow(.)) 
+
+# test scenario
+r_s <- p_scenarios_df$r_s[1]
+k_s <- p_scenarios_df$k_s[1]
+q_s <- p_scenarios_df$q_s[1]
+p_s <- p_scenarios_df$p_s[1]
+r_w <- p_scenarios_df$r_w[1]
+k_w <- p_scenarios_df$k_w[1]
+q_w <- p_scenarios_df$q_w[1]
+p_w <- p_scenarios_df$p_w[1]
+c <- p_scenarios_df$c[1]
+
+
+i = 1
+
+# test with purrr
+# p_scenarios_df_out <- p_scenarios_df %>% 
+#   pmap(~ run_model(p_scenarios_df$r_s, p_scenarios_df$r_w,
+#                    p_scenarios_df$k_s, p_scenarios_df$k_w,
+#                    p_scenarios_df$q_s, p_scenarios_df$q_w,
+#                    p_scenarios_df$p_s, p_scenarios_df$p_w,
+#                    p_scenarios_df$c)) %>% 
+#   unlist() %>% 
+#   as.data.frame()
+
+for(i in 1:nrow(p_scenarios_df)){
+ 
+  # Extract params
+  r_s <- p_scenarios_df$r_s[i]
+  r_w <- p_scenarios_df$r_w[i]
+  k_s <- p_scenarios_df$k_s[i]
+  k_w <- p_scenarios_df$k_w[i]
+  q_s <- p_scenarios_df$q_s[i]
+  q_w <- p_scenarios_df$q_w[i]
+  p_s <- p_scenarios_df$p_s[i]
+  p_w <- p_scenarios_df$p_w[i]
+  c <- p_scenarios_df$c[i]
+  sc_id <- p_scenarios_df$scenario_id[i]
+ 
+  # Run model
+  output <- run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                      q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, c = c) %>% 
+    mutate(sc_id = sc_id)
+  
+  if(i == 1){
+    output_1 <- output
+  }
+  else{
+    output_1 <- rbind(output_1, output)
+  }
+
+}
+
+output_join <- output_1 %>% 
+  rename(scenario_id = sc_id) %>% 
+  left_join(p_scenarios_df, by = "scenario_id") %>% 
+  relocate(scenario_id, .before = e)
+
+output_p_tidy <- output_join %>% 
+  mutate(price_ratio = p_s / p_w) %>% 
+  pivot_longer(cols = e:N_w,
+               names_to = "variables",
+               values_to = "values") %>% 
+  pivot_longer(cols = c(p_s, p_w),
+               names_to = "stock_prices",
+               values_to = "prices") 
+  
+output_price_range <- output_p_tidy %>% 
+  select(scenario_id, variables, values, stock_prices, prices, price_ratio) %>% 
+  distinct(variables, values, stock_prices, prices, price_ratio, .keep_all = TRUE)
+
+#write_csv(output_price_range, file = file.path(outdir, "output_price_ranges.csv"), col_names = T)
+```
+
+```{r}
+output_price_range %>%
+  pivot_wider(names_from = "stock_prices",
+              values_from = "prices") %>% 
+  filter(variables %in% c("N_w", "N_s")) %>% 
+  ggplot() +
+  geom_raster(aes(x = p_w, y = p_s, fill = values)) +
+  facet_wrap(~ variables,
+            scales = "free_y") +
+  scale_fill_gradientn(name = "Stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+  scale_x_continuous(breaks = seq(0, 10, 1)) +
+  scale_y_continuous(breaks = seq(0, 10, 1)) +
+  labs(x = "Weak stock price range",
+       y = "Strong stock price range",
+       title = "Simulation of price ranges on variable size") +
+  theme_bw() 
+```
+
+
+```{r}
+# Building df of scenarios
+q_scenarios_df <- expand.grid(p_s = 1,
+                            p_w = 1,
+                            r_s = 1,
+                            r_w = 1,
+                            q_s = seq(0.1, 1, 0.01),
+                            q_w = seq(0.1, 1, 0.01),
+                            k_s = 1,
+                            k_w = 1,
+                            c = 0.05) %>% 
+  mutate(scenario_id = 1:nrow(.)) 
+
+# test scenario
+r_s <- q_scenarios_df$r_s[1]
+k_s <- q_scenarios_df$k_s[1]
+q_s <- q_scenarios_df$q_s[1]
+p_s <- q_scenarios_df$p_s[1]
+r_w <- q_scenarios_df$r_w[1]
+k_w <- q_scenarios_df$k_w[1]
+q_w <- q_scenarios_df$q_w[1]
+p_w <- q_scenarios_df$p_w[1]
+c <- q_scenarios_df$c[1]
+
+
+
+i = 1
+
+# p_scenarios_df_out <- p_scenarios_df %>% 
+#   pmap(~ run_model(p_scenarios_df$r_s, p_scenarios_df$r_w,
+#                    p_scenarios_df$k_s, p_scenarios_df$k_w,
+#                    p_scenarios_df$q_s, p_scenarios_df$q_w,
+#                    p_scenarios_df$p_s, p_scenarios_df$p_w,
+#                    p_scenarios_df$c)) %>% 
+#   unlist() %>% 
+#   as.data.frame()
+
+for(i in 1:nrow(q_scenarios_df)){
+ 
+  # Extract params
+  r_s <- q_scenarios_df$r_s[i]
+  r_w <- q_scenarios_df$r_w[i]
+  k_s <- q_scenarios_df$k_s[i]
+  k_w <- q_scenarios_df$k_w[i]
+  q_s <- q_scenarios_df$q_s[i]
+  q_w <- q_scenarios_df$q_w[i]
+  p_s <- q_scenarios_df$p_s[i]
+  p_w <- q_scenarios_df$p_w[i]
+  c <- q_scenarios_df$c[i]
+  sc_id <- q_scenarios_df$scenario_id[i]
+ 
+  # Run model
+  output <- run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                      q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, c = c) %>% 
+    mutate(sc_id = sc_id)
+  
+  if(i == 1){
+    output_q <- output
+  }
+  else{
+    output_q <- rbind(output_q, output)
+  }
+
+}
+
+output_join_q <- output_q %>% 
+  rename(scenario_id = sc_id) %>% 
+  left_join(q_scenarios_df, by = "scenario_id") %>% 
+  relocate(scenario_id, .before = e)
+
+output_q_tidy <- output_join_q %>% 
+  mutate(q_ratio = q_s / q_w) %>% 
+  pivot_longer(cols = e:N_w,
+               names_to = "variables",
+               values_to = "values") %>% 
+  pivot_longer(cols = c(q_s, q_w),
+               names_to = "stock_q",
+               values_to = "q") 
+
+output_q <- output_q_tidy %>% 
+  select(scenario_id, variables, values, stock_q, q, q_ratio) %>% 
+  distinct(variables, values, stock_q, q, q_ratio, .keep_all = TRUE)
+
+#write_csv(output_q, file = file.path(outdir, "output_q_ranges.csv"), col_names = T)
+```
+
+```{r}
+output_q %>% 
+  pivot_wider(names_from = "stock_q",
+              values_from = "q") %>% 
+  filter(variables %in% c("N_w", "N_s")) %>% 
+  ggplot() +
+  geom_raster(aes(x = q_w, y = q_s, fill = values)) +
+  facet_wrap(~ variables) +
+  scale_fill_gradientn(name = "stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+  facet_wrap(~ variables,
+             scales = "free_y") +
+  labs(x = "Weak stock q ranges",
+       y = "Strong stock q ranges",
+       title = "Simulation of catchability ranges on stock size") +
+  theme_bw() 
+```
+
+```{r}
+# Building df of scenarios
+r_scenarios_df <- expand.grid(p_s = 1,
+                            p_w = 1,
+                            r_s = seq(0.1, 5, 0.1),
+                            r_w = seq(0.1, 5, 0.1),
+                            q_s = 0.1,
+                            q_w = 0.1,
+                            k_s = 1,
+                            k_w = 1,
+                            c = 0.05) %>% 
+  mutate(scenario_id = 1:nrow(.)) 
+
+# test scenario
+r_s <- r_scenarios_df$r_s[1]
+k_s <- r_scenarios_df$k_s[1]
+q_s <- r_scenarios_df$q_s[1]
+p_s <- r_scenarios_df$p_s[1]
+r_w <- r_scenarios_df$r_w[1]
+k_w <- r_scenarios_df$k_w[1]
+q_w <- r_scenarios_df$q_w[1]
+p_w <- r_scenarios_df$p_w[1]
+c <- r_scenarios_df$c[1]
+
+
+
+i = 1
+
+# p_scenarios_df_out <- p_scenarios_df %>% 
+#   pmap(~ run_model(p_scenarios_df$r_s, p_scenarios_df$r_w,
+#                    p_scenarios_df$k_s, p_scenarios_df$k_w,
+#                    p_scenarios_df$q_s, p_scenarios_df$q_w,
+#                    p_scenarios_df$p_s, p_scenarios_df$p_w,
+#                    p_scenarios_df$c)) %>% 
+#   unlist() %>% 
+#   as.data.frame()
+
+for(i in 1:nrow(q_scenarios_df)){
+ 
+  # Extract params
+  r_s <- r_scenarios_df$r_s[i]
+  r_w <- r_scenarios_df$r_w[i]
+  k_s <- r_scenarios_df$k_s[i]
+  k_w <- r_scenarios_df$k_w[i]
+  q_s <- r_scenarios_df$q_s[i]
+  q_w <- r_scenarios_df$q_w[i]
+  p_s <- r_scenarios_df$p_s[i]
+  p_w <- r_scenarios_df$p_w[i]
+  c <- r_scenarios_df$c[i]
+  sc_id <- r_scenarios_df$scenario_id[i]
+ 
+  # Run model
+  output <- run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                      q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, c = c) %>% 
+    mutate(sc_id = sc_id)
+  
+  if(i == 1){
+    output_r <- output
+  }
+  else{
+    output_r <- rbind(output_r, output)
+  }
+
+}
+
+output_join_r <- output_r %>% 
+  rename(scenario_id = sc_id) %>% 
+  left_join(r_scenarios_df, by = "scenario_id") %>% 
+  relocate(scenario_id, .before = e)
+
+output_r_tidy <- output_join_r %>% 
+  mutate(r_ratio = r_s / r_w) %>% 
+  pivot_longer(cols = e:N_w,
+               names_to = "variables",
+               values_to = "values") %>% 
+  pivot_longer(cols = c(r_s, r_w),
+               names_to = "stock_growth_r",
+               values_to = "r") 
+
+output_growth <- output_r_tidy %>% 
+  select(scenario_id, variables, values, stock_growth_r, r, r_ratio) %>% 
+  distinct_all()
+
+#write_csv(output_growth, file = file.path(outdir, "output_r_ranges.csv"), col_names = T)
+```
+
+```{r}
+output_growth %>% 
+  pivot_wider(names_from = "stock_growth_r",
+              values_from = "r") %>% 
+#  filter(variables %in% c("N_w", "N_s")) %>% 
+  ggplot() +  
+  geom_raster(aes(x = r_w, y = r_s, fill = values)) +
+  facet_wrap(~ variables,
+            scales = "free_y") +
+  scale_fill_gradientn(name = "Stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+  labs(x = "Weak stock r ranges",
+       y = "Strong stock r ranges",
+       title = "Simulation of r ranges on variable size") +
+  theme_bw() 
+```
+
+```{r}
+output_full <- output_price_range %>% 
+  left_join(output_growth, by = c("scenario_id", "variables")) %>% 
+  left_join(output_q, by = c("scenario_id", "variables")) %>% 
+  rename(values_price = values.x,
+         values_growth = values.y,
+         values_q = values) %>% 
+  # mutate(stock_q_2 = stock_q,
+  #        stock_r = stock_growth_r,
+  #        q2 = q,
+  #        r2 = r) %>% 
+  pivot_wider(names_from = "stock_q",
+              values_from = "q") %>% 
+  pivot_wider(names_from = "stock_growth_r",
+              values_from = "r") %>% 
+  mutate(prod_ratio = (q_s / r_s) / (q_w / r_w)) 
+
+#write_csv(output_full, file = file.path(outdir, "output_full.csv"), col_names = T)
+```
+
+```{r}
+# Building df of price range scenarios
+scenarios_df <- expand.grid(p_s = seq(0.1, 10, 0.3),
+                            p_w = seq(0.1, 10, 0.3),
+                            r_s = seq(0.1, 1, 0.5),
+                            r_w = seq(0.1, 1, 0.5),
+                            q_s = seq(0.1, 0.5, 0.2),
+                            q_w = seq(0.1, 0.5, 0.2),
+                            k_s = seq(1, 5, 2),
+                            k_w = seq(1, 5, 2),
+                            c = 0.05) %>% 
+  mutate(scenario_id = 1:nrow(.)) 
+
+# test scenario
+r_s <- scenarios_df$r_s[1]
+k_s <- scenarios_df$k_s[1]
+q_s <- scenarios_df$q_s[1]
+p_s <- scenarios_df$p_s[1]
+r_w <- scenarios_df$r_w[1]
+k_w <- scenarios_df$k_w[1]
+q_w <- scenarios_df$q_w[1]
+p_w <- scenarios_df$p_w[1]
+c <- scenarios_df$c[1]
+
+
+i = 1
+
+# test with purrr
+# scenarios_df_out <- scenarios_df %>% 
+#  pmap_dfr(~ run_model(scenarios_df$r_s, scenarios_df$r_w,
+#                   scenarios_df$k_s, scenarios_df$k_w,
+#                   scenarios_df$q_s, scenarios_df$q_w,
+#                   scenarios_df$p_s, scenarios_df$p_w,
+#                   scenarios_df$c)) 
+
+for(i in 1:nrow(scenarios_df)){
+ 
+  # Extract params
+  r_s <- scenarios_df$r_s[i]
+  r_w <- scenarios_df$r_w[i]
+  k_s <- scenarios_df$k_s[i]
+  k_w <- scenarios_df$k_w[i]
+  q_s <- scenarios_df$q_s[i]
+  q_w <- scenarios_df$q_w[i]
+  p_s <- scenarios_df$p_s[i]
+  p_w <- scenarios_df$p_w[i]
+  c <- scenarios_df$c[i]
+  sc_id <- scenarios_df$scenario_id[i]
+ 
+  # Run model
+  output <- run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                      q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, c = c) %>% 
+    mutate(sc_id = sc_id)
+  
+  if(i == 1){
+    output_1 <- output
+  }
+  else{
+    output_1 <- rbind(output_1, output)
+  }
+
+}
+
+output_join_test  <- output_1 %>% 
+  rename(scenario_id = sc_id) %>% 
+  left_join(scenarios_df, by = "scenario_id") %>% 
+  relocate(scenario_id, .before = e)
+
+output_p_tidy <- output_join_test %>% 
+  mutate(price_ratio = p_s / p_w) %>% 
+  pivot_longer(cols = e:N_w,
+               names_to = "variables",
+               values_to = "values") %>% 
+  pivot_longer(cols = c(p_s, p_w),
+               names_to = "stock_prices",
+               values_to = "prices") 
+  
+output_price_range <- output_p_tidy %>% 
+  select(scenario_id, variables, values, stock_prices, prices, price_ratio) %>% 
+  distinct(variables, values, stock_prices, prices, price_ratio, .keep_all = TRUE)
+
+#write_csv(output_p_tidy, file = file.path(outdir, "output_ranges_test.csv"), col_names = T)
+```
+

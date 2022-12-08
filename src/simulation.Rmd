@@ -452,14 +452,14 @@ only one species (weak stock) with the same price function. *I believe this woul
 
 ```{r scenario simulations}
 # Building df of scenarios
-scenarios_df <- expand.grid(r_s = seq(0.1, 1, 0.2),
-                            r_w = seq(0.1, 1, 0.2),
-                            k_s = seq(1, 5, 1),
-                            k_w = seq(1, 5, 1),
-                            q_s = seq(0.1, 1, 0.2),
-                            q_w = seq(0.1, 1, 0.2),
-                            p_s = seq(0, 10, 2),
-                            p_w = seq(0, 10, 2),
+scenarios_df <- expand.grid(r_s = seq(0.1, 1, 0.1),
+                            r_w = seq(0.1, 1, 0.1),
+                            k_s = seq(1, 5, .5),
+                            k_w = seq(1, 5, .5),
+                            q_s = seq(0.1, 1, 0.1),
+                            q_w = seq(0.1, 1, 0.1),
+                            p_s = seq(0, 10, 1),
+                            p_w = seq(0, 10, 1),
                             c = 0.05) %>% 
   mutate(scenario_id = 1:nrow(.)) 
 
@@ -721,15 +721,27 @@ output_tidy <- output_join %>%
 
 output_price <- output_tidy %>% 
   select(scenario_id, variables, values, stock_prices, prices, price_ratio) %>% 
-  distinct_all()
+  distinct(variables, values, stock_prices, prices, price_ratio, .keep_all = TRUE)
 ```
 
 ```{r}
-output_price %>% 
-  ggplot() +
-  geom_col(aes(x = prices, y = values, fill = variables)) +
-  facet_wrap(~ variables,
-             scales = "free_y") +
+ps_prices <- output_price %>% 
+  filter(stock_prices == "p_s")
+
+pw_prices <- output_price %>% 
+  filter(stock_prices == "p_w")
+
+ggplot() +
+  # geom_point(data = output_price, 
+  #          aes(x = prices, y = values, color = stock_prices),
+  #          alpha = .4) +
+  # geom_line(data = output_price, 
+  #          aes(x = prices, y = values, color = stock_prices),
+  #          alpha = .4) +
+  geom_smooth(data = output_price, 
+           aes(x = prices, y = values, color = variables)) +
+  # facet_wrap(~ variables,
+  #            scales = "free_y") +
   scale_x_continuous(breaks = seq(0, 10, 1)) +
   labs(x = "Price ranges",
        y = "Variable size (mil)",
@@ -862,17 +874,26 @@ output_q_tidy <- output_join_q %>%
 
 output_q <- output_q_tidy %>% 
   select(scenario_id, variables, values, stock_q, q, q_ratio) %>% 
-  distinct_all()
+  distinct(variables, values, stock_q, q, q_ratio)
 ```
 
 ```{r}
 output_q %>% 
+  mutate(variables = case_when(
+    variables == "e" ~ "effort",
+    variables == "N_s" ~ "Strong stock",
+    variables == "N_w" ~ "Weak stock"
+  )) %>% 
   ggplot() +
-  geom_col(aes(x = q, y = values, fill = variables),
-           alpha = 0.4) +
-  labs(x = "Q ranges",
+  geom_point(aes(x = q, y = values, color = stock_q),
+             alpha = .2) +
+  geom_line(aes(x = q, y = values, color = stock_q),
+             alpha = .2) +
+  facet_wrap(~ variables,
+             scales = "free_y") +
+  labs(x = "Catchability ranges",
        y = "Variable size (mil)",
-       title = "Simulation of q ranges on variable size") +
+       title = "Simulation of catchability ranges on variable size") +
   theme_bw() 
 ```
 
@@ -880,8 +901,8 @@ output_q %>%
 # Building df of scenarios
 r_scenarios_df <- expand.grid(p_s = 1,
                             p_w = 1,
-                            r_s = seq(0, 5, 0.1),
-                            r_w = seq(0, 5, 0.1),
+                            r_s = seq(0.1, 5, 0.1),
+                            r_w = seq(0.1, 5, 0.1),
                             q_s = 0.1,
                             q_w = 0.1,
                             k_s = 1,
@@ -1006,7 +1027,7 @@ output_growth <- output_r_tidy %>%
 ```{r}
 output_growth %>% 
   ggplot() +
-  geom_col(aes(x = r, y = values, fill = variables),
+  geom_point(aes(x = r, y = values, color = stock_growth_r),
            alpha = 0.4) +
   facet_wrap(~ variables,
              scales = "free_y") +
@@ -1015,4 +1036,6 @@ output_growth %>%
        title = "Simulation of r ranges on variable size") +
   theme_bw() 
 ```
+
+
 
