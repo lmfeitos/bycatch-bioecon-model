@@ -570,3 +570,113 @@ output_price_range <- output_p_tidy %>%
 #write_csv(output_p_tidy, file = file.path(outdir, "output_ranges_test.csv"), col_names = T)
 ```
 
+## Setting up the time series simulation
+
+$$
+\begin{align}
+\frac{d N_s}{dt} &= N_st  (r_s  (\frac{1 - N_St}{K_s}) - q_s e_t) \\
+\newline
+\frac{d N_w}{dt} &= N_wt  (r_w  (\frac{1 - N_wt}{K_w}) - q_w e_t) \\
+\newline
+\frac{d E}{dt} &= \alpha  e_t  (p_s  q_s  N_st + p_w q_w N_wt - c)
+\end{align}
+$$
+
+```{r}
+# set up the parameter space
+q_s <- 0.1
+q_w <- 0.15
+k_s <- 1
+k_w <- 1
+r_s <- 1
+r_w <- 1
+p_s <- 1
+p_w <- 1
+alpha <- 1
+c <- 0.05
+
+# Initial values for the variables
+N_w <- 1
+
+N_s <- 1
+
+E <- 0.1
+```
+
+```{r}
+tset <- seq(from = 0, to = 100, length.out = 1000)
+
+N_w_simu <- NaN*tset
+N_w_simu[1] <- N_w
+
+N_s_simu <- NaN*tset
+N_s_simu[1] <- N_s
+
+E_simu <- NaN*tset
+E_simu[1] <- E
+```
+
+```{r}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w <- N_w_simu[i-1]
+  N_s <- N_s_simu[i-1]
+  E <- E_simu[i-1]
+  
+  # Calculate change in variable size at each time step
+  dN_s <- (N_s * (r_s * (1 - N_s/k_s) - q_s * E)) * dt
+  dN_w <- (N_w * (r_w * (1 - N_w/k_w) - q_w * E)) * dt
+  dE <- (alpha * E * (p_s * q_s * N_s + p_w * q_w * N_w - c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu[i] <- N_w + dN_w
+  N_s_simu[i] <- N_s + dN_s
+  E_simu[i] <- E + dE
+}
+```
+
+
+```{r}
+plot(x = tset, y = N_s_simu,
+     type = "l",
+     col = "blue",
+     las = 1,
+     lwd = 2,
+     ylim = c(0, 8),
+     xlab = "Time", ylab = "Variable size")
+lines(x = tset, y = N_w_simu,
+      type = "l", col = "orange")
+lines(x = tset, y = E_simu,
+      type = "l", col = "green")
+legend(x = 80, y = 5,
+       lwd = 2,
+       legend = c("Ns", "Nw", "E"),
+       col = c("blue", "orange", "green"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

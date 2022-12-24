@@ -32,7 +32,9 @@ outdir <- file.path(basedir, "model_outs") # calls present data from raster file
 
 ```{r}
 # Updated dataset to be used in the analyses
-output_test <- read_csv(file.path(outdir, "output_ranges_test.csv")) %>% 
+output_test <- read_csv(file.path(outdir, "output_ranges_test.csv"))  
+
+output_test_updated <- output_test %>% 
   pivot_wider(names_from = "variables",
               values_from = "values") %>% 
   mutate(b_values_s = N_s / k_s,
@@ -42,11 +44,12 @@ output_test <- read_csv(file.path(outdir, "output_ranges_test.csv")) %>%
                values_to = "values") %>% 
   pivot_longer(cols = starts_with("b_values"),
                names_to = "b_stocks",
-               values_to = "b_v_k")
+               values_to = "b_v_k") %>% 
+  mutate(vuln_ratio = (q_s/r_s) / (q_w/r_w))
 ```
 
 ```{r, echo = FALSE}
-head(output_test, n = 20) %>% 
+head(output_test_updated, n = 20) %>% 
   kable(caption = "Glimpse of the first 20 columns of the dataset") %>% 
   kable_styling(bootstrap_options = "striped", full_width = F)
 ```
@@ -190,7 +193,7 @@ $$
 
 ```{r, echo = FALSE, message = FALSE}
 out_full <- 
-  output_test %>% 
+  output_test_updated %>% 
   # pivot_longer(cols = p_s:k_w,
   #              names_to = "param",
   #              values_to = "param_val") %>% 
@@ -205,7 +208,7 @@ out_full <-
 
 ```{r, echo = FALSE}
 out_transf <- 
-  output_test %>%
+  output_test_updated %>%
   filter(variables %in% c("N_w", "N_s")) %>% 
   mutate(values = case_when(
     values < 0 ~ 0,
@@ -225,7 +228,7 @@ out_transf <-
 
 ```{r, echo = FALSE}
 out_pos <- 
-  output_test %>%
+  output_test_updated %>%
   filter(values >= 0) %>% 
   # pivot_longer(cols = p_s:k_w,
   #              names_to = "param",
@@ -248,7 +251,7 @@ out_full /
 
 ```{r, echo = FALSE}
 out_full_bvk <- 
-  output_test %>% 
+  output_test_updated %>% 
   # pivot_longer(cols = p_s:k_w,
   #              names_to = "param",
   #              values_to = "param_val") %>% 
@@ -263,7 +266,7 @@ out_full_bvk <-
 
 ```{r, echo = FALSE}
 out_transf_bvk <- 
-  output_test %>%
+  output_test_updated %>%
   filter(variables %in% c("N_w", "N_s")) %>% 
   mutate(b_v_k = case_when(
     b_v_k < 0 ~ 0,
@@ -283,7 +286,7 @@ out_transf_bvk <-
 
 ```{r, echo = FALSE}
 out_pos_bvk <- 
-  output_test %>%
+  output_test_updated %>%
   filter(b_v_k >= 0) %>% 
   # pivot_longer(cols = p_s:k_w,
   #              names_to = "param",
@@ -312,370 +315,561 @@ out_full_bvk /
 ```{r, echo = FALSE}
 # New tests with the other parameters also being varied
 
-output_test %>% 
-  pivot_wider(names_from = "variables",
-              values_from = "values") %>% 
-  mutate(b_values_s = N_s / k_s,
-         b_values_w = N_w / k_w) %>% 
-  pivot_longer(cols = e:N_w,
-               names_to = "variables",
-               values_to = "values") %>% 
-  filter(values >= 0) %>% 
-  ggplot() +
-  geom_raster(aes(x = q_w, y = q_s, fill = values)) +
-  facet_wrap(~ variables,
-            scales = "free_y") +
-  scale_fill_gradientn(name = "Variable size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
-  facet_wrap(~ variables,
-             scales = "free_y") +
-  labs(x = "Weak stock q ranges",
-       y = "Strong stock q ranges",
-       title = "Simulation of catchability ranges on variable size") +
-  theme_bw()
+# output_test_updated %>% 
+#   pivot_wider(names_from = "variables",
+#               values_from = "values") %>% 
+#   mutate(b_values_s = N_s / k_s,
+#          b_values_w = N_w / k_w) %>% 
+#   pivot_longer(cols = e:N_w,
+#                names_to = "variables",
+#                values_to = "values") %>% 
+#   filter(values >= 0) %>% 
+#   ggplot() +
+#   geom_raster(aes(x = q_w, y = q_s, fill = values)) +
+#   facet_wrap(~ variables,
+#             scales = "free_y") +
+#   scale_fill_gradientn(name = "Variable size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+#   facet_wrap(~ variables,
+#              scales = "free_y") +
+#   labs(x = "Weak stock q ranges",
+#        y = "Strong stock q ranges",
+#        title = "Simulation of catchability ranges on variable size") +
+#   theme_bw()
 ```
 
 
 ```{r, echo = FALSE}
-output_test %>% 
-  filter(variables %in% c("N_w", "N_s")) %>% 
-  mutate(values = case_when(
-    values < 0 ~ 0,
-    TRUE ~ values
-  )) %>% 
-  ggplot() +
-  geom_raster(aes(x = q_w, y = q_s, fill = values)) +
-  facet_wrap(~ variables,
-            scales = "free_y") +
-  scale_fill_gradientn(name = "Stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
-  facet_wrap(~ variables,
-             scales = "free_y") +
-  labs(x = "Weak stock q ranges",
-       y = "Strong stock q ranges",
-       title = "Simulation of catchability ranges on stock size") +
-  theme_bw()
+# output_test_updated %>% 
+#   filter(variables %in% c("N_w", "N_s")) %>% 
+#   mutate(values = case_when(
+#     values < 0 ~ 0,
+#     TRUE ~ values
+#   )) %>% 
+#   ggplot() +
+#   geom_raster(aes(x = q_w, y = q_s, fill = values)) +
+#   facet_wrap(~ variables,
+#             scales = "free_y") +
+#   scale_fill_gradientn(name = "Stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+#   facet_wrap(~ variables,
+#              scales = "free_y") +
+#   labs(x = "Weak stock q ranges",
+#        y = "Strong stock q ranges",
+#        title = "Simulation of catchability ranges on stock size") +
+#   theme_bw()
 ```
 
 ```{r, echo = FALSE}
-output_test %>% 
-  filter(variables %in% c("N_w", "N_s")) %>% 
+w_s_q <- output_test_updated %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w") %>% 
   ggplot() +
   geom_raster(aes(x = q_w, y = q_s, fill = b_v_k)) +
-  facet_wrap(~ variables) + 
+  #facet_grid(b_stocks ~ variables) + 
+  scale_fill_distiller(palette = "RdYlBu",
+                       rescaler = ~ scales::rescale_mid(.x, mid = 0)) +
+  labs(x = "Weak stock q ranges",
+       y = "Strong stock q ranges",
+       title = "Weak stock",
+       fill = "B/K") +
+  theme_bw()
+```
+
+```{r, echo = FALSE}
+s_s_q <- output_test_updated %>% 
+  filter(variables == "N_s" & b_stocks == "b_values_s") %>% 
+  ggplot() +
+  geom_raster(aes(x = q_w, y = q_s, fill = b_v_k)) +
+  #facet_grid(b_stocks ~ variables) + 
+  scale_fill_distiller(palette = "RdYlBu",
+                       rescaler = ~ scales::rescale_mid(.x, mid = 0)) +
+  labs(x = "Weak stock q ranges",
+       y = "Strong stock q ranges",
+       title = "Strong stock",
+       fill = "B/K") +
+  theme_bw()
+```
+
+```{r, fig.width=8, echo = FALSE}
+s_s_q + w_s_q +
+  plot_annotation(title = "Simulation of catchability ranges on strong and weak stock's B/K ratio - All values")
+```
+
+
+```{r, echo = FALSE}
+s_s_q_pos <- output_test_updated %>% 
+  filter(variables == "N_s" & b_stocks == "b_values_s" & b_v_k >= 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = q_w, y = q_s, fill = b_v_k)) +
+#  facet_wrap(~ variables) + 
   scale_fill_distiller(palette = "RdYlBu",
                        rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
   labs(x = "Weak stock q ranges",
        y = "Strong stock q ranges",
-       title = "Simulation of catchability ranges on B/K ratio - All values") +
+       title = "Strong stock",
+       fill = "B/K") +
   theme_bw()
 ```
 
-
 ```{r, echo = FALSE}
-output_test %>% 
-  filter(variables %in% c("N_w", "N_s") & b_v_k >= 0) %>% 
+w_s_q_pos <- output_test_updated %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k >= 0) %>% 
   ggplot() +
   geom_raster(aes(x = q_w, y = q_s, fill = b_v_k)) +
-  facet_wrap(~ variables) + 
+#  facet_wrap(~ variables) + 
   scale_fill_distiller(palette = "RdYlBu",
                        rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
   labs(x = "Weak stock q ranges",
        y = "Strong stock q ranges",
-       title = "Simulation of catchability ranges on B/K ratio - Negative values filtered out") +
+       title = "Weak stock",
+       fill = "B/K") +
   theme_bw()
 ```
 
+```{r, echo = FALSE}
+s_s_q_pos + w_s_q_pos +
+  plot_annotation(title = "Simulation of catchability ranges on B/K ratio - Negative values filtered out")
+```
 
 
 ### Price range simulation
 
 ```{r, echo = FALSE}
-output_test %>% 
-  filter(values >= 0) %>% 
-  ggplot() +
-  geom_raster(aes(x = p_w, y = p_s, fill = values)) +
-  facet_wrap(~ variables,
-            scales = "free_y") +
-  scale_fill_gradientn(name = "Variable size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
-  facet_wrap(~ variables,
-             scales = "free_y") +
-  labs(x = "Weak stock price ranges",
-       y = "Strong stock price ranges",
-       title = "Simulation of price ranges on variable size") +
-  theme_bw()
+# output_test %>% 
+#   filter(values >= 0) %>% 
+#   ggplot() +
+#   geom_raster(aes(x = p_w, y = p_s, fill = values)) +
+#   facet_wrap(~ variables,
+#             scales = "free_y") +
+#   scale_fill_gradientn(name = "Variable size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+#   facet_wrap(~ variables,
+#              scales = "free_y") +
+#   labs(x = "Weak stock price ranges",
+#        y = "Strong stock price ranges",
+#        title = "Simulation of price ranges on variable size") +
+#   theme_bw()
 ```
 
 
 ```{r, echo = FALSE}
-output_test %>% 
-  filter(variables %in% c("N_w", "N_s") & b_v_k >= 0) %>% 
+ss_p <- output_test_updated %>% 
+  filter(variables == "N_s" & b_stocks == "b_values_s") %>% 
   ggplot() +
   geom_raster(aes(x = p_w, y = p_s, fill = b_v_k)) +
-  facet_wrap(~ variables,
-            scales = "free_y") +
-  # scale_fill_gradientn(name = "B/K", 
-  #                      colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+  scale_fill_distiller(palette = "RdYlBu",
+                       rescaler = ~ scales::rescale_mid(.x, mid = 0)) +
+  labs(x = "Weak stock price ranges",
+       y = "Strong stock price ranges",
+       title = "Strong stock",
+       fill = "B/K") +
+  theme_bw()
+```
+
+```{r, echo = FALSE}
+ws_p <- output_test_updated %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w") %>% 
+  ggplot() +
+  geom_raster(aes(x = p_w, y = p_s, fill = b_v_k)) +
+  scale_fill_distiller(palette = "RdYlBu",
+                       rescaler = ~ scales::rescale_mid(.x, mid = 0)) +
+  labs(x = "Weak stock price ranges",
+       y = "Strong stock price ranges",
+       title = "Weak stock",
+       fill = "B/K") +
+  theme_bw()
+```
+
+```{r, echo = FALSE}
+ss_p + ws_p +
+  plot_annotation(title = "Simulation of price ranges on strong and weak stock's B/K ratio - All values")
+```
+
+
+```{r, echo = FALSE}
+ss_p_pos <- output_test_updated %>% 
+  filter(variables == "N_s" & b_stocks == "b_values_s" & b_v_k >= 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = p_w, y = p_s, fill = b_v_k)) +
   scale_fill_distiller(palette = "RdYlBu",
                        rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
   labs(x = "Weak stock price ranges",
        y = "Strong stock price ranges",
-       title = "Simulation of price ranges on B/K ratio - Negative values filtered out") +
+       title = "Strong stock",
+       fill = "B/K") +
   theme_bw()
 ```
 
-```{r}
-output_test %>% 
-  filter(variables %in% c("N_w", "N_s")) %>% 
+```{r, echo = FALSE}
+ws_p_pos <- output_test_updated %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k >= 0) %>% 
   ggplot() +
   geom_raster(aes(x = p_w, y = p_s, fill = b_v_k)) +
-  facet_wrap(~ variables,
-            scales = "free_y") +
-  # scale_fill_gradientn(name = "B/K", 
-  #                      colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +  
   scale_fill_distiller(palette = "RdYlBu",
                        rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
   labs(x = "Weak stock price ranges",
        y = "Strong stock price ranges",
-       title = "Simulation of price ranges on B/K ratio - All values") +
+       title = "Weak stock",
+       fill = "B/K") +
   theme_bw()
 ```
 
-
+```{r, echo = FALSE}
+ss_p_pos + ws_p_pos +
+  plot_annotation(title = "Simulation of price ranges on strong and weak stock's B/K ratio - Positive values")
+```
 
 ### Growth range simulation
 
 ```{r, echo = FALSE}
-output_test %>% 
-  filter(values >= 0) %>% 
-  ggplot() +
-  geom_raster(aes(x = r_w, y = r_s, fill = values)) +
-  facet_wrap(~ variables,
-            scales = "free_y") +
-  scale_fill_gradientn(name = "Variable size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
-  facet_wrap(~ variables,
-             scales = "free_y") +
-  labs(x = "Weak stock growth ranges",
-       y = "Strong stock growth ranges",
-       title = "Simulation of growth ranges on variable size") +
-  theme_bw()
+# output_test %>% 
+#   filter(values >= 0) %>% 
+#   ggplot() +
+#   geom_raster(aes(x = r_w, y = r_s, fill = values)) +
+#   facet_wrap(~ variables,
+#             scales = "free_y") +
+#   scale_fill_gradientn(name = "Variable size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+#   facet_wrap(~ variables,
+#              scales = "free_y") +
+#   labs(x = "Weak stock growth ranges",
+#        y = "Strong stock growth ranges",
+#        title = "Simulation of growth ranges on variable size") +
+#   theme_bw()
 ```
 
 
 ```{r, echo = FALSE}
-output_test %>% 
-  filter(values >= 0 & variables %in% c("N_w", "N_s")) %>% 
-  ggplot() +
-  geom_raster(aes(x = r_w, y = r_s, fill = values)) +
-  facet_wrap(~ variables,
-            scales = "free_y") +
-  scale_fill_gradientn(name = "Stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
-  facet_wrap(~ variables,
-             scales = "free_y") +
-  labs(x = "Weak stock growth ranges",
-       y = "Strong stock growth ranges",
-       title = "Simulation of growth ranges on stock size") +
-  theme_bw()
+# output_test %>% 
+#   filter(values >= 0 & variables %in% c("N_w", "N_s")) %>% 
+#   ggplot() +
+#   geom_raster(aes(x = r_w, y = r_s, fill = values)) +
+#   facet_wrap(~ variables,
+#             scales = "free_y") +
+#   scale_fill_gradientn(name = "Stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+#   facet_wrap(~ variables,
+#              scales = "free_y") +
+#   labs(x = "Weak stock growth ranges",
+#        y = "Strong stock growth ranges",
+#        title = "Simulation of growth ranges on stock size") +
+#   theme_bw()
 ```
 
 ```{r, echo = FALSE}
-output_test %>% 
-  filter(variables %in% c("N_w", "N_s") & b_v_k >= 0) %>% 
+ss_p <- output_test_updated %>% 
+  filter(variables == "N_s" & b_stocks == "b_values_s") %>% 
   ggplot() +
   geom_raster(aes(x = r_w, y = r_s, fill = b_v_k)) +
-  facet_wrap(~ variables) +
+  scale_fill_distiller(palette = "RdYlBu",
+                       rescaler = ~ scales::rescale_mid(.x, mid = 0)) +
+  labs(x = "Weak stock growth ranges",
+       y = "Strong stock growth ranges",
+       title = "Strong stock",
+       fill = "B/K") +
+  theme_bw()
+```
+
+```{r, echo = FALSE}
+ws_p <- output_test_updated %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w") %>% 
+  ggplot() +
+  geom_raster(aes(x = r_w, y = r_s, fill = b_v_k)) +
+  scale_fill_distiller(palette = "RdYlBu",
+                       rescaler = ~ scales::rescale_mid(.x, mid = 0)) +
+  labs(x = "Weak stock growth ranges",
+       y = "Strong stock growth ranges",
+       title = "Weak stock",
+       fill = "B/K") +
+  theme_bw()
+```
+
+```{r, echo = FALSE}
+ss_p + ws_p +
+  plot_annotation(title = "Simulation of growth ranges on strong and weak stock's B/K ratio - All values")
+```
+
+
+```{r, echo = FALSE}
+ss_r_pos <- output_test_updated %>% 
+  filter(variables == "N_s" & b_stocks == "b_values_s" & b_v_k >= 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = r_w, y = r_s, fill = b_v_k)) +
   scale_fill_distiller(palette = "RdYlBu",
                        rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
   labs(x = "Weak stock growth ranges",
        y = "Strong stock growth ranges",
-       title = "Simulation of growth ranges on B/K ratio - Negative values filtered out") +
+       title = "Strong stock",
+       fill = "B/K") +
   theme_bw()
 ```
 
 ```{r, echo = FALSE}
-output_test %>% 
-  filter(variables %in% c("N_w", "N_s")) %>% 
+ws_r_pos <- output_test_updated %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k >= 0) %>% 
   ggplot() +
   geom_raster(aes(x = r_w, y = r_s, fill = b_v_k)) +
-  facet_wrap(~ variables) +
-  scale_fill_gradientn(name = "B/K", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+  scale_fill_distiller(palette = "RdYlBu",
+                       rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
   labs(x = "Weak stock growth ranges",
        y = "Strong stock growth ranges",
-       title = "Simulation of growth ranges on B/K ratio - All values") +
+       title = "Weak stock",
+       fill = "B/K") +
   theme_bw()
+```
+
+```{r, echo = FALSE}
+ss_r_pos + ws_r_pos +
+  plot_annotation(title = "Simulation of growth ranges on strong and weak stock's B/K ratio - Positive values")
 ```
 
 ### Carrying capacity range simulation
 
 ```{r, echo = FALSE}
-output_test %>% 
-  filter(values >= 0) %>% 
-  ggplot() +
-  geom_raster(aes(x = k_w, y = k_s, fill = values)) +
-  facet_wrap(~ variables,
-            scales = "free_y") +
-  scale_fill_gradientn(name = "Variable size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
-  facet_wrap(~ variables,
-             scales = "free_y") +
-  labs(x = "Weak stock K ranges",
-       y = "Strong stock K ranges",
-       title = "Simulation of K ranges on variable size") +
-  theme_bw()
+# output_test %>% 
+#   filter(values >= 0) %>% 
+#   ggplot() +
+#   geom_raster(aes(x = k_w, y = k_s, fill = values)) +
+#   facet_wrap(~ variables,
+#             scales = "free_y") +
+#   scale_fill_gradientn(name = "Variable size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+#   facet_wrap(~ variables,
+#              scales = "free_y") +
+#   labs(x = "Weak stock K ranges",
+#        y = "Strong stock K ranges",
+#        title = "Simulation of K ranges on variable size") +
+#   theme_bw()
 ```
 
 
 ```{r, echo = FALSE}
-output_test %>% 
-  filter(values >= 0 & variables %in% c("N_w", "N_s")) %>% 
-  ggplot() +
-  geom_raster(aes(x = k_w, y = k_s, fill = values)) +
-  facet_wrap(~ variables,
-            scales = "free_y") +
-  scale_fill_gradientn(name = "Stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
-  labs(x = "Weak stock K ranges",
-       y = "Strong stock K ranges",
-       title = "Simulation of K ranges on stock size") +
-  theme_bw()
+# output_test %>% 
+#   filter(values >= 0 & variables %in% c("N_w", "N_s")) %>% 
+#   ggplot() +
+#   geom_raster(aes(x = k_w, y = k_s, fill = values)) +
+#   facet_wrap(~ variables,
+#             scales = "free_y") +
+#   scale_fill_gradientn(name = "Stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+#   labs(x = "Weak stock K ranges",
+#        y = "Strong stock K ranges",
+#        title = "Simulation of K ranges on stock size") +
+#   theme_bw()
 ```
 
-
 ```{r, echo = FALSE}
-output_test %>% 
-  filter(variables %in% c("N_w", "N_s") & b_v_k >= 0) %>% 
+ss_k <- 
+  output_test_updated %>% 
+  filter(variables == "N_s" & b_stocks == "b_values_s") %>% 
   ggplot() +
   geom_raster(aes(x = k_w, y = k_s, fill = b_v_k)) +
-  facet_wrap(~ variables,
-            scales = "free_y") +
   scale_fill_distiller(palette = "RdYlBu",
                        rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
   labs(x = "Weak stock K ranges",
        y = "Strong stock K ranges",
-       title = "Simulation of K ranges on B/K ratio - Negative values filtered out") +
+       title = "Strong stock",
+       fill = "B/K") +
   theme_bw()
 ```
+
 ```{r, echo = FALSE}
-output_test %>% 
-  filter(variables %in% c("N_w", "N_s")) %>% 
+ws_k <- output_test_updated %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w") %>% 
   ggplot() +
   geom_raster(aes(x = k_w, y = k_s, fill = b_v_k)) +
-  facet_wrap(~ variables,
-            scales = "free_y") +
+  scale_fill_distiller(palette = "RdYlBu",
+                       rescaler = ~ scales::rescale_mid(.x, mid = 0)) +
+  labs(x = "Weak stock K ranges",
+       y = "Strong stock K ranges",
+       title = "Weak stock",
+       fill = "B/K") +
+  theme_bw()
+```
+
+```{r}
+ss_k + ws_k +
+  plot_annotation(title = "Simulation of K ranges on strong and weak stock's B/K ratio - All values")
+```
+
+
+
+```{r, echo = FALSE}
+ss_k_pos <- output_test_updated %>% 
+  filter(variables == "N_s" & b_stocks == "b_values_s" & b_v_k >= 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = k_w, y = k_s, fill = b_v_k)) +
   scale_fill_distiller(palette = "RdYlBu",
                        rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
   labs(x = "Weak stock K ranges",
        y = "Strong stock K ranges",
-       title = "Simulation of K ranges on B/K ratio - All values") +
+       title = "Strong stock",
+       fill = "B/K") +
   theme_bw()
 ```
 
+```{r}
+ws_k_pos <- output_test_updated %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k >= 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = k_w, y = k_s, fill = b_v_k)) +
+  scale_fill_distiller(palette = "RdYlBu",
+                       rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+  labs(x = "Weak stock K ranges",
+       y = "Strong stock K ranges",
+       title = "Weak stock",
+       fill = "B/K") +
+  theme_bw()
+```
 
 
 ```{r, echo = FALSE}
-vul_full <- 
-  output_test %>% 
-  filter(variables %in% c("N_w", "N_s")) %>% 
-  mutate(prod_ratio = (q_s/r_s) / (q_w/r_w)) %>% 
-  ggplot() +
-  geom_point(aes(x = price_ratio, y = prod_ratio, color = values)) +
-  scale_color_gradientn(name = "stock size", colors = RColorBrewer::brewer.pal(5, "YlOrRd")) +
-  labs(x = "Price ratio (p_s/p_w)",
-       y = "Vulnerability ratio (q_s/r_s)/(q_w/r_w)",
-       title = "All values") +
-  theme_bw()
+ss_k_pos + ws_k_pos +
+  plot_annotation(title = "Simulation of K ranges on B/K ratio - Negative values filtered out")
 ```
 
-```{r, echo = FALSE}
-vul_pos <- 
-  output_test %>% 
-  filter(variables %in% c("N_w", "N_s") & values >= 0) %>% 
-  mutate(prod_ratio = (q_s/r_s) / (q_w/r_w)) %>% 
-  ggplot() +
-  geom_point(aes(x = price_ratio, y = prod_ratio, color = values)) +
-  scale_color_gradientn(name = "stock size", colors = RColorBrewer::brewer.pal(5, "YlOrRd")) +
-  labs(x = "Price ratio (p_s/p_w)",
-       y = "Vulnerability ratio (q_s/r_s)/(q_w/r_w)",
-       title = "Only positive values") +
-  theme_bw()
-```
-
-```{r, echo = FALSE}
-vul_neg <- 
-  output_test %>% 
-  filter(variables %in% c("N_w", "N_s") & values <= 0) %>% 
-  mutate(prod_ratio = (q_s/r_s) / (q_w/r_w)) %>% 
-  ggplot() +
-  geom_point(aes(x = price_ratio, y = prod_ratio, color = values)) +
-  scale_color_gradientn(name = "stock size", colors = RColorBrewer::brewer.pal(5, "YlOrRd"),
-                        breaks = seq(-60, 0, 10)) +
-  labs(x = "Price ratio (p_s/p_w)",
-       y = "Vulnerability ratio (q_s/r_s)/(q_w/r_w)",
-       title = "Only negative values") +
-  theme_bw()
-```
 
 ### Price ratio vs Vulnerability test
 
+```{r, echo = FALSE}
+# vul_full <- 
+#   output_test %>% 
+#   filter(variables %in% c("N_w", "N_s")) %>% 
+#   mutate(prod_ratio = (q_s/r_s) / (q_w/r_w)) %>% 
+#   ggplot() +
+#   geom_point(aes(x = price_ratio, y = prod_ratio, color = values)) +
+#   scale_color_gradientn(name = "stock size", colors = RColorBrewer::brewer.pal(5, "YlOrRd")) +
+#   labs(x = "Price ratio (p_s/p_w)",
+#        y = "Vulnerability ratio (q_s/r_s)/(q_w/r_w)",
+#        title = "All values") +
+#   theme_bw()
+```
+
+```{r, echo = FALSE}
+# vul_pos <- 
+#   output_test %>% 
+#   filter(variables %in% c("N_w", "N_s") & values >= 0) %>% 
+#   mutate(prod_ratio = (q_s/r_s) / (q_w/r_w)) %>% 
+#   ggplot() +
+#   geom_point(aes(x = price_ratio, y = prod_ratio, color = values)) +
+#   scale_color_gradientn(name = "stock size", colors = RColorBrewer::brewer.pal(5, "YlOrRd")) +
+#   labs(x = "Price ratio (p_s/p_w)",
+#        y = "Vulnerability ratio (q_s/r_s)/(q_w/r_w)",
+#        title = "Only positive values") +
+#   theme_bw()
+```
+
+```{r, echo = FALSE}
+# vul_neg <- 
+#   output_test %>% 
+#   filter(variables %in% c("N_w", "N_s") & values <= 0) %>% 
+#   mutate(prod_ratio = (q_s/r_s) / (q_w/r_w)) %>% 
+#   ggplot() +
+#   geom_point(aes(x = price_ratio, y = prod_ratio, color = values)) +
+#   scale_color_gradientn(name = "stock size", colors = RColorBrewer::brewer.pal(5, "YlOrRd"),
+#                         breaks = seq(-60, 0, 10)) +
+#   labs(x = "Price ratio (p_s/p_w)",
+#        y = "Vulnerability ratio (q_s/r_s)/(q_w/r_w)",
+#        title = "Only negative values") +
+#   theme_bw()
+```
+
+
 ```{r, fig.height = 10, fig.width=9, echo = FALSE}
-(vul_neg + vul_pos) /
-  vul_full +
-  plot_annotation(title = "Simulation of the distribution of vulnerability and price ratios")
+# (vul_neg + vul_pos) /
+#   vul_full +
+#   plot_annotation(title = "Simulation of the distribution of vulnerability and price ratios")
 ```
 
 ```{r, echo = FALSE}
-vul_full_bk <- 
-  output_test %>% 
-  filter(variables %in% c("N_w", "N_s")) %>% 
-  mutate(prod_ratio = (q_s/r_s) / (q_w/r_w)) %>% 
+vul_s <- 
+  output_test_updated %>% 
+  filter(variables == "N_s" & b_stocks == "b_values_s") %>% 
   ggplot() +
-  geom_point(aes(x = price_ratio, y = prod_ratio, color = b_v_k)) +
+  geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k)) +
+  scale_color_distiller(palette = "RdYlBu",
+                       rescaler = ~ scales::rescale_mid(.x, mid = 0)) +
+  labs(x = "Price ratio (p_s/p_w)",
+       y = "Vulnerability ratio (q_s/r_s)/(q_w/r_w)",
+       title = "Strong stock",
+       fill = "B/K") +
+  theme_bw()
+```
+
+```{r, echo = FALSE}
+vul_w <- 
+  output_test_updated %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w") %>% 
+  ggplot() +
+  geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k)) +
+  scale_color_distiller(palette = "RdYlBu",
+                       rescaler = ~ scales::rescale_mid(.x, mid = 0)) +
+  labs(x = "Price ratio (p_s/p_w)",
+       y = "Vulnerability ratio (q_s/r_s)/(q_w/r_w)",
+       title = "Weak stock",
+       fill = "B/K") +
+  theme_bw()
+```
+
+```{r, echo = FALSE, fig.height=9, fig.width=8}
+vul_s + vul_w +
+  plot_annotation(title = "Price vs vulnerability ratios for strong and weak stocks - All B/K values")
+```
+
+```{r, echo = FALSE}
+vul_pos_s <- 
+  output_test_updated %>% 
+  filter(variables == "N_s" & b_stocks == "b_values_s" & b_v_k >= 0) %>% 
+  ggplot() +
+  geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k)) +
   scale_color_distiller(palette = "RdYlBu",
                        rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
-  labs(x = "Price ratio (p_s/p_w)",
-       y = "Vulnerability ratio (q_s/r_s)/(q_w/r_w)",
-       title = "All values") +
+  labs(x = "Price ratio",
+       y = "Vulnerability ratio",
+       title = "Strong stock",
+       color = "B/K") +
   theme_bw()
 ```
 
-
 ```{r, echo = FALSE}
-vul_pos_bk <- 
-  output_test %>% 
-  filter(variables %in% c("N_w", "N_s") & b_v_k >= 0) %>% 
-  mutate(prod_ratio = (q_s/r_s) / (q_w/r_w)) %>% 
+vul_pos_w <- 
+  output_test_updated %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k >= 0) %>% 
   ggplot() +
-  geom_point(aes(x = price_ratio, y = prod_ratio, color = b_v_k)) +
+  geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k)) +
   scale_color_distiller(palette = "RdYlBu",
                        rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
-  labs(x = "Price ratio (p_s/p_w)",
-       y = "Vulnerability ratio (q_s/r_s)/(q_w/r_w)",
-       title = "Only positive values") +
+  labs(x = "Price ratio",
+       y = "Vulnerability ratio",
+       title = "Weak stock",
+       color = "B/K") +
   theme_bw()
 ```
+
+```{r, echo = FALSE, fig.width=9, fig.height=6}
+vul_pos_s + vul_pos_w +
+  plot_annotation(title = "Price vs vulnerability ratios for strong and weak stocks - Positive B/K values",
+                  caption = "Price ratio = p_s / p_w \n Vulnerability ratio = (q_s/r_s) / (q_w/r_w)")
+```
+
+- When transforming the negative values of B/K into zeros, we get the following plot:
 
 ```{r, echo = FALSE}
-vul_neg_bk <- 
-  output_test %>% 
-  filter(variables %in% c("N_w", "N_s") & b_v_k <= 0) %>% 
-  mutate(prod_ratio = (q_s/r_s) / (q_w/r_w)) %>% 
+output_test_updated %>% 
+  mutate(b_v_k = case_when(
+    b_v_k < 0 ~ 0,
+    TRUE ~ b_v_k
+  )) %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k >= 0) %>% 
   ggplot() +
-  geom_point(aes(x = price_ratio, y = prod_ratio, color = b_v_k)) +
+  geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k)) +
   scale_color_distiller(palette = "RdYlBu",
-                       rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
-                        breaks = seq(-60, 0, 10)) +
-  labs(x = "Price ratio (p_s/p_w)",
-       y = "Vulnerability ratio (q_s/r_s)/(q_w/r_w)",
-       title = "Only negative values") +
+                       rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+  labs(x = "Price ratio",
+       y = "Vulnerability ratio",
+       title = "Weak stock",
+       color = "B/K") +
   theme_bw()
 ```
 
-```{r, echo = FALSE, fig.height = 10, fig.width=9}
-(vul_neg_bk + vul_pos_bk) /
-  vul_full_bk +
-  plot_annotation(title = "Simulation of the distribution of vulnerability and price ratios on B/K ratios")
-```
 
 
 ```{r, echo = FALSE}
 q_neg <- 
-  output_test %>% 
+  output_test_updated %>% 
   filter(values < 0) %>% 
   ggplot() +
   geom_raster(aes(x = q_w, y = q_s, fill = values)) +
@@ -687,7 +881,7 @@ q_neg <-
 
 ```{r, echo = FALSE}
 q_pos <-
-  output_test %>% 
+  output_test_updated %>% 
   filter(values >= 0) %>% 
   ggplot() +
   geom_raster(aes(x = q_w, y = q_s, fill = values)) +
@@ -707,7 +901,7 @@ q_pos <-
 
 ```{r, echo = FALSE}
 r_neg <- 
-  output_test %>% 
+  output_test_updated %>% 
   filter(values <= 0) %>% 
   ggplot() +
   geom_raster(aes(x = r_w, y = r_s, fill = values)) +
@@ -718,7 +912,7 @@ r_neg <-
 
 ```{r, echo = FALSE}
 r_pos <- 
-  output_test %>% 
+  output_test_updated %>% 
   filter(values >= 0) %>% 
   ggplot() +
   geom_raster(aes(x = r_w, y = r_s, fill = values)) +
@@ -736,7 +930,7 @@ r_pos <-
 
 ```{r, echo = FALSE}
 k_neg <-
-  output_test %>% 
+  output_test_updated %>% 
   filter(values <= 0) %>% 
   ggplot() +
   geom_raster(aes(x = k_w, y = k_s, fill = values)) +
@@ -747,7 +941,7 @@ k_neg <-
 
 ```{r, echo = FALSE}
 k_pos <-
-  output_test %>% 
+  output_test_updated %>% 
   filter(values >= 0) %>% 
   ggplot() +
   geom_raster(aes(x = k_w, y = k_s, fill = values)) +
@@ -766,7 +960,7 @@ k_pos <-
 
 ```{r, echo = FALSE}
 price_neg <-
-  output_test %>% 
+  output_test_updated %>% 
   filter(values <= 0) %>% 
   ggplot() +
   geom_raster(aes(x = p_w, y = p_s, fill = values)) +
@@ -778,7 +972,7 @@ price_neg <-
 
 ```{r, echo = FALSE}
 pos_price <- 
-  output_test %>% 
+  output_test_updated %>% 
   filter(values >= 0) %>% 
   ggplot() +
   geom_raster(aes(x = p_w, y = p_s, fill = values)) +
@@ -791,6 +985,97 @@ pos_price <-
 ```{r, fig.width=8, echo = FALSE}
 # price_neg + pos_price +
 #   plot_annotation(title = "Values for the range of prices")
+```
+
+
+## Setting up the time series simulation
+
+$$
+\begin{align}
+\frac{d N_s}{dt} &= N_S  (r_s  (\frac{1 - N_S}{K_s}) - q_s e_t) \\
+\newline
+\frac{d N_w}{dt} &= N_W  (r_w  (\frac{1 - N_W}{K_w}) - q_w e_t) \\
+\newline
+\frac{d E}{dt} &= \alpha  e_t  (p_s  q_s  N_S + p_w q_w N_W - c)
+\end{align}
+$$
+
+```{r}
+# set up the parameter space
+q_s <- 0.1
+q_w <- 0.15
+k_s <- 1
+k_w <- 1
+r_s <- 1
+r_w <- 1
+p_s <- 1
+p_w <- 1
+alpha <- 1 # constant controlling for the speed at which effort changes with a changing price
+c <- 0.05
+
+# Initial values for the variables
+N_w <- 1
+
+N_s <- 1
+
+E <- 0.01
+```
+
+```{r}
+tset <- seq(from = 0, to = 100, length.out = 1000)
+
+N_w_simu <- NaN*tset
+N_w_simu[1] <- k_w
+
+N_s_simu <- NaN*tset
+N_s_simu[1] <- k_s
+
+E_simu <- NaN*tset
+E_simu[1] <- E
+```
+
+```{r}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w <- N_w_simu[i-1]
+  N_s <- N_s_simu[i-1]
+  E <- E_simu[i-1]
+  
+  # Calculate change in variable size at each time step
+  dN_s <- (N_s * (r_s * (1 - N_s/k_s) - q_s * E)) * dt
+  dN_w <- (N_w * (r_w * (1 - N_w/k_w) - q_w * E)) * dt
+  dE <- (alpha * E * (p_s * q_s * N_s + p_w * q_w * N_w - c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu[i] <- N_w + dN_w
+  N_s_simu[i] <- N_s + dN_s
+  E_simu[i] <- E + dE
+}
+```
+
+
+```{r}
+# Plot time series results
+plot(x = tset, y = N_s_simu,
+     type = "l",
+     col = "darkblue",
+     las = 1,
+     lwd = 2,
+     ylim = c(0, 8),
+     xlab = "Time", ylab = "Variable size")
+lines(x = tset, y = N_w_simu,
+      type = "l", col = "darkorange")
+lines(x = tset, y = E_simu,
+      type = "l", col = "darkgreen")
+legend(x = 80, y = 5,
+       lwd = 2,
+       legend = c("Ns", "Nw", "Effort"),
+       col = c("darkblue", "darkorange", "darkgreen"))
 ```
 
 
