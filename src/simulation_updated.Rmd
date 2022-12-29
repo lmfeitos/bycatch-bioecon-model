@@ -578,20 +578,22 @@ $$
 \newline
 \frac{d N_w}{dt} &= N_wt  (r_w  (\frac{1 - N_wt}{K_w}) - q_w e_t) \\
 \newline
-\frac{d E}{dt} &= \alpha  e_t  (p_s  q_s  N_st + p_w q_w N_wt - c)
+\frac{d E}{dt} &= \alpha  E (p_s  q_s  N_st + p_w q_w N_wt - c)
 \end{align}
 $$
 
-```{r}
+where $q_s$ and $q_w$ are the catchability of the strong and the weak stock, respectively; $r_s$ and $r_w$ are the intrinsic growth rates of the strong and weak stocks, respectively; $p_s$ and $p_w$ are the prices of the strong and weak stocks, respectively; $k_s$ and $k_w$ are the carrying capacities of the strong and weak stocks, respectively; $c$ is the fishing cost, and $\alpha$ is a constant controling for the speed at which effort changes following price changes.
+
+```{r, echo = FALSE}
 # set up the parameter space
-q_s <- 0.1
-q_w <- 0.15
-k_s <- 1
-k_w <- 1
-r_s <- 1
-r_w <- 1
-p_s <- 1
-p_w <- 1
+q_s1 <- 0.1
+q_w1 <- 0.15
+k_s1 <- 1
+k_w1 <- 1
+r_s1 <- 1
+r_w1 <- 1
+p_s1 <- 1
+p_w1 <- 1
 alpha <- 1
 c <- 0.05
 
@@ -603,20 +605,17 @@ N_s <- 1
 E <- 0.1
 ```
 
-```{r}
+```{r, echo = FALSE}
 tset <- seq(from = 0, to = 100, length.out = 1000)
 
-N_w_simu <- NaN*tset
-N_w_simu[1] <- N_w
+N_w_simu <- NaN*tset; N_w_simu[1] <- N_w
 
-N_s_simu <- NaN*tset
-N_s_simu[1] <- N_s
+N_s_simu <- NaN*tset; N_s_simu[1] <- N_s
 
-E_simu <- NaN*tset
-E_simu[1] <- E
+E_simu <- NaN*tset; E_simu[1] <- E
 ```
 
-```{r}
+```{r, echo = FALSE}
 for(i in 2:length(tset)) {
   
   # change in time
@@ -637,11 +636,14 @@ for(i in 2:length(tset)) {
   N_w_simu[i] <- N_w + dN_w
   N_s_simu[i] <- N_s + dN_s
   E_simu[i] <- E + dE
+  
 }
+  
+
 ```
 
 
-```{r}
+```{r, echo = FALSE}
 plot(x = tset, y = N_s_simu,
      type = "l",
      col = "blue",
@@ -653,16 +655,250 @@ lines(x = tset, y = N_w_simu,
       type = "l", col = "orange")
 lines(x = tset, y = E_simu,
       type = "l", col = "green")
+title(title = "First simulation",
+      sub = "Params: q_s = 0.1, q_w = 0.15, r_s = 1, r_w = 1, k_s = 1, k_w = 1, p_s = 1, p_w = 1")
 legend(x = 80, y = 5,
        lwd = 2,
        legend = c("Ns", "Nw", "E"),
        col = c("blue", "orange", "green"))
 ```
 
+```{r, echo = FALSE}
+# set up the parameter space
+q_s2 <- 0.1
+q_w2 <- 0.1
+k_s2 <- 2
+k_w2 <- 1
+r_s2 <- 0.5
+r_w2 <- 0.25
+p_s2 <- 1
+p_w2 <- 5
+alpha <- 1
+c <- 0.05
+
+# Initial values for the variables
+N_w <- 1
+
+N_s <- 1
+
+E <- 0.1
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 100, length.out = 1000)
+
+N_w_simu2 <- NaN*tset; N_w_simu2[1] <- N_w
+
+N_s_simu2 <- NaN*tset; N_s_simu2[1] <- N_s
+
+E_simu2 <- NaN*tset; E_simu2[1] <- E
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w2 <- N_w_simu2[i-1]
+  N_s2 <- N_s_simu2[i-1]
+  E2 <- E_simu2[i-1]
+  
+  # Calculate change in variable size at each time step
+  dN_s2 <- (N_s2 * (r_s2 * (1 - N_s2/k_s2) - q_s2 * E2)) * dt
+  dN_w2 <- (N_w2 * (r_w2 * (1 - N_w2/k_w2) - q_w2 * E2)) * dt
+  dE2 <- (alpha * E2 * (p_s2 * q_s2 * N_s2 + p_w2 * q_w2 * N_w2 - c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu2[i] <- N_w2 + dN_w2
+  N_s_simu2[i] <- N_s2 + dN_s2
+  E_simu2[i] <- E2 + dE2
+  
+}
+  
+
+```
 
 
+```{r, echo = FALSE}
+plot(x = tset, y = N_s_simu2,
+     type = "l",
+     col = "blue",
+     las = 1,
+     lwd = 2,
+     ylim = c(0, 8),
+     xlab = "Time", ylab = "Variable size")
+lines(x = tset, y = N_w_simu2,
+      type = "l", col = "orange")
+lines(x = tset, y = E_simu2,
+      type = "l", col = "green")
+title(main = "Second simulation",
+      sub = "Params: q_s = 0.1, q_w = 0.1, r_s = 0.5, r_w = 0.25, k_s = 2, k_w = 1, p_s = 1, p_w = 5")
+legend(x = 80, y = 7.7,
+       lwd = 2,
+       legend = c("Ns", "Nw", "E"),
+       col = c("blue", "orange", "green"))
+```
+
+```{r, echo = FALSE}
+# set up the parameter space
+q_s3 <- 0.1
+q_w3 <- 0.1
+k_s3 <- 3
+k_w3 <- 1
+r_s3 <- 1
+r_w3 <- 0.2
+p_s3 <- 1
+p_w3 <- 10
+alpha <- 1
+c <- 0.05
+
+# Initial values for the variables
+N_w <- 1
+
+N_s <- 1
+
+E <- 0.1
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 100, length.out = 1000)
+
+N_w_simu3 <- NaN*tset; N_w_simu3[1] <- N_w
+
+N_s_simu3 <- NaN*tset; N_s_simu3[1] <- N_s
+
+E_simu3 <- NaN*tset; E_simu3[1] <- E
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w3 <- N_w_simu3[i-1]
+  N_s3 <- N_s_simu3[i-1]
+  E3 <- E_simu3[i-1]
+  
+  # Calculate change in variable size at each time step
+  dN_s3 <- (N_s3 * (r_s3 * (1 - N_s3/k_s3) - q_s3 * E3)) * dt
+  dN_w3 <- (N_w3 * (r_w3 * (1 - N_w3/k_w3) - q_w3 * E3)) * dt
+  dE3 <- (alpha * E3 * (p_s3 * q_s3 * N_s3 + p_w3 * q_w3 * N_w3 - c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu3[i] <- N_w3 + dN_w3
+  N_s_simu3[i] <- N_s3 + dN_s3
+  E_simu3[i] <- E3 + dE3
+  
+}
+  
+
+```
 
 
+```{r, echo = FALSE}
+plot(x = tset, y = N_s_simu3,
+     type = "l",
+     col = "blue",
+     las = 1,
+     lwd = 2,
+     ylim = c(0, 15),
+     xlab = "Time", ylab = "Variable size")
+lines(x = tset, y = N_w_simu3,
+      type = "l", col = "orange")
+lines(x = tset, y = E_simu3,
+      type = "l", col = "green")
+title(main = "Third simulation",
+      sub = "Params: q_s = 0.1, q_w = 0.1, r_s = 1, r_w = 0.2, k_s = 3, k_w = 1, p_s = 1, p_w = 10")
+legend(x = 80, y = 14,
+       lwd = 2,
+       legend = c("Ns", "Nw", "E"),
+       col = c("blue", "orange", "green"))
+```
+
+```{r, echo = FALSE}
+# set up the parameter space
+q_s4 <- 0.1
+q_w4 <- 0.1
+k_s4 <- 3
+k_w4 <- 1
+r_s4 <- 1
+r_w4 <- 0.2
+p_s4 <- 0.1
+p_w4 <- 10
+alpha <- 1
+c <- 0.05
+
+# Initial values for the variables
+N_w <- 1
+
+N_s <- 1
+
+E <- 0.1
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 100, length.out = 1000)
+
+N_w_simu4 <- NaN*tset; N_w_simu4[1] <- N_w
+
+N_s_simu4 <- NaN*tset; N_s_simu4[1] <- N_s
+
+E_simu4 <- NaN*tset; E_simu4[1] <- E
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w4 <- N_w_simu4[i-1]
+  N_s4 <- N_s_simu4[i-1]
+  E4 <- E_simu4[i-1]
+  
+  # Calculate change in variable size at each time step
+  dN_s4 <- (N_s4 * (r_s4 * (1 - N_s4/k_s4) - q_s4 * E4)) * dt
+  dN_w4 <- (N_w4 * (r_w4 * (1 - N_w4/k_w4) - q_w4 * E4)) * dt
+  dE4 <- (alpha * E4 * (p_s4 * q_s4 * N_s4 + p_w4 * q_w4 * N_w4 - c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu4[i] <- N_w4 + dN_w4
+  N_s_simu4[i] <- N_s4 + dN_s4
+  E_simu4[i] <- E4 + dE4
+  
+}
+  
+
+```
+
+
+```{r, echo = FALSE}
+plot(x = tset, y = N_s_simu4,
+     type = "l",
+     col = "blue",
+     las = 1,
+     lwd = 2,
+     ylim = c(0, 12),
+     xlab = "Time", ylab = "Variable size")
+lines(x = tset, y = N_w_simu4,
+      type = "l", col = "orange")
+lines(x = tset, y = E_simu4,
+      type = "l", col = "green")
+title(main = "Fourth simulation",
+      sub = "Params: q_s = 0.1, q_w = 0.1, r_s = 1, r_w = 0.2, k_s = 3, k_w = 1, p_s = 0.1, p_w = 10")
+legend(x = 80, y = 10,
+       lwd = 2,
+       legend = c("Ns", "Nw", "E"),
+       col = c("blue", "orange", "green"))
+```
 
 
 

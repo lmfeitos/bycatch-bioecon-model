@@ -16,7 +16,7 @@ library(ramlegacy)
 
 ```{r}
 # file paths
-basedir <- file.path("G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Bioeconomic model of multispecies fishery/analyses")
+basedir <- file.path("G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses")
 ramdir <- file.path(basedir, "RAMLDB v4.495", "Excel")
 outdir <- file.path(basedir, "outputs")
 ```
