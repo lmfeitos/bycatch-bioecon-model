@@ -54,7 +54,7 @@ output_test_updated <- output_test %>%
 
 ```{r, echo = FALSE}
 head(output_test_updated, n = 20) %>% 
-  kable(caption = "Glimpse of the first 20 columns of the dataset") %>% 
+  kable(caption = "Glimpse of the first 20 rows of the dataset") %>% 
   kable_styling(bootstrap_options = "striped", full_width = F)
 ```
 
@@ -163,19 +163,19 @@ head(output_test_updated, n = 20) %>%
 - Strong stock size ($N_s$):
 
 $$
-N_s = \frac{K_s * (c * q_s * r_w + K_w * p_w * q_w * (q_w * r_s - q_s * r_w))} {(K_w * p_w * q_w^2 * r_s) + (K_s * p_s * q_s^2 * r_w)}
+N_s = \frac{K_s * (c * q_s * r_w + K_w * p_w * q_w * (q_w * r_s - q_s * r_w))} {(K_w * p_w * q_w^2 * r_s + K_s * p_s * q_s^2 * r_w)}
 $$
 
 - Weak stock size ($N_w$):
 
 $$
-N_w = \frac{K_w * (c * q_w * r_s + K_s * p_s * q_s * (- q_w * r_s + q_s * r_w))} {(K_w * p_w * q_w^2 * r_s) + (K_s * p_s * q_s^2 * r_w)}
+N_w = \frac{K_w * (c * q_w * r_s + K_s * p_s * q_s * (- q_w * r_s + q_s * r_w))} {(K_w * p_w * q_w^2 * r_s + K_s * p_s * q_s^2 * r_w)}
 $$
 
 - Effort ($e$):
 
 $$
-e = \frac{(-c + K_s * p_s * q_s + K_w * p_w * q_w) * r_s * r_w} {(K_w * p_w * q_w^2 r_s) + (K_s * p_s * q_s^2 * r_w)}
+e = \frac{(-c + K_s * p_s * q_s + K_w * p_w * q_w) * r_s * r_w} {K_w * p_w * q_w^2 r_s + K_s * p_s * q_s^2 * r_w}
 $$
 
 ### List of parameters:
@@ -684,7 +684,7 @@ ws_k <- output_test_updated %>%
   theme_bw()
 ```
 
-```{r}
+```{r, echo = FALSE}
 ss_k + ws_k +
   plot_annotation(title = "Simulation of K ranges on strong and weak stock's B/K ratio - All values")
 ```
@@ -705,7 +705,7 @@ ss_k_pos <- output_test_updated %>%
   theme_bw()
 ```
 
-```{r}
+```{r, echo = FALSE}
 ws_k_pos <- output_test_updated %>% 
   filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k >= 0) %>% 
   ggplot() +
@@ -786,10 +786,10 @@ vul_s <-
   geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k)) +
   scale_color_distiller(palette = "RdYlBu",
                        rescaler = ~ scales::rescale_mid(.x, mid = 0)) +
-  labs(x = "Price ratio (p_s/p_w)",
-       y = "Vulnerability ratio (q_s/r_s)/(q_w/r_w)",
+  labs(x = "Price ratio",
+       y = "Vulnerability ratio",
        title = "Strong stock",
-       fill = "B/K") +
+       color = "B/K") +
   theme_bw()
 ```
 
@@ -801,16 +801,17 @@ vul_w <-
   geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k)) +
   scale_color_distiller(palette = "RdYlBu",
                        rescaler = ~ scales::rescale_mid(.x, mid = 0)) +
-  labs(x = "Price ratio (p_s/p_w)",
-       y = "Vulnerability ratio (q_s/r_s)/(q_w/r_w)",
+  labs(x = "Price ratio",
+       y = "Vulnerability ratio",
        title = "Weak stock",
-       fill = "B/K") +
+       color = "B/K") +
   theme_bw()
 ```
 
 ```{r, echo = FALSE, fig.height=9, fig.width=8}
 vul_s + vul_w +
-  plot_annotation(title = "Price vs vulnerability ratios for strong and weak stocks - All B/K values")
+  plot_annotation(title = "Price vs vulnerability ratios for strong and weak stocks - All B/K values",
+                  caption = "Price ratio = p_s / p_w \n Vulnerability ratio = (q_s/r_s) / (q_w/r_w)")
 ```
 
 ```{r, echo = FALSE}
@@ -875,29 +876,6 @@ output_test_updated %>%
         axis.text = element_text(size = 10, color = "black"))
 ```
 
-```{r, echo = FALSE}
-output_test_updated %>% 
-   mutate(b_v_k = case_when(
-     b_v_k < 0 ~ 0,
-     TRUE ~ b_v_k
-   )) %>% 
-  filter(variables == "N_w" & b_stocks == "b_values_w") %>% 
-  ggplot() +
-  geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k),
-             alpha = 0.2) +
-  scale_color_paletteer_c("viridis::plasma",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
-  labs(x = "Price ratio",
-       y = "Vulnerability ratio",
-       title = "Weak stock - values above 1 filtered out",
-       color = "B/K") +
-  theme_bw() +
-  theme(panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.minor.y = element_blank(),
-        axis.title = element_text(size = 10, color = "black"),
-        axis.text = element_text(size = 10, color = "black"))
-```
 
 ```{r, echo = FALSE}
 test <- output_test_updated %>% 
@@ -956,7 +934,7 @@ ss_test + ws_test +
   plot_annotation(title = "Price vs vulnerability ratios for strong and weak stocks - B/K values above 1 filtered out")
 ```
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, include = FALSE}
 test <- output_test_updated %>% 
   filter(q_s == 0.1 & q_w == 0.1) %>% 
   pivot_wider(names_from = "variables",
@@ -989,7 +967,7 @@ test %>%
         axis.text = element_text(size = 10, color = "black"))
 ```
 
-```{r}
+```{r, include = FALSE}
 test %>% 
    mutate(b_v_k = case_when(
      b_v_k < 0 ~ 0,
@@ -1797,7 +1775,7 @@ var_full %>%
         legend.position = "bottom")
 ```
 
-
+- I think this figure (or a better version of it) should also go in the paper, because it clearly shows how effort increases a lot when we consider two species, and how it drives both of them to extremely low levels for most of the scenarios, but not all. The price ratio calculation is price of the strong stock $\frac{P_s}{P_w}$.
 
 
 
