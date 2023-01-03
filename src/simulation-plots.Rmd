@@ -889,13 +889,13 @@ ws_test <- test %>%
    )) %>% 
   filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k <= 1) %>% 
   ggplot() +
-  geom_point(aes(x = log1p(price_ratio), y = vuln_ratio, color = b_v_k),
+  geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k),
              alpha = 0.2) +
   scale_color_paletteer_c("viridis::plasma",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
-  labs(x = "Log(1 + price ratio)",
-       y = "Vulnerability ratio",
-       title = "Weak stock",
+  labs(x = "Price ratio",
+       y = "",
+       title = "",
        color = "B/K") +
   theme_bw() +
   theme(panel.grid.major.x = element_blank(),
@@ -913,13 +913,14 @@ ss_test <- test %>%
    )) %>% 
   filter(variables == "N_s" & b_stocks == "b_values_s" & b_v_k <= 1) %>% 
   ggplot() +
-  geom_point(aes(x = log1p(price_ratio), y = vuln_ratio, color = b_v_k),
-             alpha = 0.2) +
+  geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k),
+             alpha = 0.2,
+             show.legend = F) +
   scale_color_paletteer_c("viridis::plasma",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
-  labs(x = "Log(1 + price ratio)",
+  labs(x = "Price ratio",
        y = "Vulnerability ratio",
-       title = "Strong stock",
+       title = "",
        color = "B/K") +
   theme_bw() +
   theme(panel.grid.major.x = element_blank(),
@@ -930,8 +931,9 @@ ss_test <- test %>%
 ```
 
 ```{r, echo = FALSE, fig.height=5, fig.width=8}
-ss_test + ws_test +
-  plot_annotation(title = "Price vs vulnerability ratios for strong and weak stocks - B/K values above 1 filtered out")
+ss_test + labs(tag = 'A') + ws_test + labs(tag = 'B') +
+  plot_layout(guides = "collect")
+#  plot_annotation(title = "Price vs vulnerability ratios for strong and weak stocks - B/K values above 1 filtered out")
 ```
 
 ```{r, echo = FALSE, include = FALSE}
@@ -1131,11 +1133,11 @@ where $q_s$ and $q_w$ are the catchability of the strong and the weak stock, res
 ```{r, echo = FALSE}
 # set up the parameter space
 q_s1 <- 0.1
-q_w1 <- 0.15
+q_w1 <- 0.1
 k_s1 <- 1
-k_w1 <- 1
+k_w1 <- 3
 r_s1 <- 1
-r_w1 <- 1
+r_w1 <- 0.2
 p_s1 <- 1
 p_w1 <- 1
 alpha <- 1
@@ -1200,7 +1202,7 @@ lines(x = tset, y = N_w_simu1,
 lines(x = tset, y = E_simu1,
       type = "l", col = "green")
 title(main = "First simulation - Both stocks with the same price",
-      sub = "Params: q_s = 0.1, q_w = 0.15, r_s = 1, r_w = 1, k_s = 1, k_w = 1, p_s = 1, p_w = 1")
+      sub = "Params: q_s = 0.1, q_w = 0.1, r_s = 1, r_w = 0.2, k_s = 3, k_w = 1, p_s = 1, p_w = 1")
 legend(x = 80, y = 5,
        lwd = 2,
        legend = c("Ns", "Nw", "E"),
@@ -1733,7 +1735,7 @@ var_full <- bind_rows(effort_df, nw_df, ns_df)
 ```
 
 ```{r, echo = FALSE, fig.height=4, fig.width=8}
-var_full %>%
+var_plot <- var_full %>%
   filter(scenario_id %in% c("1", "4", "5", "6", "7")) %>%
   mutate(price_ratio = case_when(
     str_detect(scenario_id, "1") ~ "Price ratio = 1",
@@ -1746,7 +1748,43 @@ var_full %>%
     str_detect(variable, "N_w") ~ "Weak stock",
     str_detect(variable, "N_s") ~ "Strong stock",
     str_detect(variable, "E") ~ "Effort",
-  )) %>% 
+  )) 
+  
+
+
+equal_scales <-
+  ggplot(data = var_plot) +
+  geom_line(aes(x = tset, y = value, color = variable_clean),
+            size = .8,
+            alpha = .8,
+            show.legend = F) +
+  facet_wrap(~ factor(price_ratio, 
+                      levels = c("Price ratio = 100",
+                                 "Price ratio = 2",
+                                 "Price ratio = 1",
+                                 "Price ratio = 0.5",
+                                 "Price ratio = 0.01")),
+             nrow = 1) +
+  scale_color_brewer(palette = "Set1") +
+  scale_x_continuous(breaks = seq(0, 100, 50)) +
+  scale_y_continuous(breaks = seq(0, 35, 5)) +
+  labs(x = "",
+       y = "Nw, Ns, E",
+       color = "") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        axis.title.x = element_text(color = "black", size = 12),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom")
+
+dif_scales <-
+  var_plot %>% 
+  filter(!variable_clean == "Effort") %>% 
   ggplot() +
   geom_line(aes(x = tset, y = value, color = variable_clean),
             size = .8,
@@ -1758,11 +1796,12 @@ var_full %>%
                                  "Price ratio = 1",
                                  "Price ratio = 0.5",
                                  "Price ratio = 0.01")),
-             nrow = 1,
-             scales = "free_y") +
-  scale_color_brewer(palette = "Set1") +
+             nrow = 1) +
+  scale_color_manual(values = c("#377EB8", "#4DAF4A")) +
+  scale_x_continuous(breaks = seq(0, 100, 50)) +
+  scale_y_continuous(breaks = seq(0, 3, .5)) +
   labs(x = "Time",
-       y = "Nw, Ns, E",
+       y = "Nw, Ns",
        color = "") +
   theme_bw() +
   theme(panel.grid.major.x = element_blank(),
@@ -1770,10 +1809,19 @@ var_full %>%
         panel.grid.minor.y = element_blank(),
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
-        axis.title = element_text(color = "black", size = 12, face = "bold"),
+        axis.title.x = element_text(color = "black", size = 12),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
 ```
+
+```{r, fig.height=8, fig.width=8, echo = FALSE}
+equal_scales /
+  dif_scales +
+  plot_annotation(tag_level = "A")
+
+```
+
 
 - I think this figure (or a better version of it) should also go in the paper, because it clearly shows how effort increases a lot when we consider two species, and how it drives both of them to extremely low levels for most of the scenarios, but not all. The price ratio calculation is price of the strong stock $\frac{P_s}{P_w}$.
 
