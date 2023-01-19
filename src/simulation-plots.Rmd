@@ -2166,7 +2166,7 @@ run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
  
   # Derive effort
  E <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
-   k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w 
+   (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
   
   # Derive weak stock biomass
  
@@ -2215,8 +2215,8 @@ sc_all <- bind_rows(sc_1, sc_2, sc_3, sc_4, sc_5, sc_6, sc_7, sc_8) %>%
   )) %>% 
   pivot_wider(names_from = "variable",
               values_from = "value") %>% 
-  mutate(b_values_s = N_s / k_s1,
-         b_values_w = N_w / k_w1) %>% 
+  mutate(b_values_s = N_s / 4,
+         b_values_w = N_w / 2) %>% 
   pivot_longer(cols = N_s:N_w,
                names_to = "variable",
                values_to = "value") %>%

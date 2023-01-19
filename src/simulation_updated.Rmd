@@ -20,7 +20,7 @@ run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
  
   # Derive effort
  e <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
-   k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w 
+   (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
   
   # Derive weak stock biomass
  
@@ -404,7 +404,7 @@ i = 1
 #   unlist() %>% 
 #   as.data.frame()
 
-for(i in 1:nrow(q_scenarios_df)){
+for(i in 1:nrow(r_scenarios_df)){
  
   # Extract params
   r_s <- r_scenarios_df$r_s[i]
@@ -563,9 +563,9 @@ output_p_tidy <- output_join_test %>%
                names_to = "variables",
                values_to = "values") 
   
-output_price_range <- output_p_tidy %>% 
-  select(scenario_id, variables, values, stock_prices, prices, price_ratio) %>% 
-  distinct(variables, values, stock_prices, prices, price_ratio, .keep_all = TRUE)
+# output_price_range <- output_p_tidy %>% 
+#   select(scenario_id, variables, values, stock_prices, prices, price_ratio) %>% 
+#   distinct(variables, values, stock_prices, prices, price_ratio, .keep_all = TRUE)
 
 #write_csv(output_p_tidy, file = file.path(outdir, "output_ranges_test.csv"), col_names = T)
 ```

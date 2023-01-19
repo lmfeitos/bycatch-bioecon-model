@@ -136,19 +136,19 @@ p_s = 1 # price for the strong stock
 # model equations
 ## Strong stock
 n_strong <- function(K_s, K_w, r_s, r_w, q_s, q_w, p_s, p_w, c){
-  N_s <- ( K_s * (c * q_s * r_w + K_w * p_w * q_w * (q_w * r_s - q_s * r_w)  ) ) / (K_w * p_w * q_w^2 * r_s) + (K_s * p_s * q_s^2 * r_w )
+  N_s <- ( K_s * (c * q_s * r_w + K_w * p_w * q_w * (q_w * r_s - q_s * r_w)  ) ) / (K_w * p_w * q_w^2 * r_s + K_s * p_s * q_s^2 * r_w )
   return(N_s)
 }
 
 ## Weak stock
 n_weak <- function(K_s, K_w, r_s, r_w, q_s, q_w, p_s, p_w, c){
-  N_s <- ( K_w * (c * q_w * r_s + K_s * p_s * q_s * (- q_w * r_s + q_s * r_w)  ) ) / (K_w * p_w * q_w^2 * r_s) + (K_s * p_s * q_s^2 * r_w )
+  N_s <- ( K_w * (c * q_w * r_s + K_s * p_s * q_s * (- q_w * r_s + q_s * r_w)  ) ) / (K_w * p_w * q_w^2 * r_s + K_s * p_s * q_s^2 * r_w )
   return(N_s)
 }
 
 ## Fishing effort
 e <- function(K_s, K_w, r_s, r_w, q_s, q_w, p_s, p_w, c){
-  e <- ( (-c + K_s * p_s * q_s + K_w * p_w * q_w) * r_s * r_w ) / (K_w * p_w * q_w^2 * r_s) + (K_s * p_s * q_s^2 * r_w)
+  e <- ( (-c + K_s * p_s * q_s + K_w * p_w * q_w) * r_s * r_w ) / (K_w * p_w * q_w^2 * r_s + K_s * p_s * q_s^2 * r_w)
   return(e)
 }
 ```
