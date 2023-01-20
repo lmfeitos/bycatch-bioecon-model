@@ -24,9 +24,9 @@ outdir <- file.path(basedir, "model_outs") # calls present data from raster file
 # Results from the parameter per parameter simulations
 #output_price_ranges <- read_csv(file.path(outdir, "output_price_ranges.csv"))
 
-#output_growth_ranges <- read_csv(file.path(outdir, "output_r_ranges.csv"))
+output_growth_ranges <- read_csv(file.path(outdir, "output_r_ranges.csv"))
 
-#output_q_ranges <- read_csv(file.path(outdir, "output_q_ranges.csv"))
+output_q_ranges <- read_csv(file.path(outdir, "output_q_ranges.csv"))
 
 #output_full <- read_csv(file.path(outdir, "output_full.csv"))
 ```
@@ -158,22 +158,42 @@ head(output_test_updated, n = 20) %>%
 
 ## Model equations:
 
-- Strong stock size ($N_s$):
+- Strong stock size ($N_s$)
 
 $$
-N_s = \frac{K_s * (c * q_s * r_w + K_w * p_w * q_w * (q_w * r_s - q_s * r_w))} {(K_w * p_w * q_w^2 * r_s + K_s * p_s * q_s^2 * r_w)}
+N_s = r_s (1 - \frac{N_s}{K_s}) - q_s E
 $$
 
 - Weak stock size ($N_w$):
 
 $$
+N_w = r_w (1 - \frac{N_w}{K_w}) - q_w E
+$$
+
+- Effort ($E$):
+
+$$
+E = (p_s q_s N_s + p_w q_w N_w) - C
+$$
+
+## Equilibrium points for the three variables:
+
+- Strong stock ($N_s$):
+
+$$
+N_s = \frac{K_s * (c * q_s * r_w + K_w * p_w * q_w * (q_w * r_s - q_s * r_w))} {(K_w * p_w * q_w^2 * r_s + K_s * p_s * q_s^2 * r_w)}
+$$
+
+- Weak stock ($N_w$):
+
+$$
 N_w = \frac{K_w * (c * q_w * r_s + K_s * p_s * q_s * (- q_w * r_s + q_s * r_w))} {(K_w * p_w * q_w^2 * r_s + K_s * p_s * q_s^2 * r_w)}
 $$
 
-- Effort ($e$):
+- Effort ($E$):
 
 $$
-e = \frac{(-c + K_s * p_s * q_s + K_w * p_w * q_w) * r_s * r_w} {K_w * p_w * q_w^2 r_s + K_s * p_s * q_s^2 * r_w}
+E = \frac{(-c + K_s * p_s * q_s + K_w * p_w * q_w) * r_s * r_w} {K_w * p_w * q_w^2 r_s + K_s * p_s * q_s^2 * r_w}
 $$
 
 ### List of parameters:
@@ -314,29 +334,25 @@ out_full_bvk /
 ### Catchability range simulation
 
 
-```{r, echo = FALSE}
+```{r distribution of negative values for Ns and Nw for the range of qs, echo = FALSE}
 # New tests with the other parameters also being varied
 
-# output_test_updated %>% 
-#   pivot_wider(names_from = "variables",
-#               values_from = "values") %>% 
-#   mutate(b_values_s = N_s / k_s,
-#          b_values_w = N_w / k_w) %>% 
-#   pivot_longer(cols = e:N_w,
-#                names_to = "variables",
-#                values_to = "values") %>% 
-#   filter(values >= 0) %>% 
-#   ggplot() +
-#   geom_raster(aes(x = q_w, y = q_s, fill = values)) +
-#   facet_wrap(~ variables,
-#             scales = "free_y") +
-#   scale_fill_gradientn(name = "Variable size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
-#   facet_wrap(~ variables,
-#              scales = "free_y") +
-#   labs(x = "Weak stock q ranges",
-#        y = "Strong stock q ranges",
-#        title = "Simulation of catchability ranges on variable size") +
-#   theme_bw()
+output_q_ranges %>% 
+  pivot_wider(names_from = "stock_q",
+              values_from = "q") %>% 
+  filter(variables %in% c("N_w", "N_s") & values < 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = q_w, y = q_s, fill = values)) +
+  scale_x_continuous(breaks = seq(0.1, 1, 0.2)) +
+  scale_y_continuous(breaks = seq(0.1, 1, 0.2)) +
+  facet_wrap(~ variables) +
+  scale_fill_gradientn(name = "stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+  facet_wrap(~ variables,
+             scales = "free_y") +
+  labs(x = "Weak stock q ranges",
+       y = "Strong stock q ranges",
+       title = "Simulation of catchability ranges on stock size") +
+  theme_bw() 
 ```
 
 
@@ -520,20 +536,22 @@ ss_p_pos + ws_p_pos +
 
 ### Growth range simulation
 
-```{r, echo = FALSE}
-# output_test %>% 
-#   filter(values >= 0) %>% 
-#   ggplot() +
-#   geom_raster(aes(x = r_w, y = r_s, fill = values)) +
-#   facet_wrap(~ variables,
-#             scales = "free_y") +
-#   scale_fill_gradientn(name = "Variable size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
-#   facet_wrap(~ variables,
-#              scales = "free_y") +
-#   labs(x = "Weak stock growth ranges",
-#        y = "Strong stock growth ranges",
-#        title = "Simulation of growth ranges on variable size") +
-#   theme_bw()
+```{r distribution of negative values for Ns and Nw for the range of rs, echo = FALSE}
+output_growth_ranges %>% 
+  pivot_wider(names_from = "stock_growth_r",
+              values_from = "r") %>% 
+  filter(variables %in% c("N_w", "N_s") & values < 0) %>% 
+  ggplot() +  
+  geom_raster(aes(x = r_w, y = r_s, fill = values)) +
+  scale_x_continuous(breaks = seq(0, 1.5, 0.2)) +
+  scale_y_continuous(breaks = seq(0, 1.6, 0.2)) +
+  facet_wrap(~ variables,
+            scales = "free_y") +
+  scale_fill_gradientn(name = "Stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+  labs(x = "Weak stock r ranges",
+       y = "Strong stock r ranges",
+       title = "Simulation of r ranges on variable size") +
+  theme_bw() 
 ```
 
 
@@ -1120,7 +1138,7 @@ pos_price <-
 ```
 
 
-## Setting up the time series simulation
+## Time series equations
 
 $$
 \begin{align}
@@ -1129,29 +1147,45 @@ $$
 \frac{d N_w}{dt} &= N_W  (r_w  (1 - (\frac{N_W}{K_w})) - q_w E) \\
 \newline
 \frac{d E}{dt} &= \alpha  E  (p_s  q_s  N_S + p_w q_w N_W - c)
+\newline
+\frac{d C_s}{dt} &= q N_s E
+\newline
+\frac{d C_w}{dt} &= q N_w E
+\newline
+\frac{d CPUE_s}{dt} &= \frac{C_s} {E}
+\newline
+\frac{d CPUE_w}{dt} &= \frac{C_w} {E}
+\newline
+\frac{d \pi_s}{dt} &= C_s p_s - C_s  c
+\newline
+\frac{d \pi_w}{dt} &= C_w p_W - C_w  c
+\newline
+\frac{d \pi}{dt} &= C_s  p_s + C_w  p_w - (C_s + C_w) * c
 \end{align}
 $$
 
 
 where $q_s$ and $q_w$ are the catchability of the strong and the weak stock, respectively; $r_s$ and $r_w$ are the intrinsic growth rates of the strong and weak stocks, respectively; $p_s$ and $p_w$ are the prices of the strong and weak stocks, respectively; $k_s$ and $k_w$ are the carrying capacities of the strong and weak stocks, respectively; $c$ is the fishing cost, and $\alpha$ is a constant controling for the speed at which effort changes following price changes.
 
+### Scenarios for a range of price ratios
+
 ```{r scenario 1 price ratio 10, echo = FALSE}
 # set up the parameter space
-q_s1 <- 0.1
-q_w1 <- 0.1
-k_s1 <- 4
-k_w1 <- 2
-r_s1 <- 0.75
-r_w1 <- 0.25
+q_s <- 0.1
+q_w <- 0.1
+k_s <- 4
+k_w <- 2
+r_s <- 0.8
+r_w <- 0.45
 p_s1 <- 1
 p_w1 <- 0.1
 alpha <- 1
 c <- 0.05
 
 # Initial values for the variables
-N_w <- k_w1
+N_w <- k_w
 
-N_s <- k_s1
+N_s <- k_s
 
 E <- 0.1
 ```
@@ -1163,13 +1197,13 @@ N_w_simu1 <- NaN*tset; N_w_simu1[1] <- N_w
 
 N_s_simu1 <- NaN*tset; N_s_simu1[1] <- N_s
 
-N_w_test_1 <- NaN*tset; N_w_test_1[1] <- N_w
+#N_w_test_1 <- NaN*tset; N_w_test_1[1] <- N_w
 
-N_s_test_1 <- NaN*tset; N_s_test_1[1] <- N_s
+#N_s_test_1 <- NaN*tset; N_s_test_1[1] <- N_s
 
 E_simu1 <- NaN*tset; E_simu1[1] <- E
 
-E_test1 <- NaN*tset; E_test1[1] <- E
+#E_test1 <- NaN*tset; E_test1[1] <- E
 
 C_s_simu1 <- NaN*tset; C_s_simu1[1] <- 1
 
@@ -1195,10 +1229,10 @@ for(i in 2:length(tset)) {
   # placeholder variables to plug into the equations
   N_w1 <- N_w_simu1[i-1]
   N_s1 <- N_s_simu1[i-1]
-  N_wt1 <- N_w_test_1[i-1]
-  N_st1 <- N_s_test_1[i-1]
+  #N_wt1 <- N_w_test_1[i-1]
+  #N_st1 <- N_s_test_1[i-1]
   E1 <- E_simu1[i-1]
-  E_t1 <- E_test1[i-1]
+  #E_t1 <- E_test1[i-1]
   C_s1 <- C_s_simu1[i-1]
   C_w1 <- C_w_simu1[i-1]
   cpue_s1 <- cpue_s_simu1[i-1]
@@ -1208,16 +1242,16 @@ for(i in 2:length(tset)) {
   pi_w1 <- Pi_w_simu1[i-1]
     
   # Calculate change in variable size at each time step
-  dN_s1 <- (N_s1 * (r_s1 * (1 - (N_s1/k_s1)) - q_s1 * E1)) * dt
-  dN_w1 <- (N_w1 * (r_w1 * (1 - (N_w1/k_w1)) - q_w1 * E1)) * dt
-  dN_st1 <- (N_st1 * (r_s1 * (1 - (N_st1/k_s1)) - q_s1 * E_t1)) * dt
-  dN_wt1 <- (N_wt1 * (r_w1 * (1 - (N_wt1/k_w1)) - q_w1 * E_t1)) * dt
-  dE1 <- (alpha * E1 * (p_s1 * q_s1 * N_s1 + p_w1 * q_w1 * N_w1 - c)) * dt
-  dE_test1 <- ((p_s1 * q_s1 * N_st1 + p_w1 * q_w1 * N_wt1) - c) * dt
-  dC_s1 <- (q_s1 * N_s1 * E1) * dt
-  dC_w1 <- (q_w1 * N_w1 * E1) * dt
-  dcpue_s1 <- (N_s1 / E1) * dt
-  dcpue_w1 <- (N_w1 / E1) * dt
+  dN_s1 <- (N_s1 * (r_s * (1 - (N_s1/k_s)) - q_s * E1)) * dt
+  dN_w1 <- (N_w1 * (r_w * (1 - (N_w1/k_w)) - q_w * E1)) * dt
+  #dN_st1 <- (N_st1 * (r_s * (1 - (N_st1/k_s)) - q_s * E_t1)) * dt
+  #dN_wt1 <- (N_wt1 * (r_w * (1 - (N_wt1/k_w)) - q_w * E_t1)) * dt
+  dE1 <- (alpha * E1 * (p_s1 * q_s * N_s1 + p_w1 * q_w * N_w1 - c)) * dt
+  #dE_test1 <- ((p_s1 * q_s1 * N_st1 + p_w1 * q_w1 * N_wt1) - c) * dt
+  dC_s1 <- (q_s * N_s1 * E1) * dt
+  dC_w1 <- (q_w * N_w1 * E1) * dt
+  dcpue_s1 <- (C_s1 / E1) * dt
+  dcpue_w1 <- (C_w1 / E1) * dt
   dPi_s1 <- (C_s1 * p_s1 - C_s1 * c) * dt
   dPi_w1 <- (C_w1 * p_w1 - C_w1 * c) * dt
   dPi1 <- (C_s1 * p_s1 + C_w1 * p_w1 - ((C_s1 + C_w1) * c)) * dt
@@ -1225,10 +1259,10 @@ for(i in 2:length(tset)) {
   
   N_w_simu1[i] <- N_w1 + dN_w1
   N_s_simu1[i] <- N_s1 + dN_s1
-  N_w_test_1[i] <- N_wt1 + dN_wt1
-  N_s_test_1[i] <- N_st1 + dN_st1
+  #N_w_test_1[i] <- N_wt1 + dN_wt1
+  #N_s_test_1[i] <- N_st1 + dN_st1
   E_simu1[i] <- E1 + dE1
-  E_test1[i] <- E_t1 + dE_test1
+  #E_test1[i] <- E_t1 + dE_test1
   C_s_simu1[i] <- C_s1 + dC_s1
   C_w_simu1[i] <- C_w1 + dC_w1
   cpue_s_simu1[i] <- cpue_s1 + dcpue_s1
@@ -1243,51 +1277,10 @@ for(i in 2:length(tset)) {
 ```
 
 
-```{r, echo = FALSE, include = FALSE}
-plot(x = tset, y = N_s_simu1,
-     type = "l",
-     col = "blue",
-     las = 1,
-     lwd = 2,
-     ylim = c(0, 10),
-     xlab = "Time", ylab = "Variable size")
-lines(x = tset, y = N_w_simu1,
-      type = "l", col = "orange")
-lines(x = tset, y = E_simu1,
-      type = "l", col = "green")
-lines(x = tset, y = N_w_test_1,
-      type = "l", col = "red")
-lines(x = tset, y = N_s_test_1,
-      type = "l", col = "red3")
-lines(x = tset, y = E_test1,
-      type = "l", col = "red4")
-title(main = "First simulation - Both stocks with the same price",
-      sub = "Params: q_s = 0.1, q_w = 0.1, r_s = 0.75, r_w = 0.25, k_s = 4, k_w = 2, p_s = 1, p_w = 1")
-legend(x = 300, y = 10,
-       lwd = 2,
-       legend = c("Ns", "Nw", "E", "Nwt", "Nst", "Et"),
-       col = c("blue", "orange", "green", "red", "red3", "red4"))
-```
 
 ```{r scenario 2 price ratio 5, echo = FALSE}
-# set up the parameter space
-q_s2 <- 0.1
-q_w2 <- 0.1
-k_s2 <- 4
-k_w2 <- 2
-r_s2 <- 0.75
-r_w2 <- 0.25
 p_s2 <- 1
 p_w2 <- 0.2
-alpha <- 1
-c <- 0.05
-
-# Initial values for the variables
-N_w <- k_w2
-
-N_s <- k_s2
-
-E <- 0.1
 ```
 
 ```{r, echo = FALSE}
@@ -1297,13 +1290,13 @@ N_w_simu2 <- NaN*tset; N_w_simu2[1] <- N_w
 
 N_s_simu2 <- NaN*tset; N_s_simu2[1] <- N_s
 
-N_w_test_2 <- NaN*tset; N_w_test_2[1] <- N_w
+#N_w_test_2 <- NaN*tset; N_w_test_2[1] <- N_w
 
-N_s_test_2 <- NaN*tset; N_s_test_2[1] <- N_s
+#N_s_test_2 <- NaN*tset; N_s_test_2[1] <- N_s
 
 E_simu2 <- NaN*tset; E_simu2[1] <- E
 
-E_test2 <- NaN*tset; E_test2[1] <- E
+#E_test2 <- NaN*tset; E_test2[1] <- E
 
 C_s_simu2 <- NaN*tset; C_s_simu2[1] <- 1
 
@@ -1329,10 +1322,10 @@ for(i in 2:length(tset)) {
   # placeholder variables to plug into the equations
   N_w2 <- N_w_simu2[i-1]
   N_s2 <- N_s_simu2[i-1]
-  N_wt2 <- N_w_test_2[i-1]
-  N_st2 <- N_s_test_2[i-1]
+  #N_wt2 <- N_w_test_2[i-1]
+  #N_st2 <- N_s_test_2[i-1]
   E2 <- E_simu2[i-1]
-  E_t2 <- E_test2[i-1]
+  #E_t2 <- E_test2[i-1]
   C_s2 <- C_s_simu2[i-1]
   C_w2 <- C_w_simu2[i-1]
   cpue_s2 <- cpue_s_simu2[i-1]
@@ -1342,16 +1335,16 @@ for(i in 2:length(tset)) {
   pi_w2 <- Pi_w_simu2[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s2 <- (N_s2 * (r_s2 * (1 - (N_s2/k_s2)) - q_s2 * E2)) * dt
-  dN_w2 <- (N_w2 * (r_w2 * (1 - (N_w2/k_w2)) - q_w2 * E2)) * dt
-  dN_st2 <- (N_st2 * (r_s2 * (1 - (N_st2/k_s2)) - q_s2 * E_t2)) * dt
-  dN_wt2 <- (N_wt2 * (r_w2 * (1 - (N_wt2/k_w2)) - q_w2 * E_t2)) * dt
-  dE2 <- (alpha * E2 * (p_s2 * q_s2 * N_s2 + p_w2 * q_w2 * N_w2 - c)) * dt
-  dE_test2 <- ((p_s2 * q_s2 * N_st2 + p_w2 * q_w2 * N_wt2) - c) * dt
-  dC_s2 <- (q_s2 * N_s2 * E2) * dt
-  dC_w2 <- (q_w2 * N_w2 * E2) * dt
-  dcpue_s2 <- (N_s2 / E2) * dt
-  dcpue_w2 <- (N_w2 / E2) * dt
+  dN_s2 <- (N_s2 * (r_s * (1 - (N_s2/k_s)) - q_s * E2)) * dt
+  dN_w2 <- (N_w2 * (r_w * (1 - (N_w2/k_w)) - q_w * E2)) * dt
+  #dN_st2 <- (N_st2 * (r_s2 * (1 - (N_st2/k_s2)) - q_s2 * E_t2)) * dt
+  #dN_wt2 <- (N_wt2 * (r_w2 * (1 - (N_wt2/k_w2)) - q_w2 * E_t2)) * dt
+  dE2 <- (alpha * E2 * (p_s2 * q_s * N_s2 + p_w2 * q_w * N_w2 - c)) * dt
+  #dE_test2 <- ((p_s2 * q_s2 * N_st2 + p_w2 * q_w2 * N_wt2) - c) * dt
+  dC_s2 <- (q_s * N_s2 * E2) * dt
+  dC_w2 <- (q_w * N_w2 * E2) * dt
+  dcpue_s2 <- (C_s2 / E2) * dt
+  dcpue_w2 <- (C_w2 / E2) * dt
   dPi_s2 <- (C_s2 * p_s2 - C_s2 * c) * dt
   dPi_w2 <- (C_w2 * p_w2 - C_w2 * c) * dt
   dPi2 <- (C_s2 * p_s2 + C_w2 * p_w2 - ((C_s2 + C_w2) * c)) * dt
@@ -1360,10 +1353,10 @@ for(i in 2:length(tset)) {
   
   N_w_simu2[i] <- N_w2 + dN_w2
   N_s_simu2[i] <- N_s2 + dN_s2
-  N_w_test_2[i] <- N_wt2 + dN_wt2
-  N_s_test_2[i] <- N_st2 + dN_st2
+  #N_w_test_2[i] <- N_wt2 + dN_wt2
+  #N_s_test_2[i] <- N_st2 + dN_st2
   E_simu2[i] <- E2 + dE2
-  E_test2[i] <- E_t2 + dE_test2
+  #E_test2[i] <- E_t2 + dE_test2
   C_s_simu2[i] <- C_s2 + dC_s2
   C_w_simu2[i] <- C_w2 + dC_w2
   cpue_s_simu2[i] <- cpue_s2 + dcpue_s2
@@ -1375,46 +1368,10 @@ for(i in 2:length(tset)) {
 ```
 
 
-
-```{r, echo = FALSE, include = FALSE}
-plot(x = tset, y = N_s_simu2,
-     type = "l",
-     col = "blue",
-     las = 1,
-     lwd = 2,
-     ylim = c(0, 8),
-     xlab = "Time", ylab = "Variable size")
-lines(x = tset, y = N_w_simu2,
-      type = "l", col = "orange")
-lines(x = tset, y = E_simu2,
-      type = "l", col = "green")
-title(main = "Second simulation - Price ratio = 0.2",
-      sub = "Params: q_s = 0.1, q_w = 0.1, r_s = 0.75, r_w = 0.25, k_s = 4, k_w = 2, p_s = 2.5, p_w = 1")
-legend(x = 80, y = 7.7,
-       lwd = 2,
-       legend = c("Ns", "Nw", "E"),
-       col = c("blue", "orange", "green"))
-```
-
 ```{r scenario 3 price ratio 2.5, echo = FALSE}
 # set up the parameter space
-q_s3 <- 0.1
-q_w3 <- 0.1
-k_s3 <- 4
-k_w3 <- 2
-r_s3 <- 0.75
-r_w3 <- 0.25
 p_s3 <- 1
 p_w3 <- 0.4
-alpha <- 1
-c <- 0.05
-
-# Initial values for the variables
-N_w <- k_w3
-
-N_s <- k_s3
-
-E <- 0.1
 ```
 
 ```{r, echo = FALSE}
@@ -1424,13 +1381,13 @@ N_w_simu3 <- NaN*tset; N_w_simu3[1] <- N_w
 
 N_s_simu3 <- NaN*tset; N_s_simu3[1] <- N_s
 
-N_w_test_3 <- NaN*tset; N_w_test_3[1] <- N_w
+#N_w_test_3 <- NaN*tset; N_w_test_3[1] <- N_w
 
-N_s_test_3 <- NaN*tset; N_s_test_3[1] <- N_s
+#N_s_test_3 <- NaN*tset; N_s_test_3[1] <- N_s
 
 E_simu3 <- NaN*tset; E_simu3[1] <- E
 
-E_test3 <- NaN*tset; E_test3[1] <- E
+#E_test3 <- NaN*tset; E_test3[1] <- E
 
 C_s_simu3 <- NaN*tset; C_s_simu3[1] <- 1
 
@@ -1456,10 +1413,10 @@ for(i in 2:length(tset)) {
   # placeholder variables to plug into the equations
   N_w3 <- N_w_simu3[i-1]
   N_s3 <- N_s_simu3[i-1]
-  N_wt3 <- N_w_test_3[i-1]
-  N_st3 <- N_s_test_3[i-1]
+  #N_wt3 <- N_w_test_3[i-1]
+  #N_st3 <- N_s_test_3[i-1]
   E3 <- E_simu3[i-1]
-  E_t3 <- E_test3[i-1]
+  #E_t3 <- E_test3[i-1]
   C_s3 <- C_s_simu3[i-1]
   C_w3 <- C_w_simu3[i-1]
   cpue_s3 <- cpue_s_simu3[i-1]
@@ -1469,16 +1426,16 @@ for(i in 2:length(tset)) {
   pi_w3 <- Pi_w_simu3[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s3 <- (N_s3 * (r_s3 * (1 - (N_s3/k_s3)) - q_s3 * E3)) * dt
-  dN_w3 <- (N_w3 * (r_w3 * (1 - (N_w3/k_w3)) - q_w3 * E3)) * dt
-  dN_st3 <- (N_st3 * (r_s3 * (1 - (N_st3/k_s3)) - q_s3 * E_t3)) * dt
-  dN_wt3 <- (N_wt3 * (r_w3 * (1 - (N_wt3/k_w3)) - q_w3 * E_t3)) * dt
-  dE3 <- (alpha * E3 * (p_s3 * q_s3 * N_s3 + p_w3 * q_w3 * N_w3 - c)) * dt
-  dE_test3 <- ((p_s3 * q_s3 * N_st3 + p_w3 * q_w3 * N_wt3) - c) * dt
-  dC_s3 <- (q_s3 * N_s3 * E3) * dt
-  dC_w3 <- (q_w3 * N_w3 * E3) * dt
-  dcpue_s3 <- (N_s3 / E3) * dt
-  dcpue_w3 <- (N_w3 / E3) * dt
+  dN_s3 <- (N_s3 * (r_s * (1 - (N_s3/k_s)) - q_s * E3)) * dt
+  dN_w3 <- (N_w3 * (r_w * (1 - (N_w3/k_w)) - q_w * E3)) * dt
+  #dN_st3 <- (N_st3 * (r_s3 * (1 - (N_st3/k_s3)) - q_s3 * E_t3)) * dt
+  #dN_wt3 <- (N_wt3 * (r_w3 * (1 - (N_wt3/k_w3)) - q_w3 * E_t3)) * dt
+  dE3 <- (alpha * E3 * (p_s3 * q_s * N_s3 + p_w3 * q_w * N_w3 - c)) * dt
+  #dE_test3 <- ((p_s3 * q_s3 * N_st3 + p_w3 * q_w3 * N_wt3) - c) * dt
+  dC_s3 <- (q_s * N_s3 * E3) * dt
+  dC_w3 <- (q_w * N_w3 * E3) * dt
+  dcpue_s3 <- (C_s3 / E3) * dt
+  dcpue_w3 <- (C_w3 / E3) * dt
   dPi_s3 <- (C_s3 * p_s3 - C_s3 * c) * dt
   dPi_w3 <- (C_w3 * p_w3 - C_w3 * c) * dt
   dPi3 <- (C_s3 * p_s3 + C_w3 * p_w3 - ((C_s3 + C_w3) * c)) * dt
@@ -1487,10 +1444,10 @@ for(i in 2:length(tset)) {
   
   N_w_simu3[i] <- N_w3 + dN_w3
   N_s_simu3[i] <- N_s3 + dN_s3
-  N_w_test_3[i] <- N_wt3 + dN_wt3
-  N_s_test_3[i] <- N_st3 + dN_st3
+  #N_w_test_3[i] <- N_wt3 + dN_wt3
+  #N_s_test_3[i] <- N_st3 + dN_st3
   E_simu3[i] <- E3 + dE3
-  E_test3[i] <- E_t3 + dE_test3
+  #E_test3[i] <- E_t3 + dE_test3
   C_s_simu3[i] <- C_s3 + dC_s3
   C_w_simu3[i] <- C_w3 + dC_w3
   cpue_s_simu3[i] <- cpue_s3 + dcpue_s3
@@ -1503,45 +1460,10 @@ for(i in 2:length(tset)) {
 ```
 
 
-```{r, echo = FALSE, include = FALSE}
-plot(x = tset, y = N_s_simu3,
-     type = "l",
-     col = "blue",
-     las = 1,
-     lwd = 2,
-     ylim = c(0, 15),
-     xlab = "Time", ylab = "Variable size")
-lines(x = tset, y = N_w_simu3,
-      type = "l", col = "orange")
-lines(x = tset, y = E_simu3,
-      type = "l", col = "green")
-title(main = "Third simulation - Price ratio = 0.1",
-      sub = "Params: q_s = 0.1, q_w = 0.1, r_s = 0.75, r_w = 0.25, k_s = 4, k_w = 2, p_s = 10, p_w = 2")
-legend(x = 80, y = 14,
-       lwd = 2,
-       legend = c("Ns", "Nw", "E"),
-       col = c("blue", "orange", "green"))
-```
-
 ```{r scenario 4 price ratio 1, echo = FALSE}
 # set up the parameter space
-q_s4 <- 0.1
-q_w4 <- 0.1
-k_s4 <- 4
-k_w4 <- 2
-r_s4 <- 0.75
-r_w4 <- 0.25
 p_s4 <- 1
 p_w4 <- 1
-alpha <- 1
-c <- 0.05
-
-# Initial values for the variables
-N_w <- k_w4
-
-N_s <- k_s4
-
-E <- 0.1
 ```
 
 ```{r, echo = FALSE}
@@ -1551,13 +1473,13 @@ N_w_simu4 <- NaN*tset; N_w_simu4[1] <- N_w
 
 N_s_simu4 <- NaN*tset; N_s_simu4[1] <- N_s
 
-N_w_test_4 <- NaN*tset; N_w_test_4[1] <- N_w
+#N_w_test_4 <- NaN*tset; N_w_test_4[1] <- N_w
 
-N_s_test_4 <- NaN*tset; N_s_test_4[1] <- N_s
+#N_s_test_4 <- NaN*tset; N_s_test_4[1] <- N_s
 
 E_simu4 <- NaN*tset; E_simu4[1] <- E
 
-E_test4 <- NaN*tset; E_test4[1] <- E
+#E_test4 <- NaN*tset; E_test4[1] <- E
 
 C_s_simu4 <- NaN*tset; C_s_simu4[1] <- 1
 
@@ -1583,10 +1505,10 @@ for(i in 2:length(tset)) {
   # placeholder variables to plug into the equations
   N_w4 <- N_w_simu4[i-1]
   N_s4 <- N_s_simu4[i-1]
-  N_wt4 <- N_w_test_4[i-1]
-  N_st4 <- N_s_test_4[i-1]
+  #N_wt4 <- N_w_test_4[i-1]
+  #N_st4 <- N_s_test_4[i-1]
   E4 <- E_simu4[i-1]
-  E_t4 <- E_test4[i-1]
+  #E_t4 <- E_test4[i-1]
   C_s4 <- C_s_simu4[i-1]
   C_w4 <- C_w_simu4[i-1]
   cpue_s4 <- cpue_s_simu4[i-1]
@@ -1596,16 +1518,16 @@ for(i in 2:length(tset)) {
   pi_w4 <- Pi_w_simu4[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s4 <- (N_s4 * (r_s4 * (1 - (N_s4/k_s4)) - q_s4 * E4)) * dt
-  dN_w4 <- (N_w4 * (r_w4 * (1 - (N_w4/k_w4)) - q_w4 * E4)) * dt
-  dN_st4 <- (N_st4 * (r_s4 * (1 - (N_st4/k_s4)) - q_s4 * E_t4)) * dt
-  dN_wt4 <- (N_wt4 * (r_w4 * (1 - (N_wt4/k_w4)) - q_w4 * E_t4)) * dt
-  dE4 <- (alpha * E4 * (p_s4 * q_s4 * N_s4 + p_w4 * q_w4 * N_w4 - c)) * dt
-  dE_test4 <- ((p_s4 * q_s4 * N_st4 + p_w4 * q_w4 * N_wt4) - c) * dt
-  dC_s4 <- (q_s4 * N_s4 * E4) * dt
-  dC_w4 <- (q_w4 * N_w4 * E4) * dt
-  dcpue_s4 <- (N_s4 / E4) * dt
-  dcpue_w4 <- (N_w4 / E4) * dt
+  dN_s4 <- (N_s4 * (r_s * (1 - (N_s4/k_s)) - q_s * E4)) * dt
+  dN_w4 <- (N_w4 * (r_w * (1 - (N_w4/k_w)) - q_w * E4)) * dt
+  #dN_st4 <- (N_st4 * (r_s4 * (1 - (N_st4/k_s4)) - q_s4 * E_t4)) * dt
+  #dN_wt4 <- (N_wt4 * (r_w4 * (1 - (N_wt4/k_w4)) - q_w4 * E_t4)) * dt
+  dE4 <- (alpha * E4 * (p_s4 * q_s * N_s4 + p_w4 * q_w * N_w4 - c)) * dt
+  #dE_test4 <- ((p_s4 * q_s4 * N_st4 + p_w4 * q_w4 * N_wt4) - c) * dt
+  dC_s4 <- (q_s * N_s4 * E4) * dt
+  dC_w4 <- (q_w * N_w4 * E4) * dt
+  dcpue_s4 <- (C_s4 / E4) * dt
+  dcpue_w4 <- (C_w4 / E4) * dt
   dPi_s4 <- (C_s4 * p_s4 - C_s4 * c) * dt
   dPi_w4 <- (C_w4 * p_w4 - C_w4 * c) * dt
   dPi4 <- (C_s4 * p_s4 + C_w4 * p_w4 - ((C_s4 + C_w4) * c)) * dt
@@ -1614,10 +1536,10 @@ for(i in 2:length(tset)) {
   
   N_w_simu4[i] <- N_w4 + dN_w4
   N_s_simu4[i] <- N_s4 + dN_s4
-  N_w_test_4[i] <- N_wt4 + dN_wt4
-  N_s_test_4[i] <- N_st4 + dN_st4
+  #N_w_test_4[i] <- N_wt4 + dN_wt4
+  #N_s_test_4[i] <- N_st4 + dN_st4
   E_simu4[i] <- E4 + dE4
-  E_test4[i] <- E_t4 + dE_test4
+  #E_test4[i] <- E_t4 + dE_test4
   C_s_simu4[i] <- C_s4 + dC_s4
   C_w_simu4[i] <- C_w4 + dC_w4
   cpue_s_simu4[i] <- cpue_s4 + dcpue_s4
@@ -1630,46 +1552,10 @@ for(i in 2:length(tset)) {
 ```
 
 
-```{r, echo = FALSE, include = FALSE}
-plot(x = tset, y = N_s_simu4,
-     type = "l",
-     col = "blue",
-     las = 1,
-     lwd = 2,
-     ylim = c(0, 12),
-     xlab = "Time", ylab = "Variable size")
-lines(x = tset, y = N_w_simu4,
-      type = "l", col = "orange")
-lines(x = tset, y = E_simu4,
-      type = "l", col = "green")
-title(main = "Fourth simulation - Price ratio = 0.01",
-      sub = "Params: q_s = 0.1, q_w = 0.1, r_s = 0.75, r_w = 0.25, k_s = 4, k_w = 2, p_s = 0.1, p_w = 10")
-legend(x = 80, y = 10,
-       lwd = 2,
-       legend = c("Ns", "Nw", "E"),
-       col = c("blue", "orange", "green"))
-```
-
-
 ```{r scenario 5 price ratio 0.75, echo = FALSE}
 # set up the parameter space
-q_s5 <- 0.1
-q_w5 <- 0.1
-k_s5 <- 4
-k_w5 <- 2
-r_s5 <- 0.75
-r_w5 <- 0.25
 p_s5 <- 0.75
 p_w5 <- 1
-alpha <- 1
-c <- 0.05
-
-# Initial values for the variables
-N_w <- k_w5
-
-N_s <- k_s5
-
-E <- 0.1
 ```
 
 ```{r, echo = FALSE}
@@ -1679,13 +1565,13 @@ N_w_simu5 <- NaN*tset; N_w_simu5[1] <- N_w
 
 N_s_simu5 <- NaN*tset; N_s_simu5[1] <- N_s
 
-N_w_test_5 <- NaN*tset; N_w_test_5[1] <- N_w
+#N_w_test_5 <- NaN*tset; N_w_test_5[1] <- N_w
 
-N_s_test_5 <- NaN*tset; N_s_test_5[1] <- N_s
+#N_s_test_5 <- NaN*tset; N_s_test_5[1] <- N_s
 
 E_simu5 <- NaN*tset; E_simu5[1] <- E
 
-E_test5 <- NaN*tset; E_test5[1] <- E
+#E_test5 <- NaN*tset; E_test5[1] <- E
 
 C_s_simu5 <- NaN*tset; C_s_simu5[1] <- 1
 
@@ -1711,10 +1597,10 @@ for(i in 2:length(tset)) {
   # placeholder variables to plug into the equations
   N_w5 <- N_w_simu5[i-1]
   N_s5 <- N_s_simu5[i-1]
-  N_wt5 <- N_w_test_5[i-1]
-  N_st5 <- N_s_test_5[i-1]
+  #N_wt5 <- N_w_test_5[i-1]
+  #N_st5 <- N_s_test_5[i-1]
   E5 <- E_simu5[i-1]
-  E_t5 <- E_test5[i-1]
+  #E_t5 <- E_test5[i-1]
   C_s5 <- C_s_simu5[i-1]
   C_w5 <- C_w_simu5[i-1]
   cpue_s5 <- cpue_s_simu5[i-1]
@@ -1724,16 +1610,16 @@ for(i in 2:length(tset)) {
   pi_w5 <- Pi_w_simu5[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s5 <- (N_s5 * (r_s5 * (1 - (N_s5/k_s5)) - q_s5 * E5)) * dt
-  dN_w5 <- (N_w5 * (r_w5 * (1 - (N_w5/k_w5)) - q_w5 * E5)) * dt
-  dN_st5 <- (N_st5 * (r_s5 * (1 - (N_st5/k_s5)) - q_s5 * E_t5)) * dt
-  dN_wt5 <- (N_wt5 * (r_w5 * (1 - (N_wt5/k_w5)) - q_w5 * E_t5)) * dt
-  dE5 <- (alpha * E5 * (p_s5 * q_s5 * N_s5 + p_w5 * q_w5 * N_w5 - c)) * dt
-  dE_test5 <- ((p_s5 * q_s5 * N_st5 + p_w5 * q_w5 * N_wt5) - c) * dt
-  dC_s5 <- (q_s5 * N_s5 * E5) * dt
-  dC_w5 <- (q_w5 * N_w5 * E5) * dt
-  dcpue_s5 <- (N_s5 / E5) * dt
-  dcpue_w5 <- (N_w5 / E5) * dt
+  dN_s5 <- (N_s5 * (r_s * (1 - (N_s5/k_s)) - q_s * E5)) * dt
+  dN_w5 <- (N_w5 * (r_w * (1 - (N_w5/k_w)) - q_w * E5)) * dt
+  #dN_st5 <- (N_st5 * (r_s5 * (1 - (N_st5/k_s5)) - q_s5 * E_t5)) * dt
+  #dN_wt5 <- (N_wt5 * (r_w5 * (1 - (N_wt5/k_w5)) - q_w5 * E_t5)) * dt
+  dE5 <- (alpha * E5 * (p_s5 * q_s * N_s5 + p_w5 * q_w * N_w5 - c)) * dt
+  #dE_test5 <- ((p_s5 * q_s5 * N_st5 + p_w5 * q_w5 * N_wt5) - c) * dt
+  dC_s5 <- (q_s * N_s5 * E5) * dt
+  dC_w5 <- (q_w * N_w5 * E5) * dt
+  dcpue_s5 <- (C_s5 / E5) * dt
+  dcpue_w5 <- (C_w5 / E5) * dt
   dPi_s5 <- (C_s5 * p_s5 - C_s5 * c) * dt
   dPi_w5 <- (C_w5 * p_w5 - C_w5 * c) * dt
   dPi5 <- (C_s5 * p_s5 + C_w5 * p_w5 - ((C_s5 + C_w5) * c)) * dt
@@ -1742,10 +1628,10 @@ for(i in 2:length(tset)) {
   
   N_w_simu5[i] <- N_w5 + dN_w5
   N_s_simu5[i] <- N_s5 + dN_s5
-  N_w_test_5[i] <- N_wt5 + dN_wt5
-  N_s_test_5[i] <- N_st5 + dN_st5
+  #N_w_test_5[i] <- N_wt5 + dN_wt5
+  #N_s_test_5[i] <- N_st5 + dN_st5
   E_simu5[i] <- E5 + dE5
-  E_test5[i] <- E_t5 + dE_test5
+  #E_test5[i] <- E_t5 + dE_test5
   C_s_simu5[i] <- C_s5 + dC_s5
   C_w_simu5[i] <- C_w5 + dC_w5
   cpue_s_simu5[i] <- cpue_s5 + dcpue_s5
@@ -1758,45 +1644,9 @@ for(i in 2:length(tset)) {
 
 
 
-```{r, echo = FALSE, include = FALSE}
-plot(x = tset, y = N_s_simu5,
-     type = "l",
-     col = "blue",
-     las = 1,
-     lwd = 2,
-     ylim = c(0, 25),
-     xlab = "Time", ylab = "Variable size")
-lines(x = tset, y = N_w_simu5,
-      type = "l", col = "orange")
-lines(x = tset, y = E_simu5,
-      type = "l", col = "green")
-title(main = "Fifth simulation - Price ratio = 2",
-      sub = "Params: q_s = 0.1, q_w = 0.1, r_s = 0.75, r_w = 0.25, k_s = 4, k_w = 2, p_s = 5, p_w = 2.5")
-legend(x = 80, y = 25,
-       lwd = 2,
-       legend = c("Ns", "Nw", "E"),
-       col = c("blue", "orange", "green"))
-```
-
 ```{r scenario 6 price ratio 0.5, echo = FALSE}
-# set up the parameter space
-q_s6 <- 0.1
-q_w6 <- 0.1
-k_s6 <- 4
-k_w6 <- 2
-r_s6 <- 0.75
-r_w6 <- 0.25
 p_s6 <- 0.5
 p_w6 <- 1
-alpha <- 1
-c <- 0.05
-
-# Initial values for the variables
-N_w <- k_w6
-
-N_s <- k_s6
-
-E <- 0.1
 ```
 
 ```{r, echo = FALSE}
@@ -1806,13 +1656,13 @@ N_w_simu6 <- NaN*tset; N_w_simu6[1] <- N_w
 
 N_s_simu6 <- NaN*tset; N_s_simu6[1] <- N_s
 
-N_w_test_6 <- NaN*tset; N_w_test_6[1] <- N_w
+#N_w_test_6 <- NaN*tset; N_w_test_6[1] <- N_w
 
-N_s_test_6 <- NaN*tset; N_s_test_6[1] <- N_s
+#N_s_test_6 <- NaN*tset; N_s_test_6[1] <- N_s
 
 E_simu6 <- NaN*tset; E_simu6[1] <- E
 
-E_test6 <- NaN*tset; E_test6[1] <- E
+#E_test6 <- NaN*tset; E_test6[1] <- E
 
 C_s_simu6 <- NaN*tset; C_s_simu6[1] <- 1
 
@@ -1838,10 +1688,10 @@ for(i in 2:length(tset)) {
   # placeholder variables to plug into the equations
   N_w6 <- N_w_simu6[i-1]
   N_s6 <- N_s_simu6[i-1]
-  N_wt6 <- N_w_test_6[i-1]
-  N_st6 <- N_s_test_6[i-1]
+  #N_wt6 <- N_w_test_6[i-1]
+  #N_st6 <- N_s_test_6[i-1]
   E6 <- E_simu6[i-1]
-  E_t6 <- E_test6[i-1]
+  #E_t6 <- E_test6[i-1]
   C_s6 <- C_s_simu6[i-1]
   C_w6 <- C_w_simu6[i-1]
   cpue_s6 <- cpue_s_simu6[i-1]
@@ -1851,16 +1701,16 @@ for(i in 2:length(tset)) {
   pi_w6 <- Pi_w_simu6[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s6 <- (N_s6 * (r_s6 * (1 - (N_s6/k_s6)) - q_s6 * E6)) * dt
-  dN_w6 <- (N_w6 * (r_w6 * (1 - (N_w6/k_w6)) - q_w6 * E6)) * dt
-  dN_st6 <- (N_st6 * (r_s6 * (1 - (N_st6/k_s6)) - q_s6 * E_t6)) * dt
-  dN_wt6 <- (N_wt6 * (r_w6 * (1 - (N_wt6/k_w6)) - q_w6 * E_t6)) * dt
-  dE6 <- (alpha * E6 * (p_s6 * q_s6 * N_s6 + p_w6 * q_w6 * N_w6 - c)) * dt
-  dE_test6 <- ((p_s6 * q_s6 * N_st6 + p_w6 * q_w6 * N_wt6) - c) * dt
-  dC_s6 <- (q_s6 * N_s6 * E6) * dt
-  dC_w6 <- (q_w6 * N_w6 * E6) * dt
-  dcpue_s6 <- (N_s6 / E6) * dt
-  dcpue_w6 <- (N_w6 / E6) * dt
+  dN_s6 <- (N_s6 * (r_s * (1 - (N_s6/k_s)) - q_s * E6)) * dt
+  dN_w6 <- (N_w6 * (r_w * (1 - (N_w6/k_w)) - q_w * E6)) * dt
+  #dN_st6 <- (N_st6 * (r_s6 * (1 - (N_st6/k_s6)) - q_s6 * E_t6)) * dt
+  #dN_wt6 <- (N_wt6 * (r_w6 * (1 - (N_wt6/k_w6)) - q_w6 * E_t6)) * dt
+  dE6 <- (alpha * E6 * (p_s6 * q_s * N_s6 + p_w6 * q_w * N_w6 - c)) * dt
+  #dE_test6 <- ((p_s6 * q_s6 * N_st6 + p_w6 * q_w6 * N_wt6) - c) * dt
+  dC_s6 <- (q_s * N_s6 * E6) * dt
+  dC_w6 <- (q_w * N_w6 * E6) * dt
+  dcpue_s6 <- (C_s6 / E6) * dt
+  dcpue_w6 <- (C_w6 / E6) * dt
   dPi_s6 <- (C_s6 * p_s6 - C_s6 * c) * dt
   dPi_w6 <- (C_w6 * p_w6 - C_w6 * c) * dt
   dPi6 <- (C_s6 * p_s6 + C_w6 * p_w6 - ((C_s6 + C_w6) * c)) * dt
@@ -1868,10 +1718,10 @@ for(i in 2:length(tset)) {
   # calculate total variable size and store in holding vectors
   N_w_simu6[i] <- N_w6 + dN_w6
   N_s_simu6[i] <- N_s6 + dN_s6
-  N_w_test_6[i] <- N_wt6 + dN_wt6
-  N_s_test_6[i] <- N_st6 + dN_st6
+  #N_w_test_6[i] <- N_wt6 + dN_wt6
+  #N_s_test_6[i] <- N_st6 + dN_st6
   E_simu6[i] <- E6 + dE6
-  E_test6[i] <- E_t6 + dE_test6
+  #E_test6[i] <- E_t6 + dE_test6
   C_s_simu6[i] <- C_s6 + dC_s6
   C_w_simu6[i] <- C_w6 + dC_w6
   cpue_s_simu6[i] <- cpue_s6 + dcpue_s6
@@ -1907,24 +1757,8 @@ legend(x = 80, y = 20,
 
 
 ```{r scenario 7 price ratio 0.25, echo = FALSE}
-# set up the parameter space
-q_s7 <- 0.1
-q_w7 <- 0.1
-k_s7 <- 4
-k_w7 <- 2
-r_s7 <- 0.75
-r_w7 <- 0.25
 p_s7 <- 0.25
 p_w7 <- 1
-alpha <- 1
-c <- 0.05
-
-# Initial values for the variables
-N_w <- k_w7
-
-N_s <- k_s7
-
-E <- 0.1
 ```
 
 ```{r, echo = FALSE}
@@ -1934,13 +1768,13 @@ N_w_simu7 <- NaN*tset; N_w_simu7[1] <- N_w
 
 N_s_simu7 <- NaN*tset; N_s_simu7[1] <- N_s
 
-N_w_test_7 <- NaN*tset; N_w_test_7[1] <- N_w
+#N_w_test_7 <- NaN*tset; N_w_test_7[1] <- N_w
 
-N_s_test_7 <- NaN*tset; N_s_test_7[1] <- N_s
+#N_s_test_7 <- NaN*tset; N_s_test_7[1] <- N_s
 
 E_simu7 <- NaN*tset; E_simu7[1] <- E
 
-E_test7 <- NaN*tset; E_test7[1] <- E
+#E_test7 <- NaN*tset; E_test7[1] <- E
 
 C_s_simu7 <- NaN*tset; C_s_simu7[1] <- 1
 
@@ -1966,10 +1800,10 @@ for(i in 2:length(tset)) {
   # placeholder variables to plug into the equations
   N_w7 <- N_w_simu7[i-1]
   N_s7 <- N_s_simu7[i-1]
-  N_wt7 <- N_w_test_7[i-1]
-  N_st7 <- N_s_test_7[i-1]
+  #N_wt7 <- N_w_test_7[i-1]
+  #N_st7 <- N_s_test_7[i-1]
   E7 <- E_simu7[i-1]
-  E_t7 <- E_test7[i-1]
+  #E_t7 <- E_test7[i-1]
   C_s7 <- C_s_simu7[i-1]
   C_w7 <- C_w_simu7[i-1]
   cpue_s7 <- cpue_s_simu7[i-1]
@@ -1979,16 +1813,16 @@ for(i in 2:length(tset)) {
   pi_w7 <- Pi_w_simu7[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s7 <- (N_s7 * (r_s7 * (1 - (N_s7/k_s7)) - q_s7 * E7)) * dt
-  dN_w7 <- (N_w7 * (r_w7 * (1 - (N_w7/k_w7)) - q_w7 * E7)) * dt
-  dN_st7 <- (N_st7 * (r_s7 * (1 - (N_st7/k_s7)) - q_s7 * E_t7)) * dt
-  dN_wt7 <- (N_wt7 * (r_w7 * (1 - (N_wt7/k_w7)) - q_w7 * E_t7)) * dt
-  dE7 <- (alpha * E7 * (p_s7 * q_s7 * N_s7 + p_w7 * q_w7 * N_w7 - c)) * dt
-  dE_test7 <- ((p_s7 * q_s7 * N_st7 + p_w7 * q_w7 * N_wt7) - c) * dt
-  dC_s7 <- (q_s7 * N_s7 * E7) * dt
-  dC_w7 <- (q_w7 * N_w7 * E7) * dt
-  dcpue_s7 <- (N_s7 / E7) * dt
-  dcpue_w7 <- (N_w7 / E7) * dt
+  dN_s7 <- (N_s7 * (r_s * (1 - (N_s7/k_s)) - q_s * E7)) * dt
+  dN_w7 <- (N_w7 * (r_w * (1 - (N_w7/k_w)) - q_w * E7)) * dt
+  #dN_st7 <- (N_st7 * (r_s7 * (1 - (N_st7/k_s7)) - q_s7 * E_t7)) * dt
+  #dN_wt7 <- (N_wt7 * (r_w7 * (1 - (N_wt7/k_w7)) - q_w7 * E_t7)) * dt
+  dE7 <- (alpha * E7 * (p_s7 * q_s * N_s7 + p_w7 * q_w * N_w7 - c)) * dt
+  #dE_test7 <- ((p_s7 * q_s7 * N_st7 + p_w7 * q_w7 * N_wt7) - c) * dt
+  dC_s7 <- (q_s * N_s7 * E7) * dt
+  dC_w7 <- (q_w * N_w7 * E7) * dt
+  dcpue_s7 <- (C_s7 / E7) * dt
+  dcpue_w7 <- (C_w7 / E7) * dt
   dPi_s7 <- (C_s7 * p_s7 - C_s7 * c) * dt
   dPi_w7 <- (C_w7 * p_w7 - C_w7 * c) * dt
   dPi7 <- (C_s7 * p_s7 + C_w7 * p_w7 - ((C_s7 + C_w7) * c)) * dt
@@ -1997,10 +1831,10 @@ for(i in 2:length(tset)) {
   
   N_w_simu7[i] <- N_w7 + dN_w7
   N_s_simu7[i] <- N_s7 + dN_s7
-  N_w_test_7[i] <- N_wt7 + dN_wt7
-  N_s_test_7[i] <- N_st7 + dN_st7
+  #N_w_test_7[i] <- N_wt7 + dN_wt7
+  #N_s_test_7[i] <- N_st7 + dN_st7
   E_simu7[i] <- E7 + dE7
-  E_test7[i] <- E_t7 + dE_test7
+  #E_test7[i] <- E_t7 + dE_test7
   C_s_simu7[i] <- C_s7 + dC_s7
   C_w_simu7[i] <- C_w7 + dC_w7
   cpue_s_simu7[i] <- cpue_s7 + dcpue_s7
@@ -2013,45 +1847,10 @@ for(i in 2:length(tset)) {
 ```
 
 
-```{r, echo = FALSE, include = FALSE}
-plot(x = tset, y = N_s_simu7,
-     type = "l",
-     col = "blue",
-     las = 1,
-     lwd = 2,
-     ylim = c(0, 40),
-     xlab = "Time", ylab = "Variable size")
-lines(x = tset, y = N_w_simu7,
-      type = "l", col = "orange")
-lines(x = tset, y = E_simu7,
-      type = "l", col = "green")
-title(main = "Seventh simulation - Price ratio = 100",
-      sub = "Params: q_s = 0.1, q_w = 0.1, r_s = 0.75, r_w = 0.25, k_s = 4, k_w = 2, p_s = 10, p_w = 1")
-legend(x = 80, y = 40,
-       lwd = 2,
-       legend = c("Ns", "Nw", "E"),
-       col = c("blue", "orange", "green"))
-```
-
 ```{r scenario 8 price ratio 0.25, echo = FALSE}
 # set up the parameter space
-q_s8 <- 0.1
-q_w8 <- 0.1
-k_s8 <- 4
-k_w8 <- 2
-r_s8 <- 0.75
-r_w8 <- 0.25
 p_s8 <- 0.1
 p_w8 <- 1
-alpha <- 1
-c <- 0.05
-
-# Initial values for the variables
-N_w <- k_w8
-
-N_s <- k_s8
-
-E <- 0.1
 ```
 
 ```{r, echo = FALSE}
@@ -2061,13 +1860,13 @@ N_w_simu8 <- NaN*tset; N_w_simu8[1] <- N_w
 
 N_s_simu8 <- NaN*tset; N_s_simu8[1] <- N_s
 
-N_w_test_8 <- NaN*tset; N_w_test_8[1] <- N_w
+#N_w_test_8 <- NaN*tset; N_w_test_8[1] <- N_w
 
-N_s_test_8 <- NaN*tset; N_s_test_8[1] <- N_s
+#N_s_test_8 <- NaN*tset; N_s_test_8[1] <- N_s
 
 E_simu8 <- NaN*tset; E_simu8[1] <- E
 
-E_test8 <- NaN*tset; E_test8[1] <- E
+#E_test8 <- NaN*tset; E_test8[1] <- E
 
 C_s_simu8 <- NaN*tset; C_s_simu8[1] <- 1
 
@@ -2093,10 +1892,10 @@ for(i in 2:length(tset)) {
   # placeholder variables to plug into the equations
   N_w8 <- N_w_simu8[i-1]
   N_s8 <- N_s_simu8[i-1]
-  N_wt8 <- N_w_test_8[i-1]
-  N_st8 <- N_s_test_8[i-1]
+  #N_wt8 <- N_w_test_8[i-1]
+  #N_st8 <- N_s_test_8[i-1]
   E8 <- E_simu8[i-1]
-  E_t8 <- E_test8[i-1]
+  #E_t8 <- E_test8[i-1]
   C_s8 <- C_s_simu8[i-1]
   C_w8 <- C_w_simu8[i-1]
   cpue_s8 <- cpue_s_simu8[i-1]
@@ -2106,16 +1905,16 @@ for(i in 2:length(tset)) {
   pi_w8 <- Pi_w_simu8[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s8 <- (N_s8 * (r_s8 * (1 - (N_s8/k_s8)) - q_s8 * E8)) * dt
-  dN_w8 <- (N_w8 * (r_w8 * (1 - (N_w8/k_w8)) - q_w8 * E8)) * dt
-  dN_st8 <- (N_st8 * (r_s8 * (1 - (N_st8/k_s8)) - q_s8 * E_t8)) * dt
-  dN_wt8 <- (N_wt8 * (r_w8 * (1 - (N_wt8/k_w8)) - q_w8 * E_t8)) * dt
-  dE8 <- (alpha * E8 * (p_s8 * q_s8 * N_s8 + p_w8 * q_w8 * N_w8 - c)) * dt
-  dE_test8 <- ((p_s8 * q_s8 * N_st8 + p_w8 * q_w8 * N_wt8) - c) * dt
-  dC_s8 <- (q_s8 * N_s8 * E8) * dt
-  dC_w8 <- (q_w8 * N_w8 * E8) * dt
-  dcpue_s8 <- (N_s8 / E8) * dt
-  dcpue_w8 <- (N_w8 / E8) * dt
+  dN_s8 <- (N_s8 * (r_s * (1 - (N_s8/k_s)) - q_s * E8)) * dt
+  dN_w8 <- (N_w8 * (r_w * (1 - (N_w8/k_w)) - q_w * E8)) * dt
+  #dN_st8 <- (N_st8 * (r_s8 * (1 - (N_st8/k_s8)) - q_s8 * E_t8)) * dt
+  #dN_wt8 <- (N_wt8 * (r_w8 * (1 - (N_wt8/k_w8)) - q_w8 * E_t8)) * dt
+  dE8 <- (alpha * E8 * (p_s8 * q_s * N_s8 + p_w8 * q_w * N_w8 - c)) * dt
+  #dE_test8 <- ((p_s8 * q_s8 * N_st8 + p_w8 * q_w8 * N_wt8) - c) * dt
+  dC_s8 <- (q_s * N_s8 * E8) * dt
+  dC_w8 <- (q_w * N_w8 * E8) * dt
+  dcpue_s8 <- (C_s8 / E8) * dt
+  dcpue_w8 <- (C_w8 / E8) * dt
   dPi_s8 <- (C_s8 * p_s8 - C_s8 * c) * dt
   dPi_w8 <- (C_w8 * p_w8 - C_w8 * c) * dt
   dPi8 <- (C_s8 * p_s8 + C_w8 * p_w8 - ((C_s8 + C_w8) * c)) * dt
@@ -2124,10 +1923,10 @@ for(i in 2:length(tset)) {
   
   N_w_simu8[i] <- N_w8 + dN_w8
   N_s_simu8[i] <- N_s8 + dN_s8
-  N_w_test_8[i] <- N_wt8 + dN_wt8
-  N_s_test_8[i] <- N_st8 + dN_st8
+  #N_w_test_8[i] <- N_wt8 + dN_wt8
+  #N_s_test_8[i] <- N_st8 + dN_st8
   E_simu8[i] <- E8 + dE8
-  E_test8[i] <- E_t8 + dE_test8
+  #E_test8[i] <- E_t8 + dE_test8
   C_s_simu8[i] <- C_s8 + dC_s8
   C_w_simu8[i] <- C_w8 + dC_w8
   cpue_s_simu8[i] <- cpue_s8 + dcpue_s8
@@ -2140,26 +1939,6 @@ for(i in 2:length(tset)) {
 }
 ```
 
-
-```{r, echo = FALSE, include = FALSE}
-plot(x = tset, y = N_s_simu8,
-     type = "l",
-     col = "blue",
-     las = 1,
-     lwd = 2,
-     ylim = c(0, 10),
-     xlab = "Time", ylab = "Variable size")
-lines(x = tset, y = N_w_simu8,
-      type = "l", col = "orange")
-lines(x = tset, y = E_simu8,
-      type = "l", col = "green")
-title(main = "Seventh simulation - Price ratio = 100",
-      sub = "Params: q_s = 0.1, q_w = 0.1, r_s = 0.75, r_w = 0.25, k_s = 4, k_w = 2, p_s = 10, p_w = 1")
-legend(x = 80, y = 10,
-       lwd = 2,
-       legend = c("Ns", "Nw", "E"),
-       col = c("blue", "orange", "green"))
-```
 
 ```{r, echo = FALSE}
 run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
@@ -2187,14 +1966,14 @@ run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
  
 }
 
-sc_1 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.75, r_w = 0.25, p_s = 1, p_w = 0.1, c = 0.05)
-sc_2 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.75, r_w = 0.25, p_s = 1, p_w = 0.2, c = 0.05)
-sc_3 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.75, r_w = 0.25, p_s = 1, p_w = 0.4, c = 0.05)
-sc_4 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.75, r_w = 0.25, p_s = 1, p_w = 1, c = 0.05)
-sc_5 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.75, r_w = 0.25, p_s = 0.75, p_w = 1, c = 0.05)
-sc_6 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.75, r_w = 0.25, p_s = 0.5, p_w = 1, c = 0.05)
-sc_7 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.75, r_w = 0.25, p_s = 0.2, p_w = 1, c = 0.05)
-sc_8 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.75, r_w = 0.25, p_s = .1, p_w = 1, c = 0.05)
+sc_1 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 0.1, c = 0.05)
+sc_2 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 0.2, c = 0.05)
+sc_3 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 0.4, c = 0.05)
+sc_4 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
+sc_5 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 0.75, p_w = 1, c = 0.05)
+sc_6 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 0.5, p_w = 1, c = 0.05)
+sc_7 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 0.2, p_w = 1, c = 0.05)
+sc_8 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = .1, p_w = 1, c = 0.05)
 
 sc_all <- bind_rows(sc_1, sc_2, sc_3, sc_4, sc_5, sc_6, sc_7, sc_8) %>% 
   rownames_to_column() %>% 
@@ -2241,14 +2020,14 @@ sc_all <- bind_rows(sc_1, sc_2, sc_3, sc_4, sc_5, sc_6, sc_7, sc_8) %>%
 
 ```{r building df for the parameter space, echo = FALSE}
 eq_par <- data.frame(parameter = c("q_w", "q_s", "k_w", "k_s", "r_w", "r_s", "p_w", "p_s", "c"),
-                     "PR_10" = c(0.1, 0.1, 4, 2, 0.75, 0.25, 1, 0.1, 0.05),
-                     "PR_5" = c(0.1, 0.1, 4, 2, 0.75, 0.25, 1, 0.2, 0.05),
-                     "PR_2.5" = c(0.1, 0.1, 4, 2, 0.75, 0.25, 1, 0.4, 0.05),
-                     "PR_1" = c(0.1, 0.1, 4, 2, 0.75, 0.25, 1, 1, 0.05),
-                     "PR_0.75" = c(0.1, 0.1, 4, 2, 0.75, 0.25, 0.75, 1, 0.05),
-                     "PR_0.5" = c(0.1, 0.1, 4, 2, 0.75, 0.25, 0.5, 1, 0.05),
-                     "PR_0.25" = c(0.1, 0.1, 4, 2, 0.75, 0.25, 0.25, 1, 0.05),
-                     "PR_0.1" = c(0.1, 0.1, 4, 2, 0.75, 0.25, 0.1, 1, 0.05))
+                     "PR_10" =  c(0.1, 0.1, 4, 2, 0.8, 0.45, 1, 0.1, 0.05),
+                     "PR_5" =   c(0.1, 0.1, 4, 2, 0.8, 0.45, 1, 0.2, 0.05),
+                     "PR_2.5" = c(0.1, 0.1, 4, 2, 0.8, 0.45, 1, 0.4, 0.05),
+                     "PR_1" =   c(0.1, 0.1, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "PR_0.75" =c(0.1, 0.1, 4, 2, 0.8, 0.45, 0.75, 1, 0.05),
+                     "PR_0.5" = c(0.1, 0.1, 4, 2, 0.8, 0.45, 0.5, 1, 0.05),
+                     "PR_0.25" =c(0.1, 0.1, 4, 2, 0.8, 0.45, 0.25, 1, 0.05),
+                     "PR_0.1" = c(0.1, 0.1, 4, 2, 0.8, 0.45, 0.1, 1, 0.05))
 
 eq_par %>% 
   gt() %>%
@@ -2275,21 +2054,21 @@ effort_df <- cbind(E_simu1, E_simu2, E_simu3, E_simu4, E_simu5, E_simu6, E_simu7
     str_detect(variable, "8") ~ "8")
          )
 
-effort_test_df <- cbind(E_test1, E_test2, E_test3, E_test4, E_test5, E_test6, E_test7, E_test8, tset) %>% 
-  as.data.frame() %>% 
-  pivot_longer(cols = starts_with("E_"),
-               names_to = "variable",
-               values_to = "value") %>% 
-  mutate(scenario_id = case_when(
-    str_detect(variable, "1") ~ "1",
-    str_detect(variable, "2") ~ "2",
-    str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "7",
-    str_detect(variable, "8") ~ "8")
-    )
+# effort_test_df <- cbind(E_test1, E_test2, E_test3, E_test4, E_test5, E_test6, E_test7, E_test8, tset) %>% 
+#   as.data.frame() %>% 
+#   pivot_longer(cols = starts_with("E_"),
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id = case_when(
+#     str_detect(variable, "1") ~ "1",
+#     str_detect(variable, "2") ~ "2",
+#     str_detect(variable, "3") ~ "3",
+#     str_detect(variable, "4") ~ "4",
+#     str_detect(variable, "5") ~ "5",
+#     str_detect(variable, "6") ~ "6",
+#     str_detect(variable, "7") ~ "7",
+#     str_detect(variable, "8") ~ "8")
+#     )
 
 nw_df <- cbind(N_w_simu1, N_w_simu2, N_w_simu3, N_w_simu4, N_w_simu5, N_w_simu6, N_w_simu7,N_w_simu8, tset) %>% 
   as.data.frame() %>% 
@@ -2324,37 +2103,37 @@ ns_df <- cbind(N_s_simu1, N_s_simu2, N_s_simu3, N_s_simu4, N_s_simu5, N_s_simu6,
     str_detect(variable, "8") ~ "8")) %>% 
   mutate(b_v_k = value/4)
 
-ns_t_df <- cbind(N_s_test_1, N_s_test_2, N_s_test_3, N_s_test_4, N_s_test_5, N_s_test_6, N_s_test_7, N_s_test_8, tset) %>% 
-  as.data.frame() %>% 
-  pivot_longer(cols = starts_with("N_s_test_"),
-               names_to = "variable",
-               values_to = "value") %>% 
-  mutate(scenario_id = case_when(
-    str_detect(variable, "1") ~ "1",
-    str_detect(variable, "2") ~ "2",
-    str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "7",
-    str_detect(variable, "8") ~ "8")) %>% 
-  mutate(b_v_k = value/4)
-
-nw_t_df <- cbind(N_w_test_1, N_w_test_2, N_w_test_3, N_w_test_4, N_w_test_5, N_w_test_6, N_w_test_7, N_w_test_8, tset) %>% 
-  as.data.frame() %>% 
-  pivot_longer(cols = starts_with("N_w_test_"),
-               names_to = "variable",
-               values_to = "value") %>% 
-  mutate(scenario_id = case_when(
-    str_detect(variable, "1") ~ "1",
-    str_detect(variable, "2") ~ "2",
-    str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "7",
-    str_detect(variable, "8") ~ "8")) %>% 
-  mutate(b_v_k = value/2)
+# ns_t_df <- cbind(N_s_test_1, N_s_test_2, N_s_test_3, N_s_test_4, N_s_test_5, N_s_test_6, N_s_test_7, N_s_test_8, tset) %>% 
+#   as.data.frame() %>% 
+#   pivot_longer(cols = starts_with("N_s_test_"),
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id = case_when(
+#     str_detect(variable, "1") ~ "1",
+#     str_detect(variable, "2") ~ "2",
+#     str_detect(variable, "3") ~ "3",
+#     str_detect(variable, "4") ~ "4",
+#     str_detect(variable, "5") ~ "5",
+#     str_detect(variable, "6") ~ "6",
+#     str_detect(variable, "7") ~ "7",
+#     str_detect(variable, "8") ~ "8")) %>% 
+#   mutate(b_v_k = value/4)
+# 
+# nw_t_df <- cbind(N_w_test_1, N_w_test_2, N_w_test_3, N_w_test_4, N_w_test_5, N_w_test_6, N_w_test_7, N_w_test_8, tset) %>% 
+#   as.data.frame() %>% 
+#   pivot_longer(cols = starts_with("N_w_test_"),
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id = case_when(
+#     str_detect(variable, "1") ~ "1",
+#     str_detect(variable, "2") ~ "2",
+#     str_detect(variable, "3") ~ "3",
+#     str_detect(variable, "4") ~ "4",
+#     str_detect(variable, "5") ~ "5",
+#     str_detect(variable, "6") ~ "6",
+#     str_detect(variable, "7") ~ "7",
+#     str_detect(variable, "8") ~ "8")) %>% 
+#   mutate(b_v_k = value/2)
 
 catch_s_df <- cbind(C_s_simu1, C_s_simu2, C_s_simu3, C_s_simu4, C_s_simu5, C_s_simu6, C_s_simu7, C_s_simu8, tset) %>% 
   as.data.frame() %>% 
@@ -2465,7 +2244,7 @@ profits_w_df <- cbind(Pi_w_simu1, Pi_w_simu2, Pi_w_simu3, Pi_w_simu4, Pi_w_simu5
 
 # Gathered the results from each model scenario run into a single df
 
-var_full <- bind_rows(effort_df, effort_test_df, nw_df, ns_df, ns_t_df, nw_t_df, catch_s_df, catch_w_df, cpue_s_df, cpue_w_df, profits_df, profits_w_df, profits_s_df)
+var_full <- bind_rows(effort_df, nw_df, ns_df, catch_s_df, catch_w_df, cpue_s_df, cpue_w_df, profits_df, profits_w_df, profits_s_df)
 
 # Tidy dataset for plotting
 
@@ -2536,43 +2315,43 @@ equal_scales_EWS <-
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
 
-equal_scales_EWS_test <-
-  var_plot %>% 
-  filter(variable_clean %in% c("Effort test", "Weak stock test", "Strong stock test")) %>% 
-  ggplot() +
-  geom_line(aes(x = tset/100, y = value, color = variable_clean),
-            size = .8,
-            alpha = .8,
-            show.legend = T) +
-  geom_point(data = sc_all, 
-             aes(x = tset, y = value, color = variable)) +
-  geom_point(data = sc_all, 
-             aes(x = tset, y = ef_value, color = effort)) +
-  facet_wrap(~ factor(price_ratio, 
-                      levels = c("PR = 10",
-                                 "PR = 5",
-                                 "PR = 2.5",
-                                 "PR = 1",
-                                 "PR = 0.75",
-                                 "PR = 0.5",
-                                 "PR = 0.25",
-                                 "PR = 0.1")),
-             nrow = 1) +
-  scale_color_manual(values = c("#1B9E77", "#1B9E77", "#D95F02", "#7570B3",  "#D95F02", "#7570B3")) +
-#  scale_y_continuous(breaks = seq(0, 50, 10)) +
-  labs(x = "",
-       y = "Nw, Ns, E",
-       color = "") +
-  theme_bw() +
-  theme(panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.minor.y = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        strip.text = element_text(color = "black", size = 11),
-        axis.title.x = element_text(color = "black", size = 12),
-        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
-        axis.text = element_text(color = "black", size = 10),
-        legend.position = "bottom")
+# equal_scales_EWS_test <-
+#   var_plot %>% 
+#   filter(variable_clean %in% c("Effort test", "Weak stock test", "Strong stock test")) %>% 
+#   ggplot() +
+#   geom_line(aes(x = tset/100, y = value, color = variable_clean),
+#             size = .8,
+#             alpha = .8,
+#             show.legend = T) +
+#   geom_point(data = sc_all, 
+#              aes(x = tset, y = value, color = variable)) +
+#   geom_point(data = sc_all, 
+#              aes(x = tset, y = ef_value, color = effort)) +
+#   facet_wrap(~ factor(price_ratio, 
+#                       levels = c("PR = 10",
+#                                  "PR = 5",
+#                                  "PR = 2.5",
+#                                  "PR = 1",
+#                                  "PR = 0.75",
+#                                  "PR = 0.5",
+#                                  "PR = 0.25",
+#                                  "PR = 0.1")),
+#              nrow = 1) +
+#   scale_color_manual(values = c("#1B9E77", "#1B9E77", "#D95F02", "#7570B3",  "#D95F02", "#7570B3")) +
+# #  scale_y_continuous(breaks = seq(0, 50, 10)) +
+#   labs(x = "",
+#        y = "Nw, Ns, E",
+#        color = "") +
+#   theme_bw() +
+#   theme(panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank(),
+#         panel.grid.minor.y = element_blank(),
+#         strip.background = element_rect(fill = "transparent"),
+#         strip.text = element_text(color = "black", size = 11),
+#         axis.title.x = element_text(color = "black", size = 12),
+#         axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+#         axis.text = element_text(color = "black", size = 10),
+#         legend.position = "bottom")
 
 dif_scales <-
   var_plot %>% 
@@ -2681,22 +2460,2351 @@ equal_scales_pi <-
 
 ```{r, fig.height=15, fig.width=10, echo = FALSE}
 equal_scales_EWS /
-  equal_scales_EWS_test /
   dif_scales /
   equal_scales_CPE /
   equal_scales_pi +
   plot_annotation(tag_level = "A") 
 ```
 
-Panel A shows the time series dynamics for the strong and weak stocks, and effort. Panel B plots a different effort equation ($$\frac{dE}{dt} = (p_s  q_s  N_S + p_w q_w N_W) - c$$). Panel C shows the same data but without effort for better comparison. Panel C shows the CPUE and catch for the strong and weak stocks separately. Panel D shows the profits for the strong and weak stocks, and the total profits for the fishery through time.
+Panel A shows the time series dynamics for the strong and weak stocks, and effort. Panel B shows the same data but without effort for better comparison. Panel C shows the CPUE and catch for the strong and weak stocks separately. Panel D shows the profits for the strong and weak stocks, and the total profits for the fishery through time.
+
+**Negative equilibrium points for the weak stock only occur at high enough prices of the strong stock. If the price ratio ($PR = P_s/P_w$) is smaller than 0.25, both stock have positive equilibrium points (at a growth rate ratio ($r_s/r_w$) of ~2).**
 
 - I think this figure (or a better version of it) should also go in the paper, because it clearly shows how effort increases a lot when we consider two species, and how it drives both of them to extremely low levels for most of the scenarios, but not all. 
 
-$$
-\begin{align}
-PR &= \frac{P_s}{P_w}
-\end{align}
-$$.
+
+### Scenarios for a range of productivity ratios:
+
+```{r scenario 1 productivity ratio 2, echo = FALSE}
+# set up the parameter space
+q_s <- 0.1
+q_w <- 0.1
+k_s <- 4
+k_w <- 2
+r_s1 <- 1
+r_w1 <- 0.5
+p_s <- 1
+p_w <- 1
+alpha <- 1
+c <- 0.05
+
+# Initial values for the variables
+N_w <- k_w
+
+N_s <- k_s
+
+E <- 0.1
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 500, length.out = 10000)
+
+N_w_simu1 <- NaN*tset; N_w_simu1[1] <- N_w
+
+N_s_simu1 <- NaN*tset; N_s_simu1[1] <- N_s
+
+#N_w_test_1 <- NaN*tset; N_w_test_1[1] <- N_w
+
+#N_s_test_1 <- NaN*tset; N_s_test_1[1] <- N_s
+
+E_simu1 <- NaN*tset; E_simu1[1] <- E
+
+#E_test1 <- NaN*tset; E_test1[1] <- E
+
+C_s_simu1 <- NaN*tset; C_s_simu1[1] <- 1
+
+C_w_simu1 <- NaN*tset; C_w_simu1[1] <- 1
+
+cpue_s_simu1 <- NaN*tset; cpue_s_simu1[1] <- 1
+
+cpue_w_simu1 <- NaN*tset; cpue_w_simu1[1] <- 1
+
+Pi_sum_simu1 <- NaN*tset; Pi_sum_simu1[1] <- 2
+
+Pi_s_simu1 <- NaN*tset; Pi_s_simu1[1] <- 1
+
+Pi_w_simu1 <- NaN*tset; Pi_w_simu1[1] <- 1
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w1 <- N_w_simu1[i-1]
+  N_s1 <- N_s_simu1[i-1]
+  #N_wt1 <- N_w_test_1[i-1]
+  #N_st1 <- N_s_test_1[i-1]
+  E1 <- E_simu1[i-1]
+  #E_t1 <- E_test1[i-1]
+  C_s1 <- C_s_simu1[i-1]
+  C_w1 <- C_w_simu1[i-1]
+  cpue_s1 <- cpue_s_simu1[i-1]
+  cpue_w1 <- cpue_w_simu1[i-1]
+  pi1 <- Pi_sum_simu1[i-1]
+  pi_s1 <- Pi_s_simu1[i-1]
+  pi_w1 <- Pi_w_simu1[i-1]
+    
+  # Calculate change in variable size at each time step
+  dN_s1 <- (N_s1 * (r_s1 * (1 - (N_s1/k_s)) - q_s * E1)) * dt
+  dN_w1 <- (N_w1 * (r_w1 * (1 - (N_w1/k_w)) - q_w * E1)) * dt
+  #dN_st1 <- (N_st1 * (r_s * (1 - (N_st1/k_s)) - q_s * E_t1)) * dt
+  #dN_wt1 <- (N_wt1 * (r_w * (1 - (N_wt1/k_w)) - q_w * E_t1)) * dt
+  dE1 <- (alpha * E1 * (p_s * q_s * N_s1 + p_w * q_w * N_w1 - c)) * dt
+  #dE_test1 <- ((p_s1 * q_s1 * N_st1 + p_w1 * q_w1 * N_wt1) - c) * dt
+  dC_s1 <- (q_s * N_s1 * E1) * dt
+  dC_w1 <- (q_w * N_w1 * E1) * dt
+  dcpue_s1 <- (C_s1 / E1) * dt
+  dcpue_w1 <- (C_w1 / E1) * dt
+  dPi_s1 <- (C_s1 * p_s - C_s1 * c) * dt
+  dPi_w1 <- (C_w1 * p_w - C_w1 * c) * dt
+  dPi1 <- (C_s1 * p_s + C_w1 * p_w - ((C_s1 + C_w1) * c)) * dt
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu1[i] <- N_w1 + dN_w1
+  N_s_simu1[i] <- N_s1 + dN_s1
+  #N_w_test_1[i] <- N_wt1 + dN_wt1
+  #N_s_test_1[i] <- N_st1 + dN_st1
+  E_simu1[i] <- E1 + dE1
+  #E_test1[i] <- E_t1 + dE_test1
+  C_s_simu1[i] <- C_s1 + dC_s1
+  C_w_simu1[i] <- C_w1 + dC_w1
+  cpue_s_simu1[i] <- cpue_s1 + dcpue_s1
+  cpue_w_simu1[i] <- cpue_w1 + dcpue_w1
+  Pi_sum_simu1[i] <- pi1 + dPi1
+  Pi_s_simu1[i] <- pi_s1 + dPi_s1
+  Pi_w_simu1[i] <- pi_w1 + dPi_w1
+  
+}
+  
+
+```
+
+
+```{r scenario 2 productivity ratio 1.75, echo = FALSE}
+r_s2 <- 1
+r_w2 <- 0.57
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 500, length.out = 10000)
+
+N_w_simu2 <- NaN*tset; N_w_simu2[1] <- N_w
+
+N_s_simu2 <- NaN*tset; N_s_simu2[1] <- N_s
+
+#N_w_test_2 <- NaN*tset; N_w_test_2[1] <- N_w
+
+#N_s_test_2 <- NaN*tset; N_s_test_2[1] <- N_s
+
+E_simu2 <- NaN*tset; E_simu2[1] <- E
+
+#E_test2 <- NaN*tset; E_test2[1] <- E
+
+C_s_simu2 <- NaN*tset; C_s_simu2[1] <- 1
+
+C_w_simu2 <- NaN*tset; C_w_simu2[1] <- 1
+
+cpue_s_simu2 <- NaN*tset; cpue_s_simu2[1] <- 1
+
+cpue_w_simu2 <- NaN*tset; cpue_w_simu2[1] <- 1
+
+Pi_sum_simu2 <- NaN*tset; Pi_sum_simu2[1] <- 2
+
+Pi_s_simu2 <- NaN*tset; Pi_s_simu2[1] <- 1
+
+Pi_w_simu2 <- NaN*tset; Pi_w_simu2[1] <- 1
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w2 <- N_w_simu2[i-1]
+  N_s2 <- N_s_simu2[i-1]
+  #N_wt2 <- N_w_test_2[i-1]
+  #N_st2 <- N_s_test_2[i-1]
+  E2 <- E_simu2[i-1]
+  #E_t2 <- E_test2[i-1]
+  C_s2 <- C_s_simu2[i-1]
+  C_w2 <- C_w_simu2[i-1]
+  cpue_s2 <- cpue_s_simu2[i-1]
+  cpue_w2 <- cpue_w_simu2[i-1]
+  pi2 <- Pi_sum_simu2[i-1]
+  pi_s2 <- Pi_s_simu2[i-1]
+  pi_w2 <- Pi_w_simu2[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s2 <- (N_s2 * (r_s2 * (1 - (N_s2/k_s)) - q_s * E2)) * dt
+  dN_w2 <- (N_w2 * (r_w2 * (1 - (N_w2/k_w)) - q_w * E2)) * dt
+  #dN_st2 <- (N_st2 * (r_s2 * (1 - (N_st2/k_s2)) - q_s2 * E_t2)) * dt
+  #dN_wt2 <- (N_wt2 * (r_w2 * (1 - (N_wt2/k_w2)) - q_w2 * E_t2)) * dt
+  dE2 <- (alpha * E2 * (p_s * q_s * N_s2 + p_w * q_w * N_w2 - c)) * dt
+  #dE_test2 <- ((p_s2 * q_s2 * N_st2 + p_w2 * q_w2 * N_wt2) - c) * dt
+  dC_s2 <- (q_s * N_s2 * E2) * dt
+  dC_w2 <- (q_w * N_w2 * E2) * dt
+  dcpue_s2 <- (C_s2 / E2) * dt
+  dcpue_w2 <- (C_w2 / E2) * dt
+  dPi_s2 <- (C_s2 * p_s - C_s2 * c) * dt
+  dPi_w2 <- (C_w2 * p_w - C_w2 * c) * dt
+  dPi2 <- (C_s2 * p_s + C_w2 * p_w - ((C_s2 + C_w2) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu2[i] <- N_w2 + dN_w2
+  N_s_simu2[i] <- N_s2 + dN_s2
+  #N_w_test_2[i] <- N_wt2 + dN_wt2
+  #N_s_test_2[i] <- N_st2 + dN_st2
+  E_simu2[i] <- E2 + dE2
+  #E_test2[i] <- E_t2 + dE_test2
+  C_s_simu2[i] <- C_s2 + dC_s2
+  C_w_simu2[i] <- C_w2 + dC_w2
+  cpue_s_simu2[i] <- cpue_s2 + dcpue_s2
+  cpue_w_simu2[i] <- cpue_w2 + dcpue_w2
+  Pi_sum_simu2[i] <- pi2 + dPi2
+  Pi_s_simu2[i] <- pi_s2 + dPi_s2
+  Pi_w_simu2[i] <- pi_w2 + dPi_w2
+}
+```
+
+
+
+```{r scenario 3 productivity ratio 1.5, echo = FALSE}
+# set up the parameter space
+r_s3 <- 1
+r_w3 <- 0.69
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 500, length.out = 10000)
+
+N_w_simu3 <- NaN*tset; N_w_simu3[1] <- N_w
+
+N_s_simu3 <- NaN*tset; N_s_simu3[1] <- N_s
+
+#N_w_test_3 <- NaN*tset; N_w_test_3[1] <- N_w
+
+#N_s_test_3 <- NaN*tset; N_s_test_3[1] <- N_s
+
+E_simu3 <- NaN*tset; E_simu3[1] <- E
+
+#E_test3 <- NaN*tset; E_test3[1] <- E
+
+C_s_simu3 <- NaN*tset; C_s_simu3[1] <- 1
+
+C_w_simu3 <- NaN*tset; C_w_simu3[1] <- 1
+
+cpue_s_simu3 <- NaN*tset; cpue_s_simu3[1] <- 1
+
+cpue_w_simu3 <- NaN*tset; cpue_w_simu3[1] <- 1
+
+Pi_sum_simu3 <- NaN*tset; Pi_sum_simu3[1] <- 2
+
+Pi_s_simu3 <- NaN*tset; Pi_s_simu3[1] <- 1
+
+Pi_w_simu3 <- NaN*tset; Pi_w_simu3[1] <- 1
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w3 <- N_w_simu3[i-1]
+  N_s3 <- N_s_simu3[i-1]
+  #N_wt3 <- N_w_test_3[i-1]
+  #N_st3 <- N_s_test_3[i-1]
+  E3 <- E_simu3[i-1]
+  #E_t3 <- E_test3[i-1]
+  C_s3 <- C_s_simu3[i-1]
+  C_w3 <- C_w_simu3[i-1]
+  cpue_s3 <- cpue_s_simu3[i-1]
+  cpue_w3 <- cpue_w_simu3[i-1]
+  pi3 <- Pi_sum_simu3[i-1]
+  pi_s3 <- Pi_s_simu3[i-1]
+  pi_w3 <- Pi_w_simu3[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s3 <- (N_s3 * (r_s2 * (1 - (N_s3/k_s)) - q_s * E3)) * dt
+  dN_w3 <- (N_w3 * (r_w2 * (1 - (N_w3/k_w)) - q_w * E3)) * dt
+  #dN_st3 <- (N_st3 * (r_s3 * (1 - (N_st3/k_s3)) - q_s3 * E_t3)) * dt
+  #dN_wt3 <- (N_wt3 * (r_w3 * (1 - (N_wt3/k_w3)) - q_w3 * E_t3)) * dt
+  dE3 <- (alpha * E3 * (p_s * q_s * N_s3 + p_w * q_w * N_w3 - c)) * dt
+  #dE_test3 <- ((p_s3 * q_s3 * N_st3 + p_w3 * q_w3 * N_wt3) - c) * dt
+  dC_s3 <- (q_s * N_s3 * E3) * dt
+  dC_w3 <- (q_w * N_w3 * E3) * dt
+  dcpue_s3 <- (C_s3 / E3) * dt
+  dcpue_w3 <- (C_w3 / E3) * dt
+  dPi_s3 <- (C_s3 * p_s - C_s3 * c) * dt
+  dPi_w3 <- (C_w3 * p_w - C_w3 * c) * dt
+  dPi3 <- (C_s3 * p_s + C_w3 * p_w - ((C_s3 + C_w3) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu3[i] <- N_w3 + dN_w3
+  N_s_simu3[i] <- N_s3 + dN_s3
+  #N_w_test_3[i] <- N_wt3 + dN_wt3
+  #N_s_test_3[i] <- N_st3 + dN_st3
+  E_simu3[i] <- E3 + dE3
+  #E_test3[i] <- E_t3 + dE_test3
+  C_s_simu3[i] <- C_s3 + dC_s3
+  C_w_simu3[i] <- C_w3 + dC_w3
+  cpue_s_simu3[i] <- cpue_s3 + dcpue_s3
+  cpue_w_simu3[i] <- cpue_w3 + dcpue_w3
+  Pi_sum_simu3[i] <- pi3 + dPi3
+  Pi_s_simu3[i] <- pi_s3 + dPi_s3
+  Pi_w_simu3[i] <- pi_w3 + dPi_w3
+
+}
+```
+
+
+```{r scenario 4 productivity ratio 1.25, echo = FALSE}
+# set up the parameter space
+r_s4 <- 1
+r_w4 <- 0.8
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 500, length.out = 10000)
+
+N_w_simu4 <- NaN*tset; N_w_simu4[1] <- N_w
+
+N_s_simu4 <- NaN*tset; N_s_simu4[1] <- N_s
+
+#N_w_test_4 <- NaN*tset; N_w_test_4[1] <- N_w
+
+#N_s_test_4 <- NaN*tset; N_s_test_4[1] <- N_s
+
+E_simu4 <- NaN*tset; E_simu4[1] <- E
+
+#E_test4 <- NaN*tset; E_test4[1] <- E
+
+C_s_simu4 <- NaN*tset; C_s_simu4[1] <- 1
+
+C_w_simu4 <- NaN*tset; C_w_simu4[1] <- 1
+
+cpue_s_simu4 <- NaN*tset; cpue_s_simu4[1] <- 1
+
+cpue_w_simu4 <- NaN*tset; cpue_w_simu4[1] <- 1
+
+Pi_sum_simu4 <- NaN*tset; Pi_sum_simu4[1] <- 2
+
+Pi_s_simu4 <- NaN*tset; Pi_s_simu4[1] <- 1
+
+Pi_w_simu4 <- NaN*tset; Pi_w_simu4[1] <- 1
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w4 <- N_w_simu4[i-1]
+  N_s4 <- N_s_simu4[i-1]
+  #N_wt4 <- N_w_test_4[i-1]
+  #N_st4 <- N_s_test_4[i-1]
+  E4 <- E_simu4[i-1]
+  #E_t4 <- E_test4[i-1]
+  C_s4 <- C_s_simu4[i-1]
+  C_w4 <- C_w_simu4[i-1]
+  cpue_s4 <- cpue_s_simu4[i-1]
+  cpue_w4 <- cpue_w_simu4[i-1]
+  pi4 <- Pi_sum_simu4[i-1]
+  pi_s4 <- Pi_s_simu4[i-1]
+  pi_w4 <- Pi_w_simu4[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s4 <- (N_s4 * (r_s4 * (1 - (N_s4/k_s)) - q_s * E4)) * dt
+  dN_w4 <- (N_w4 * (r_w4 * (1 - (N_w4/k_w)) - q_w * E4)) * dt
+  #dN_st4 <- (N_st4 * (r_s4 * (1 - (N_st4/k_s4)) - q_s4 * E_t4)) * dt
+  #dN_wt4 <- (N_wt4 * (r_w4 * (1 - (N_wt4/k_w4)) - q_w4 * E_t4)) * dt
+  dE4 <- (alpha * E4 * (p_s * q_s * N_s4 + p_w * q_w * N_w4 - c)) * dt
+  #dE_test4 <- ((p_s4 * q_s4 * N_st4 + p_w4 * q_w4 * N_wt4) - c) * dt
+  dC_s4 <- (q_s * N_s4 * E4) * dt
+  dC_w4 <- (q_w * N_w4 * E4) * dt
+  dcpue_s4 <- (C_s4 / E4) * dt
+  dcpue_w4 <- (C_w4 / E4) * dt
+  dPi_s4 <- (C_s4 * p_s - C_s4 * c) * dt
+  dPi_w4 <- (C_w4 * p_w - C_w4 * c) * dt
+  dPi4 <- (C_s4 * p_s + C_w4 * p_w - ((C_s4 + C_w4) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu4[i] <- N_w4 + dN_w4
+  N_s_simu4[i] <- N_s4 + dN_s4
+  #N_w_test_4[i] <- N_wt4 + dN_wt4
+  #N_s_test_4[i] <- N_st4 + dN_st4
+  E_simu4[i] <- E4 + dE4
+  #E_test4[i] <- E_t4 + dE_test4
+  C_s_simu4[i] <- C_s4 + dC_s4
+  C_w_simu4[i] <- C_w4 + dC_w4
+  cpue_s_simu4[i] <- cpue_s4 + dcpue_s4
+  cpue_w_simu4[i] <- cpue_w4 + dcpue_w4
+  Pi_sum_simu4[i] <- pi4 + dPi4
+  Pi_s_simu4[i] <- pi_s4 + dPi_s4
+  Pi_w_simu4[i] <- pi_w4 + dPi_w4
+  
+}
+```
+
+
+
+```{r scenario 5 productivity ratio 1.1, echo = FALSE}
+# set up the parameter space
+r_s5 <- 1
+r_w5 <- 0.9
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 500, length.out = 10000)
+
+N_w_simu5 <- NaN*tset; N_w_simu5[1] <- N_w
+
+N_s_simu5 <- NaN*tset; N_s_simu5[1] <- N_s
+
+#N_w_test_5 <- NaN*tset; N_w_test_5[1] <- N_w
+
+#N_s_test_5 <- NaN*tset; N_s_test_5[1] <- N_s
+
+E_simu5 <- NaN*tset; E_simu5[1] <- E
+
+#E_test5 <- NaN*tset; E_test5[1] <- E
+
+C_s_simu5 <- NaN*tset; C_s_simu5[1] <- 1
+
+C_w_simu5 <- NaN*tset; C_w_simu5[1] <- 1
+
+cpue_s_simu5 <- NaN*tset; cpue_s_simu5[1] <- 1
+
+cpue_w_simu5 <- NaN*tset; cpue_w_simu5[1] <- 1
+
+Pi_sum_simu5 <- NaN*tset; Pi_sum_simu5[1] <- 2
+
+Pi_s_simu5 <- NaN*tset; Pi_s_simu5[1] <- 1
+
+Pi_w_simu5 <- NaN*tset; Pi_w_simu5[1] <- 1
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w5 <- N_w_simu5[i-1]
+  N_s5 <- N_s_simu5[i-1]
+  #N_wt5 <- N_w_test_5[i-1]
+  #N_st5 <- N_s_test_5[i-1]
+  E5 <- E_simu5[i-1]
+  #E_t5 <- E_test5[i-1]
+  C_s5 <- C_s_simu5[i-1]
+  C_w5 <- C_w_simu5[i-1]
+  cpue_s5 <- cpue_s_simu5[i-1]
+  cpue_w5 <- cpue_w_simu5[i-1]
+  pi5 <- Pi_sum_simu5[i-1]
+  pi_s5 <- Pi_s_simu5[i-1]
+  pi_w5 <- Pi_w_simu5[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s5 <- (N_s5 * (r_s5 * (1 - (N_s5/k_s)) - q_s * E5)) * dt
+  dN_w5 <- (N_w5 * (r_w5 * (1 - (N_w5/k_w)) - q_w * E5)) * dt
+  #dN_st5 <- (N_st5 * (r_s5 * (1 - (N_st5/k_s5)) - q_s5 * E_t5)) * dt
+  #dN_wt5 <- (N_wt5 * (r_w5 * (1 - (N_wt5/k_w5)) - q_w5 * E_t5)) * dt
+  dE5 <- (alpha * E5 * (p_s * q_s * N_s5 + p_w * q_w * N_w5 - c)) * dt
+  #dE_test5 <- ((p_s5 * q_s5 * N_st5 + p_w5 * q_w5 * N_wt5) - c) * dt
+  dC_s5 <- (q_s * N_s5 * E5) * dt
+  dC_w5 <- (q_w * N_w5 * E5) * dt
+  dcpue_s5 <- (C_s5 / E5) * dt
+  dcpue_w5 <- (C_w5 / E5) * dt
+  dPi_s5 <- (C_s5 * p_s - C_s5 * c) * dt
+  dPi_w5 <- (C_w5 * p_w - C_w5 * c) * dt
+  dPi5 <- (C_s5 * p_s + C_w5 * p_w - ((C_s5 + C_w5) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu5[i] <- N_w5 + dN_w5
+  N_s_simu5[i] <- N_s5 + dN_s5
+  #N_w_test_5[i] <- N_wt5 + dN_wt5
+  #N_s_test_5[i] <- N_st5 + dN_st5
+  E_simu5[i] <- E5 + dE5
+  #E_test5[i] <- E_t5 + dE_test5
+  C_s_simu5[i] <- C_s5 + dC_s5
+  C_w_simu5[i] <- C_w5 + dC_w5
+  cpue_s_simu5[i] <- cpue_s5 + dcpue_s5
+  cpue_w_simu5[i] <- cpue_w5 + dcpue_w5
+  Pi_sum_simu5[i] <- pi5 + dPi5
+  Pi_s_simu5[i] <- pi_s5 + dPi_s5
+  Pi_w_simu5[i] <- pi_w5 + dPi_w5  
+}
+```
+
+
+
+
+```{r scenario 6 productivity ratio 1, echo = FALSE}
+r_s6 <- 1
+r_w6 <- 1
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 500, length.out = 10000)
+
+N_w_simu6 <- NaN*tset; N_w_simu6[1] <- N_w
+
+N_s_simu6 <- NaN*tset; N_s_simu6[1] <- N_s
+
+#N_w_test_6 <- NaN*tset; N_w_test_6[1] <- N_w
+
+#N_s_test_6 <- NaN*tset; N_s_test_6[1] <- N_s
+
+E_simu6 <- NaN*tset; E_simu6[1] <- E
+
+#E_test6 <- NaN*tset; E_test6[1] <- E
+
+C_s_simu6 <- NaN*tset; C_s_simu6[1] <- 1
+
+C_w_simu6 <- NaN*tset; C_w_simu6[1] <- 1
+
+cpue_s_simu6 <- NaN*tset; cpue_s_simu6[1] <- 1
+
+cpue_w_simu6 <- NaN*tset; cpue_w_simu6[1] <- 1
+
+Pi_sum_simu6 <- NaN*tset; Pi_sum_simu6[1] <- 2
+
+Pi_s_simu6 <- NaN*tset; Pi_s_simu6[1] <- 1
+
+Pi_w_simu6 <- NaN*tset; Pi_w_simu6[1] <- 1
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w6 <- N_w_simu6[i-1]
+  N_s6 <- N_s_simu6[i-1]
+  #N_wt6 <- N_w_test_6[i-1]
+  #N_st6 <- N_s_test_6[i-1]
+  E6 <- E_simu6[i-1]
+  #E_t6 <- E_test6[i-1]
+  C_s6 <- C_s_simu6[i-1]
+  C_w6 <- C_w_simu6[i-1]
+  cpue_s6 <- cpue_s_simu6[i-1]
+  cpue_w6 <- cpue_w_simu6[i-1]
+  pi6 <- Pi_sum_simu6[i-1]
+  pi_s6 <- Pi_s_simu6[i-1]
+  pi_w6 <- Pi_w_simu6[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s6 <- (N_s6 * (r_s6 * (1 - (N_s6/k_s)) - q_s * E6)) * dt
+  dN_w6 <- (N_w6 * (r_w6 * (1 - (N_w6/k_w)) - q_w * E6)) * dt
+  #dN_st6 <- (N_st6 * (r_s6 * (1 - (N_st6/k_s6)) - q_s6 * E_t6)) * dt
+  #dN_wt6 <- (N_wt6 * (r_w6 * (1 - (N_wt6/k_w6)) - q_w6 * E_t6)) * dt
+  dE6 <- (alpha * E6 * (p_s * q_s * N_s6 + p_w * q_w * N_w6 - c)) * dt
+  #dE_test6 <- ((p_s6 * q_s6 * N_st6 + p_w6 * q_w6 * N_wt6) - c) * dt
+  dC_s6 <- (q_s * N_s6 * E6) * dt
+  dC_w6 <- (q_w * N_w6 * E6) * dt
+  dcpue_s6 <- (C_s6 / E6) * dt
+  dcpue_w6 <- (C_w6 / E6) * dt
+  dPi_s6 <- (C_s6 * p_s - C_s6 * c) * dt
+  dPi_w6 <- (C_w6 * p_w - C_w6 * c) * dt
+  dPi6 <- (C_s6 * p_s + C_w6 * p_w - ((C_s6 + C_w6) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  N_w_simu6[i] <- N_w6 + dN_w6
+  N_s_simu6[i] <- N_s6 + dN_s6
+  #N_w_test_6[i] <- N_wt6 + dN_wt6
+  #N_s_test_6[i] <- N_st6 + dN_st6
+  E_simu6[i] <- E6 + dE6
+  #E_test6[i] <- E_t6 + dE_test6
+  C_s_simu6[i] <- C_s6 + dC_s6
+  C_w_simu6[i] <- C_w6 + dC_w6
+  cpue_s_simu6[i] <- cpue_s6 + dcpue_s6
+  cpue_w_simu6[i] <- cpue_w6 + dcpue_w6
+  Pi_sum_simu6[i] <- pi6 + dPi6
+  Pi_s_simu6[i] <- pi_s6 + dPi_s6
+  Pi_w_simu6[i] <- pi_w6 + dPi_w6  
+  
+}
+```
+
+```{r, echo = FALSE}
+run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
+ 
+  # Derive effort
+ E <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
+   (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+  
+  # Derive weak stock biomass
+ 
+  N_w <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
+    (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
+  
+ # Derive strong stock biomass
+ 
+   N_s <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
+     (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
+  
+  # Build output
+  output <- data.frame(E = E, N_s = N_s, N_w = N_w)
+ 
+  # Return
+  return(output)
+ 
+ 
+}
+
+sc_r_1 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.5, p_s = 1, p_w = 1, c = 0.05)
+sc_r_2 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.57, p_s = 1, p_w = 1, c = 0.05)
+sc_r_3 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.69, p_s = 1, p_w = 1, c = 0.05)
+sc_r_4 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.8, p_s = 1, p_w = 1, c = 0.05)
+sc_r_5 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.9, p_s = 1, p_w = 1, c = 0.05)
+sc_r_6 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 1, p_s = 1, p_w = 1, c = 0.05)
+
+sc_r_all <- bind_rows(sc_r_1, sc_r_2, sc_r_3, sc_r_4, sc_r_5, sc_r_6) %>% 
+  rownames_to_column() %>% 
+  rename(scenario = rowname) %>% 
+  mutate(tset = 5) %>% 
+  pivot_longer(cols = E:N_w,
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(price_ratio = case_when(
+    scenario == "1" ~ "RR = 2",
+    scenario == "2" ~ "RR = 1.75",
+    scenario == "3" ~ "RR = 1.5",
+    scenario == "4" ~ "RR = 1.25",
+    scenario == "5" ~ "RR = 1.1",
+    scenario == "6" ~ "RR = 1"
+  )) %>% 
+  pivot_wider(names_from = "variable",
+              values_from = "value") %>% 
+  mutate(b_values_s = N_s / k_s,
+         b_values_w = N_w / k_w) %>% 
+  pivot_longer(cols = N_s:N_w,
+               names_to = "variable",
+               values_to = "value") %>%
+  pivot_longer(cols = b_values_s:b_values_w,
+               names_to = "b_values",
+               values_to = "b_v_k") %>% 
+  pivot_longer(cols = E,
+               names_to = "effort",
+               values_to = "ef_value") %>% 
+  mutate(variable = case_when(
+    variable == "N_s" ~ "Ns*",
+    variable == "N_w" ~ "Nw*"
+  )) %>% 
+  mutate(effort = case_when(
+    effort == "E" ~ "E*"
+  )) %>% 
+  mutate(b_values = case_when(
+    str_detect(b_values, "_w") ~ "Nw/Kw*",
+    str_detect(b_values, "_s") ~ "Ns/Ks*"
+  ))
+```
+
+```{r building df for the growth rate parameter space, echo = FALSE}
+eq_par <- data.frame(parameter = c("q_w", "q_s", "k_w", "k_s", "r_w", "r_s", "p_w", "p_s", "c"),
+                     "RR_2" =    c(0.1, 0.1, 4, 2, 1, 0.5, 1, 1, 0.05),
+                     "RR_1.75" = c(0.1, 0.1, 4, 2, 1, 0.57, 1, 1, 0.05),
+                     "RR_1.5" =  c(0.1, 0.1, 4, 2, 1, 0.69, 1, 1, 0.05),
+                     "RR_1.25" = c(0.1, 0.1, 4, 2, 1, 0.8, 1, 1, 0.05),
+                     "RR_1.1" =  c(0.1, 0.1, 4, 2, 1, 0.9, 1, 1, 0.05),
+                     "RR_1" =    c(0.1, 0.1, 4, 2, 1, 1, 1, 1, 0.05))
+
+eq_par %>% 
+  gt() %>%
+  tab_header(title = "Parameter space for equilibrium points") %>% 
+  cols_align(align = "center")
+  
+```
+
+
+```{r, echo = FALSE}
+effort_df <- cbind(E_simu1, E_simu2, E_simu3, E_simu4, E_simu5, E_simu6, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("E_"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6")
+         )
+
+# effort_test_df <- cbind(E_test1, E_test2, E_test3, E_test4, E_test5, E_test6, E_test7, E_test8, tset) %>% 
+#   as.data.frame() %>% 
+#   pivot_longer(cols = starts_with("E_"),
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id = case_when(
+#     str_detect(variable, "1") ~ "1",
+#     str_detect(variable, "2") ~ "2",
+#     str_detect(variable, "3") ~ "3",
+#     str_detect(variable, "4") ~ "4",
+#     str_detect(variable, "5") ~ "5",
+#     str_detect(variable, "6") ~ "6",
+#     str_detect(variable, "7") ~ "7",
+#     str_detect(variable, "8") ~ "8")
+#     )
+
+nw_df <- cbind(N_w_simu1, N_w_simu2, N_w_simu3, N_w_simu4, N_w_simu5, N_w_simu6, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("N_w_simu"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6")) %>% 
+  mutate(b_v_k = value/k_w)
+
+
+ns_df <- cbind(N_s_simu1, N_s_simu2, N_s_simu3, N_s_simu4, N_s_simu5, N_s_simu6, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("N_s_simu"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6")) %>% 
+  mutate(b_v_k = value/k_s)
+
+# ns_t_df <- cbind(N_s_test_1, N_s_test_2, N_s_test_3, N_s_test_4, N_s_test_5, N_s_test_6, N_s_test_7, N_s_test_8, tset) %>% 
+#   as.data.frame() %>% 
+#   pivot_longer(cols = starts_with("N_s_test_"),
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id = case_when(
+#     str_detect(variable, "1") ~ "1",
+#     str_detect(variable, "2") ~ "2",
+#     str_detect(variable, "3") ~ "3",
+#     str_detect(variable, "4") ~ "4",
+#     str_detect(variable, "5") ~ "5",
+#     str_detect(variable, "6") ~ "6",
+#     str_detect(variable, "7") ~ "7",
+#     str_detect(variable, "8") ~ "8")) %>% 
+#   mutate(b_v_k = value/4)
+# 
+# nw_t_df <- cbind(N_w_test_1, N_w_test_2, N_w_test_3, N_w_test_4, N_w_test_5, N_w_test_6, N_w_test_7, N_w_test_8, tset) %>% 
+#   as.data.frame() %>% 
+#   pivot_longer(cols = starts_with("N_w_test_"),
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id = case_when(
+#     str_detect(variable, "1") ~ "1",
+#     str_detect(variable, "2") ~ "2",
+#     str_detect(variable, "3") ~ "3",
+#     str_detect(variable, "4") ~ "4",
+#     str_detect(variable, "5") ~ "5",
+#     str_detect(variable, "6") ~ "6",
+#     str_detect(variable, "7") ~ "7",
+#     str_detect(variable, "8") ~ "8")) %>% 
+#   mutate(b_v_k = value/2)
+
+catch_s_df <- cbind(C_s_simu1, C_s_simu2, C_s_simu3, C_s_simu4, C_s_simu5, C_s_simu6, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("C_s_"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6"))
+
+catch_w_df <- cbind(C_w_simu1, C_w_simu2, C_w_simu3, C_w_simu4, C_w_simu5, C_w_simu6, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("C_w_"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6"))
+
+
+cpue_s_df <- cbind(cpue_s_simu1, cpue_s_simu2, cpue_s_simu3, cpue_s_simu4, cpue_s_simu5, cpue_s_simu6, 
+                   tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("cpue_s_"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6"))
+
+
+cpue_w_df <- cbind(cpue_w_simu1, cpue_w_simu2, cpue_w_simu3, cpue_w_simu4, cpue_w_simu5, cpue_w_simu6, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("cpue_w_"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6"))
+
+profits_df <- cbind(Pi_sum_simu1, Pi_sum_simu2, Pi_sum_simu3, Pi_sum_simu4, Pi_sum_simu5, Pi_sum_simu6,tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("Pi_sum"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6"))
+
+profits_s_df <- cbind(Pi_s_simu1, Pi_s_simu2, Pi_s_simu3, Pi_s_simu4, Pi_s_simu5, Pi_s_simu6,tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("Pi_s_"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6"))
+
+profits_w_df <- cbind(Pi_w_simu1, Pi_w_simu2, Pi_w_simu3, Pi_w_simu4, Pi_w_simu5, Pi_w_simu6, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("Pi_w_"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6"))
+
+# Gathered the results from each model scenario run into a single df
+
+var_full_r <- bind_rows(effort_df, nw_df, ns_df, catch_s_df, catch_w_df, cpue_s_df, cpue_w_df, profits_df, profits_w_df, profits_s_df)
+
+# Tidy dataset for plotting
+
+var_plot_r <- var_full_r %>%
+  mutate(price_ratio = case_when(
+    str_detect(scenario_id, "1") ~ "RR = 2",
+    str_detect(scenario_id, "2") ~ "RR = 1.75",
+    str_detect(scenario_id, "3") ~ "RR = 1.5",
+    str_detect(scenario_id, "4") ~ "RR = 1.25",
+    str_detect(scenario_id, "5") ~ "RR = 1.1",
+    str_detect(scenario_id, "6") ~ "RR = 1"
+  )) %>% 
+  mutate(variable_clean = case_when(
+    str_detect(variable, "N_w") ~ "Weak stock",
+    str_detect(variable, "N_s") ~ "Strong stock",
+    str_detect(variable, "E_simu") ~ "Effort simulation",
+    str_detect(variable, "Pi_sum_") ~ "Profit sum",
+    str_detect(variable, "Pi_s") ~ "Strong stock profits",
+    str_detect(variable, "Pi_w") ~ "Weak stock profits",
+    str_detect(variable, "cpue_w") ~ "Weak stock CPUE",
+    str_detect(variable, "cpue_s") ~ "Strong stock CPUE",
+    str_detect(variable, "C_w") ~ "Weak stock catch",
+    str_detect(variable, "C_s") ~ "Strong stock catch"
+  ))
+```
+
+```{r, echo = FALSE, fig.height=4, fig.width=8}
+equal_scales_EWS_r <-
+  var_plot_r %>% 
+  filter(variable_clean %in% c("Effort simulation", "Weak stock", "Strong stock")) %>% 
+  ggplot() +
+  geom_line(aes(x = tset/100, y = value, color = variable_clean),
+            size = .8,
+            alpha = .8,
+            show.legend = T) +
+  geom_point(data = sc_r_all, 
+             aes(x = tset, y = value, color = variable)) +
+  geom_point(data = sc_r_all,
+             aes(x = tset, y = ef_value, color = effort)) +
+  facet_wrap(~ factor(price_ratio, 
+                      levels = c("RR = 2",
+                                 "RR = 1.75",
+                                 "RR = 1.5",
+                                 "RR = 1.25",
+                                 "RR = 1.1",
+                                 "RR = 1")),
+             nrow = 1) +
+  scale_color_manual(values = c("#1B9E77", "#1B9E77", "#D95F02", "#7570B3",  "#D95F02", "#7570B3")) +
+#  scale_y_continuous(breaks = seq(0, 50, 10)) +
+  labs(x = "",
+       y = "Nw, Ns, E",
+       color = "") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        axis.title.x = element_text(color = "black", size = 12),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom")
+
+# equal_scales_EWS_test <-
+#   var_plot %>% 
+#   filter(variable_clean %in% c("Effort test", "Weak stock test", "Strong stock test")) %>% 
+#   ggplot() +
+#   geom_line(aes(x = tset/100, y = value, color = variable_clean),
+#             size = .8,
+#             alpha = .8,
+#             show.legend = T) +
+#   geom_point(data = sc_all, 
+#              aes(x = tset, y = value, color = variable)) +
+#   geom_point(data = sc_all, 
+#              aes(x = tset, y = ef_value, color = effort)) +
+#   facet_wrap(~ factor(price_ratio, 
+#                       levels = c("PR = 10",
+#                                  "PR = 5",
+#                                  "PR = 2.5",
+#                                  "PR = 1",
+#                                  "PR = 0.75",
+#                                  "PR = 0.5",
+#                                  "PR = 0.25",
+#                                  "PR = 0.1")),
+#              nrow = 1) +
+#   scale_color_manual(values = c("#1B9E77", "#1B9E77", "#D95F02", "#7570B3",  "#D95F02", "#7570B3")) +
+# #  scale_y_continuous(breaks = seq(0, 50, 10)) +
+#   labs(x = "",
+#        y = "Nw, Ns, E",
+#        color = "") +
+#   theme_bw() +
+#   theme(panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank(),
+#         panel.grid.minor.y = element_blank(),
+#         strip.background = element_rect(fill = "transparent"),
+#         strip.text = element_text(color = "black", size = 11),
+#         axis.title.x = element_text(color = "black", size = 12),
+#         axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+#         axis.text = element_text(color = "black", size = 10),
+#         legend.position = "bottom")
+
+dif_scales_r <-
+  var_plot_r %>% 
+  filter(variable_clean %in% c("Strong stock", "Weak stock")) %>% 
+  ggplot() +
+  geom_line(aes(x = tset/100, y = b_v_k, color = variable_clean),
+            size = .8,
+            alpha = .8,
+            show.legend = F) +
+  geom_point(data = sc_r_all %>% filter(!variable == "E"), 
+             aes(x = tset, y = b_v_k, color = b_values)) +
+  facet_wrap(~ factor(price_ratio, 
+                      levels = c("RR = 2",
+                                 "RR = 1.75",
+                                 "RR = 1.5",
+                                 "RR = 1.25",
+                                 "RR = 1.1",
+                                 "RR = 1")),
+             nrow = 1) +
+  scale_color_manual(values = c("#D95F02", "#7570B3", "#D95F02", "#7570B3")) +
+#  scale_x_continuous(breaks = seq(0, 500, 100)) +
+  labs(x = "",
+       y = "N/K (Nw, Ns)",
+       color = "") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        axis.title.x = element_text(color = "black", size = 12, vjust = -2),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom")
+
+equal_scales_CPE_r <-
+  var_plot_r %>% 
+  filter(variable_clean %in% c("Weak stock catch", "Strong stock catch", "Weak stock CPUE", "Strong stock CPUE")) %>% 
+  ggplot() +
+  geom_line(aes(x = tset/100, y = value, color = variable_clean),
+            size = .8,
+            alpha = .8,
+            show.legend = T) +
+  facet_wrap(~ factor(price_ratio, 
+                      levels = c("RR = 2",
+                                 "RR = 1.75",
+                                 "RR = 1.5",
+                                 "RR = 1.25",
+                                 "RR = 1.1",
+                                 "RR = 1")),
+             nrow = 1) +
+  scale_color_manual(values = c("#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F")) +
+#  scale_y_continuous(breaks = seq(0, 50, 10)) +
+  labs(x = "",
+       y = "CPUE, Catch (S and W)",
+       color = "") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        axis.title.x = element_text(color = "black", size = 12),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom")
+
+equal_scales_pi_r <-
+  var_plot_r %>% 
+  filter(variable_clean %in% c("Profit sum", "Weak stock profits", "Strong stock profits")) %>% 
+  ggplot() +
+  geom_line(aes(x = tset/100, y = value, color = variable_clean),
+            size = .8,
+            alpha = .8,
+            show.legend = T) +
+  facet_wrap(~ factor(price_ratio, 
+                      levels = c("RR = 2",
+                                 "RR = 1.75",
+                                 "RR = 1.5",
+                                 "RR = 1.25",
+                                 "RR = 1.1",
+                                 "RR = 1")),
+             nrow = 1) +
+  scale_color_manual(values = c("#FF7F00", "#CAB2D6", "#6A3D9A")) +
+#  scale_y_continuous(breaks = seq(0, 50, 10)) +
+  labs(x = "Time (x100)",
+       y = "Profits",
+       color = "") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        axis.title.x = element_text(color = "black", size = 12),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom")
+```
+
+```{r, fig.height=15, fig.width=10, echo = FALSE}
+equal_scales_EWS_r /
+  dif_scales_r /
+  equal_scales_CPE_r /
+  equal_scales_pi_r +
+  plot_annotation(tag_level = "A") 
+```
+
+### Scenarios for a range of catchability values
+
+```{r scenario 1 catchability ratio 10, echo = FALSE}
+# set up the parameter space
+q_s1 <- 0.9
+q_w1 <- 0.09
+k_s <- 4
+k_w <- 2
+r_s <- 0.8
+r_w <- 0.45
+p_s <- 1
+p_w <- 1
+alpha <- 1
+c <- 0.05
+
+# Initial values for the variables
+N_w <- k_w
+
+N_s <- k_s
+
+E <- 0.1
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 500, length.out = 10000)
+
+N_w_simu1 <- NaN*tset; N_w_simu1[1] <- N_w
+
+N_s_simu1 <- NaN*tset; N_s_simu1[1] <- N_s
+
+#N_w_test_1 <- NaN*tset; N_w_test_1[1] <- N_w
+
+#N_s_test_1 <- NaN*tset; N_s_test_1[1] <- N_s
+
+E_simu1 <- NaN*tset; E_simu1[1] <- E
+
+#E_test1 <- NaN*tset; E_test1[1] <- E
+
+C_s_simu1 <- NaN*tset; C_s_simu1[1] <- 1
+
+C_w_simu1 <- NaN*tset; C_w_simu1[1] <- 1
+
+cpue_s_simu1 <- NaN*tset; cpue_s_simu1[1] <- 1
+
+cpue_w_simu1 <- NaN*tset; cpue_w_simu1[1] <- 1
+
+Pi_sum_simu1 <- NaN*tset; Pi_sum_simu1[1] <- 2
+
+Pi_s_simu1 <- NaN*tset; Pi_s_simu1[1] <- 1
+
+Pi_w_simu1 <- NaN*tset; Pi_w_simu1[1] <- 1
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w1 <- N_w_simu1[i-1]
+  N_s1 <- N_s_simu1[i-1]
+  #N_wt1 <- N_w_test_1[i-1]
+  #N_st1 <- N_s_test_1[i-1]
+  E1 <- E_simu1[i-1]
+  #E_t1 <- E_test1[i-1]
+  C_s1 <- C_s_simu1[i-1]
+  C_w1 <- C_w_simu1[i-1]
+  cpue_s1 <- cpue_s_simu1[i-1]
+  cpue_w1 <- cpue_w_simu1[i-1]
+  pi1 <- Pi_sum_simu1[i-1]
+  pi_s1 <- Pi_s_simu1[i-1]
+  pi_w1 <- Pi_w_simu1[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s1 <- (N_s1 * (r_s * (1 - (N_s1/k_s)) - q_s1 * E1)) * dt
+  dN_w1 <- (N_w1 * (r_w * (1 - (N_w1/k_w)) - q_w1 * E1)) * dt
+  #dN_st1 <- (N_st1 * (r_s1 * (1 - (N_st1/k_s1)) - q_s1 * E_t1)) * dt
+  #dN_wt1 <- (N_wt1 * (r_w1 * (1 - (N_wt1/k_w1)) - q_w1 * E_t1)) * dt
+  dE1 <- (alpha * E1 * (p_s * q_s1 * N_s1 + p_w * q_w1 * N_w1 - c)) * dt
+  #dE_test1 <- ((p_s1 * q_s1 * N_st1 + p_w1 * q_w1 * N_wt1) - c) * dt
+  dC_s1 <- (q_s1 * N_s1 * E1) * dt
+  dC_w1 <- (q_w1 * N_w1 * E1) * dt
+  dcpue_s1 <- (C_s1 / E1) * dt
+  dcpue_w1 <- (C_w1 / E1) * dt
+  dPi_s1 <- (C_s1 * p_s - C_s1 * c) * dt
+  dPi_w1 <- (C_w1 * p_w - C_w1 * c) * dt
+  dPi1 <- (C_s1 * p_s + C_w1 * p_w - ((C_s1 + C_w1) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu1[i] <- N_w1 + dN_w1
+  N_s_simu1[i] <- N_s1 + dN_s1
+  #N_w_test_1[i] <- N_wt1 + dN_wt1
+  #N_s_test_1[i] <- N_st1 + dN_st1
+  E_simu1[i] <- E1 + dE1
+  #E_test1[i] <- E_t1 + dE_test1
+  C_s_simu1[i] <- C_s1 + dC_s1
+  C_w_simu1[i] <- C_w1 + dC_w1
+  cpue_s_simu1[i] <- cpue_s1 + dcpue_s1
+  cpue_w_simu1[i] <- cpue_w1 + dcpue_w1
+  Pi_sum_simu1[i] <- pi1 + dPi1
+  Pi_s_simu1[i] <- pi_s1 + dPi_s1
+  Pi_w_simu1[i] <- pi_w1 + dPi_w1  
+  
+}
+```
+
+
+```{r scenario 2 catchability ratio 5, echo = FALSE}
+# set up the parameter space
+q_s2 <- 0.9
+q_w2 <- 0.18
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 500, length.out = 10000)
+
+N_w_simu2 <- NaN*tset; N_w_simu2[1] <- N_w
+
+N_s_simu2 <- NaN*tset; N_s_simu2[1] <- N_s
+
+#N_w_test_2 <- NaN*tset; N_w_test_2[1] <- N_w
+
+#N_s_test_2 <- NaN*tset; N_s_test_2[1] <- N_s
+
+E_simu2 <- NaN*tset; E_simu2[1] <- E
+
+#E_test2 <- NaN*tset; E_test2[1] <- E
+
+C_s_simu2 <- NaN*tset; C_s_simu2[1] <- 1
+
+C_w_simu2 <- NaN*tset; C_w_simu2[1] <- 1
+
+cpue_s_simu2 <- NaN*tset; cpue_s_simu2[1] <- 1
+
+cpue_w_simu2 <- NaN*tset; cpue_w_simu2[1] <- 1
+
+Pi_sum_simu2 <- NaN*tset; Pi_sum_simu2[1] <- 2
+
+Pi_s_simu2 <- NaN*tset; Pi_s_simu2[1] <- 1
+
+Pi_w_simu2 <- NaN*tset; Pi_w_simu2[1] <- 1
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w2 <- N_w_simu2[i-1]
+  N_s2 <- N_s_simu2[i-1]
+  #N_wt2 <- N_w_test_2[i-1]
+  #N_st2 <- N_s_test_2[i-1]
+  E2 <- E_simu2[i-1]
+  #E_t2 <- E_test2[i-1]
+  C_s2 <- C_s_simu2[i-1]
+  C_w2 <- C_w_simu2[i-1]
+  cpue_s2 <- cpue_s_simu2[i-1]
+  cpue_w2 <- cpue_w_simu2[i-1]
+  pi2 <- Pi_sum_simu2[i-1]
+  pi_s2 <- Pi_s_simu2[i-1]
+  pi_w2 <- Pi_w_simu2[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s2 <- (N_s2 * (r_s * (1 - (N_s2/k_s)) - q_s2 * E2)) * dt
+  dN_w2 <- (N_w2 * (r_w * (1 - (N_w2/k_w)) - q_w2 * E2)) * dt
+  #dN_st2 <- (N_st2 * (r_s2 * (1 - (N_st2/k_s2)) - q_s2 * E_t2)) * dt
+  #dN_wt2 <- (N_wt2 * (r_w2 * (1 - (N_wt2/k_w2)) - q_w2 * E_t2)) * dt
+  dE2 <- (alpha * E2 * (p_s * q_s2 * N_s2 + p_w * q_w2 * N_w2 - c)) * dt
+  #dE_test2 <- ((p_s2 * q_s2 * N_st2 + p_w2 * q_w2 * N_wt2) - c) * dt
+  dC_s2 <- (q_s2 * N_s2 * E2) * dt
+  dC_w2 <- (q_w2 * N_w2 * E2) * dt
+  dcpue_s2 <- (C_s2 / E2) * dt
+  dcpue_w2 <- (C_w2 / E2) * dt
+  dPi_s2 <- (C_s2 * p_s - C_s2 * c) * dt
+  dPi_w2 <- (C_w2 * p_w - C_w2 * c) * dt
+  dPi2 <- (C_s2 * p_s + C_w2 * p_w - ((C_s2 + C_w2) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu2[i] <- N_w2 + dN_w2
+  N_s_simu2[i] <- N_s2 + dN_s2
+  #N_w_test_2[i] <- N_wt2 + dN_wt2
+  #N_s_test_2[i] <- N_st2 + dN_st2
+  E_simu2[i] <- E2 + dE2
+  #E_test2[i] <- E_t2 + dE_test2
+  C_s_simu2[i] <- C_s2 + dC_s2
+  C_w_simu2[i] <- C_w2 + dC_w2
+  cpue_s_simu2[i] <- cpue_s2 + dcpue_s2
+  cpue_w_simu2[i] <- cpue_w2 + dcpue_w2
+  Pi_sum_simu2[i] <- pi2 + dPi2
+  Pi_s_simu2[i] <- pi_s2 + dPi_s2
+  Pi_w_simu2[i] <- pi_w2 + dPi_w2  
+  
+  
+}
+```
+
+```{r scenario 3 catchability ratio 2.5, echo = FALSE}
+# set up the parameter space
+q_s3 <- 0.9
+q_w3 <- 0.36
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 500, length.out = 10000)
+
+N_w_simu3 <- NaN*tset; N_w_simu3[1] <- N_w
+
+N_s_simu3 <- NaN*tset; N_s_simu3[1] <- N_s
+
+#N_w_test_3 <- NaN*tset; N_w_test_3[1] <- N_w
+
+#N_s_test_3 <- NaN*tset; N_s_test_3[1] <- N_s
+
+E_simu3 <- NaN*tset; E_simu3[1] <- E
+
+#E_test3 <- NaN*tset; E_test3[1] <- E
+
+C_s_simu3 <- NaN*tset; C_s_simu3[1] <- 1
+
+C_w_simu3 <- NaN*tset; C_w_simu3[1] <- 1
+
+cpue_s_simu3 <- NaN*tset; cpue_s_simu3[1] <- 1
+
+cpue_w_simu3 <- NaN*tset; cpue_w_simu3[1] <- 1
+
+Pi_sum_simu3 <- NaN*tset; Pi_sum_simu3[1] <- 2
+
+Pi_s_simu3 <- NaN*tset; Pi_s_simu3[1] <- 1
+
+Pi_w_simu3 <- NaN*tset; Pi_w_simu3[1] <- 1
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w3 <- N_w_simu3[i-1]
+  N_s3 <- N_s_simu3[i-1]
+  #N_wt3 <- N_w_test_3[i-1]
+  #N_st3 <- N_s_test_3[i-1]
+  E3 <- E_simu3[i-1]
+  #E_t3 <- E_test3[i-1]
+  C_s3 <- C_s_simu3[i-1]
+  C_w3 <- C_w_simu3[i-1]
+  cpue_s3 <- cpue_s_simu3[i-1]
+  cpue_w3 <- cpue_w_simu3[i-1]
+  pi3 <- Pi_sum_simu3[i-1]
+  pi_s3 <- Pi_s_simu3[i-1]
+  pi_w3 <- Pi_w_simu3[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s3 <- (N_s3 * (r_s * (1 - (N_s3/k_s)) - q_s3 * E3)) * dt
+  dN_w3 <- (N_w3 * (r_w * (1 - (N_w3/k_w)) - q_w3 * E3)) * dt
+  #dN_st3 <- (N_st3 * (r_s3 * (1 - (N_st3/k_s3)) - q_s3 * E_t3)) * dt
+  #dN_wt3 <- (N_wt3 * (r_w3 * (1 - (N_wt3/k_w3)) - q_w3 * E_t3)) * dt
+  dE3 <- (alpha * E3 * (p_s * q_s3 * N_s3 + p_w * q_w3 * N_w3 - c)) * dt
+  #dE_test3 <- ((p_s3 * q_s3 * N_st3 + p_w3 * q_w3 * N_wt3) - c) * dt
+  dC_s3 <- (q_s3 * N_s3 * E3) * dt
+  dC_w3 <- (q_w3 * N_w3 * E3) * dt
+  dcpue_s3 <- (C_s3 / E3) * dt
+  dcpue_w3 <- (C_w3 / E3) * dt
+  dPi_s3 <- (C_s3 * p_s - C_s3 * c) * dt
+  dPi_w3 <- (C_w3 * p_w - C_w3 * c) * dt
+  dPi3 <- (C_s3 * p_s + C_w3 * p_w - ((C_s3 + C_w3) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu3[i] <- N_w3 + dN_w3
+  N_s_simu3[i] <- N_s3 + dN_s3
+  #N_w_test_3[i] <- N_wt3 + dN_wt3
+  #N_s_test_3[i] <- N_st3 + dN_st3
+  E_simu3[i] <- E3 + dE3
+  #E_test3[i] <- E_t3 + dE_test3
+  C_s_simu3[i] <- C_s3 + dC_s3
+  C_w_simu3[i] <- C_w3 + dC_w3
+  cpue_s_simu3[i] <- cpue_s3 + dcpue_s3
+  cpue_w_simu3[i] <- cpue_w3 + dcpue_w3
+  Pi_sum_simu3[i] <- pi3 + dPi3
+  Pi_s_simu3[i] <- pi_s3 + dPi_s3
+  Pi_w_simu3[i] <- pi_w3 + dPi_w3  
+  
+  
+}
+```
+
+```{r scenario 4 catchability ratio 1, echo = FALSE}
+# set up the parameter space
+q_s4 <- 0.5
+q_w4 <- 0.5
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 500, length.out = 10000)
+
+N_w_simu4 <- NaN*tset; N_w_simu4[1] <- N_w
+
+N_s_simu4 <- NaN*tset; N_s_simu4[1] <- N_s
+
+#N_w_test_4 <- NaN*tset; N_w_test_4[1] <- N_w
+
+#N_s_test_4 <- NaN*tset; N_s_test_4[1] <- N_s
+
+E_simu4 <- NaN*tset; E_simu4[1] <- E
+
+#E_test4 <- NaN*tset; E_test4[1] <- E
+
+C_s_simu4 <- NaN*tset; C_s_simu4[1] <- 1
+
+C_w_simu4 <- NaN*tset; C_w_simu4[1] <- 1
+
+cpue_s_simu4 <- NaN*tset; cpue_s_simu4[1] <- 1
+
+cpue_w_simu4 <- NaN*tset; cpue_w_simu4[1] <- 1
+
+Pi_sum_simu4 <- NaN*tset; Pi_sum_simu4[1] <- 2
+
+Pi_s_simu4 <- NaN*tset; Pi_s_simu4[1] <- 1
+
+Pi_w_simu4 <- NaN*tset; Pi_w_simu4[1] <- 1
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w4 <- N_w_simu4[i-1]
+  N_s4 <- N_s_simu4[i-1]
+  #N_wt4 <- N_w_test_4[i-1]
+  #N_st4 <- N_s_test_4[i-1]
+  E4 <- E_simu4[i-1]
+  #E_t4 <- E_test4[i-1]
+  C_s4 <- C_s_simu4[i-1]
+  C_w4 <- C_w_simu4[i-1]
+  cpue_s4 <- cpue_s_simu4[i-1]
+  cpue_w4 <- cpue_w_simu4[i-1]
+  pi4 <- Pi_sum_simu4[i-1]
+  pi_s4 <- Pi_s_simu4[i-1]
+  pi_w4 <- Pi_w_simu4[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s4 <- (N_s4 * (r_s * (1 - (N_s4/k_s)) - q_s4 * E4)) * dt
+  dN_w4 <- (N_w4 * (r_w * (1 - (N_w4/k_w)) - q_w4 * E4)) * dt
+  #dN_st4 <- (N_st4 * (r_s4 * (1 - (N_st4/k_s4)) - q_s4 * E_t4)) * dt
+  #dN_wt4 <- (N_wt4 * (r_w4 * (1 - (N_wt4/k_w4)) - q_w4 * E_t4)) * dt
+  dE4 <- (alpha * E4 * (p_s * q_s4 * N_s4 + p_w * q_w4 * N_w4 - c)) * dt
+  #dE_test4 <- ((p_s4 * q_s4 * N_st4 + p_w4 * q_w4 * N_wt4) - c) * dt
+  dC_s4 <- (q_s4 * N_s4 * E4) * dt
+  dC_w4 <- (q_w4 * N_w4 * E4) * dt
+  dcpue_s4 <- (C_s4 / E4) * dt
+  dcpue_w4 <- (C_w4 / E4) * dt
+  dPi_s4 <- (C_s4 * p_s - C_s4 * c) * dt
+  dPi_w4 <- (C_w4 * p_w - C_w4 * c) * dt
+  dPi4 <- (C_s4 * p_s + C_w4 * p_w - ((C_s4 + C_w4) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu4[i] <- N_w4 + dN_w4
+  N_s_simu4[i] <- N_s4 + dN_s4
+  #N_w_test_4[i] <- N_wt4 + dN_wt4
+  #N_s_test_4[i] <- N_st4 + dN_st4
+  E_simu4[i] <- E4 + dE4
+  #E_test4[i] <- E_t4 + dE_test4
+  C_s_simu4[i] <- C_s4 + dC_s4
+  C_w_simu4[i] <- C_w4 + dC_w4
+  cpue_s_simu4[i] <- cpue_s4 + dcpue_s4
+  cpue_w_simu4[i] <- cpue_w4 + dcpue_w4
+  Pi_sum_simu4[i] <- pi4 + dPi4
+  Pi_s_simu4[i] <- pi_s4 + dPi_s4
+  Pi_w_simu4[i] <- pi_w4 + dPi_w4  
+  
+  
+}
+```
+
+```{r scenario 5 catchability ratio 0.75, echo = FALSE}
+# set up the parameter space
+q_s5 <- 0.9
+q_w5 <- 0.9
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 500, length.out = 10000)
+
+N_w_simu5 <- NaN*tset; N_w_simu5[1] <- N_w
+
+N_s_simu5 <- NaN*tset; N_s_simu5[1] <- N_s
+
+#N_w_test_5 <- NaN*tset; N_w_test_5[1] <- N_w
+
+#N_s_test_5 <- NaN*tset; N_s_test_5[1] <- N_s
+
+E_simu5 <- NaN*tset; E_simu5[1] <- E
+
+#E_test5 <- NaN*tset; E_test5[1] <- E
+
+C_s_simu5 <- NaN*tset; C_s_simu5[1] <- 1
+
+C_w_simu5 <- NaN*tset; C_w_simu5[1] <- 1
+
+cpue_s_simu5 <- NaN*tset; cpue_s_simu5[1] <- 1
+
+cpue_w_simu5 <- NaN*tset; cpue_w_simu5[1] <- 1
+
+Pi_sum_simu5 <- NaN*tset; Pi_sum_simu5[1] <- 2
+
+Pi_s_simu5 <- NaN*tset; Pi_s_simu5[1] <- 1
+
+Pi_w_simu5 <- NaN*tset; Pi_w_simu5[1] <- 1
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w5 <- N_w_simu5[i-1]
+  N_s5 <- N_s_simu5[i-1]
+  #N_wt5 <- N_w_test_5[i-1]
+  #N_st5 <- N_s_test_5[i-1]
+  E5 <- E_simu5[i-1]
+  #E_t5 <- E_test5[i-1]
+  C_s5 <- C_s_simu5[i-1]
+  C_w5 <- C_w_simu5[i-1]
+  cpue_s5 <- cpue_s_simu5[i-1]
+  cpue_w5 <- cpue_w_simu5[i-1]
+  pi5 <- Pi_sum_simu5[i-1]
+  pi_s5 <- Pi_s_simu5[i-1]
+  pi_w5 <- Pi_w_simu5[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s5 <- (N_s5 * (r_s * (1 - (N_s5/k_s)) - q_s5 * E5)) * dt
+  dN_w5 <- (N_w5 * (r_w * (1 - (N_w5/k_w)) - q_w5 * E5)) * dt
+  #dN_st5 <- (N_st5 * (r_s5 * (1 - (N_st5/k_s5)) - q_s5 * E_t5)) * dt
+  #dN_wt5 <- (N_wt5 * (r_w5 * (1 - (N_wt5/k_w5)) - q_w5 * E_t5)) * dt
+  dE5 <- (alpha * E5 * (p_s * q_s5 * N_s5 + p_w * q_w5 * N_w5 - c)) * dt
+  #dE_test5 <- ((p_s5 * q_s5 * N_st5 + p_w5 * q_w5 * N_wt5) - c) * dt
+  dC_s5 <- (q_s5 * N_s5 * E5) * dt
+  dC_w5 <- (q_w5 * N_w5 * E5) * dt
+  dcpue_s5 <- (C_s5 / E5) * dt
+  dcpue_w5 <- (C_w5 / E5) * dt
+  dPi_s5 <- (C_s5 * p_s - C_s5 * c) * dt
+  dPi_w5 <- (C_w5 * p_w - C_w5 * c) * dt
+  dPi5 <- (C_s5 * p_s + C_w5 * p_w - ((C_s5 + C_w5) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu5[i] <- N_w5 + dN_w5
+  N_s_simu5[i] <- N_s5 + dN_s5
+  #N_w_test_5[i] <- N_wt5 + dN_wt5
+  #N_s_test_5[i] <- N_st5 + dN_st5
+  E_simu5[i] <- E5 + dE5
+  #E_test5[i] <- E_t5 + dE_test5
+  C_s_simu5[i] <- C_s5 + dC_s5
+  C_w_simu5[i] <- C_w5 + dC_w5
+  cpue_s_simu5[i] <- cpue_s5 + dcpue_s5
+  cpue_w_simu5[i] <- cpue_w5 + dcpue_w5
+  Pi_sum_simu5[i] <- pi5 + dPi5
+  Pi_s_simu5[i] <- pi_s5 + dPi_s5
+  Pi_w_simu5[i] <- pi_w5 + dPi_w5  
+  
+  
+}
+```
+
+```{r scenario 6 catchability ratio 0.5, echo = FALSE}
+# set up the parameter space
+q_s6 <- 0.45
+q_w6 <- 0.9
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 500, length.out = 10000)
+
+N_w_simu6 <- NaN*tset; N_w_simu6[1] <- N_w
+
+N_s_simu6 <- NaN*tset; N_s_simu6[1] <- N_s
+
+#N_w_test_6 <- NaN*tset; N_w_test_6[1] <- N_w
+
+#N_s_test_6 <- NaN*tset; N_s_test_6[1] <- N_s
+
+E_simu6 <- NaN*tset; E_simu6[1] <- E
+
+#E_test6 <- NaN*tset; E_test6[1] <- E
+
+C_s_simu6 <- NaN*tset; C_s_simu6[1] <- 1
+
+C_w_simu6 <- NaN*tset; C_w_simu6[1] <- 1
+
+cpue_s_simu6 <- NaN*tset; cpue_s_simu6[1] <- 1
+
+cpue_w_simu6 <- NaN*tset; cpue_w_simu6[1] <- 1
+
+Pi_sum_simu6 <- NaN*tset; Pi_sum_simu6[1] <- 2
+
+Pi_s_simu6 <- NaN*tset; Pi_s_simu6[1] <- 1
+
+Pi_w_simu6 <- NaN*tset; Pi_w_simu6[1] <- 1
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w6 <- N_w_simu6[i-1]
+  N_s6 <- N_s_simu6[i-1]
+  #N_wt6 <- N_w_test_6[i-1]
+  #N_st6 <- N_s_test_6[i-1]
+  E6 <- E_simu6[i-1]
+  #E_t6 <- E_test6[i-1]
+  C_s6 <- C_s_simu6[i-1]
+  C_w6 <- C_w_simu6[i-1]
+  cpue_s6 <- cpue_s_simu6[i-1]
+  cpue_w6 <- cpue_w_simu6[i-1]
+  pi6 <- Pi_sum_simu6[i-1]
+  pi_s6 <- Pi_s_simu6[i-1]
+  pi_w6 <- Pi_w_simu6[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s6 <- (N_s6 * (r_s * (1 - (N_s6/k_s)) - q_s6 * E6)) * dt
+  dN_w6 <- (N_w6 * (r_w * (1 - (N_w6/k_w)) - q_w6 * E6)) * dt
+  #dN_st6 <- (N_st6 * (r_s6 * (1 - (N_st6/k_s6)) - q_s6 * E_t6)) * dt
+  #dN_wt6 <- (N_wt6 * (r_w6 * (1 - (N_wt6/k_w6)) - q_w6 * E_t6)) * dt
+  dE6 <- (alpha * E6 * (p_s * q_s6 * N_s6 + p_w * q_w6 * N_w6 - c)) * dt
+  #dE_test6 <- ((p_s6 * q_s6 * N_st6 + p_w6 * q_w6 * N_wt6) - c) * dt
+  dC_s6 <- (q_s6 * N_s6 * E6) * dt
+  dC_w6 <- (q_w6 * N_w6 * E6) * dt
+  dcpue_s6 <- (C_s6 / E6) * dt
+  dcpue_w6 <- (C_w6 / E6) * dt
+  dPi_s6 <- (C_s6 * p_s - C_s6 * c) * dt
+  dPi_w6 <- (C_w6 * p_w - C_w6 * c) * dt
+  dPi6 <- (C_s6 * p_s + C_w6 * p_w - ((C_s6 + C_w6) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu6[i] <- N_w6 + dN_w6
+  N_s_simu6[i] <- N_s6 + dN_s6
+  #N_w_test_6[i] <- N_wt6 + dN_wt6
+  #N_s_test_6[i] <- N_st6 + dN_st6
+  E_simu6[i] <- E6 + dE6
+  #E_test6[i] <- E_t6 + dE_test6
+  C_s_simu6[i] <- C_s6 + dC_s6
+  C_w_simu6[i] <- C_w6 + dC_w6
+  cpue_s_simu6[i] <- cpue_s6 + dcpue_s6
+  cpue_w_simu6[i] <- cpue_w6 + dcpue_w6
+  Pi_sum_simu6[i] <- pi6 + dPi6
+  Pi_s_simu6[i] <- pi_s6 + dPi_s6
+  Pi_w_simu6[i] <- pi_w6 + dPi_w6  
+  
+  
+}
+```
+
+```{r scenario 7 catchability ratio 0.25, echo = FALSE}
+# set up the parameter space
+q_s7 <- 0.225
+q_w7 <- 0.9
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 500, length.out = 10000)
+
+N_w_simu7 <- NaN*tset; N_w_simu7[1] <- N_w
+
+N_s_simu7 <- NaN*tset; N_s_simu7[1] <- N_s
+
+#N_w_test_7 <- NaN*tset; N_w_test_7[1] <- N_w
+
+#N_s_test_7 <- NaN*tset; N_s_test_7[1] <- N_s
+
+E_simu7 <- NaN*tset; E_simu7[1] <- E
+
+#E_test7 <- NaN*tset; E_test7[1] <- E
+
+C_s_simu7 <- NaN*tset; C_s_simu7[1] <- 1
+
+C_w_simu7 <- NaN*tset; C_w_simu7[1] <- 1
+
+cpue_s_simu7 <- NaN*tset; cpue_s_simu7[1] <- 1
+
+cpue_w_simu7 <- NaN*tset; cpue_w_simu7[1] <- 1
+
+Pi_sum_simu7 <- NaN*tset; Pi_sum_simu7[1] <- 2
+
+Pi_s_simu7 <- NaN*tset; Pi_s_simu7[1] <- 1
+
+Pi_w_simu7 <- NaN*tset; Pi_w_simu7[1] <- 1
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w7 <- N_w_simu7[i-1]
+  N_s7 <- N_s_simu7[i-1]
+  #N_wt7 <- N_w_test_7[i-1]
+  #N_st7 <- N_s_test_7[i-1]
+  E7 <- E_simu7[i-1]
+  #E_t7 <- E_test7[i-1]
+  C_s7 <- C_s_simu7[i-1]
+  C_w7 <- C_w_simu7[i-1]
+  cpue_s7 <- cpue_s_simu7[i-1]
+  cpue_w7 <- cpue_w_simu7[i-1]
+  pi7 <- Pi_sum_simu7[i-1]
+  pi_s7 <- Pi_s_simu7[i-1]
+  pi_w7 <- Pi_w_simu7[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s7 <- (N_s7 * (r_s * (1 - (N_s7/k_s)) - q_s7 * E7)) * dt
+  dN_w7 <- (N_w7 * (r_w * (1 - (N_w7/k_w)) - q_w7 * E7)) * dt
+  #dN_st7 <- (N_st7 * (r_s7 * (1 - (N_st7/k_s7)) - q_s7 * E_t7)) * dt
+  #dN_wt7 <- (N_wt7 * (r_w7 * (1 - (N_wt7/k_w7)) - q_w7 * E_t7)) * dt
+  dE7 <- (alpha * E7 * (p_s * q_s7 * N_s7 + p_w * q_w7 * N_w7 - c)) * dt
+  #dE_test7 <- ((p_s7 * q_s7 * N_st7 + p_w7 * q_w7 * N_wt7) - c) * dt
+  dC_s7 <- (q_s7 * N_s7 * E7) * dt
+  dC_w7 <- (q_w7 * N_w7 * E7) * dt
+  dcpue_s7 <- (C_s7 / E7) * dt
+  dcpue_w7 <- (C_w7 / E7) * dt
+  dPi_s7 <- (C_s7 * p_s - C_s7 * c) * dt
+  dPi_w7 <- (C_w7 * p_w - C_w7 * c) * dt
+  dPi7 <- (C_s7 * p_s + C_w7 * p_w - ((C_s7 + C_w7) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu7[i] <- N_w7 + dN_w7
+  N_s_simu7[i] <- N_s7 + dN_s7
+  #N_w_test_7[i] <- N_wt7 + dN_wt7
+  #N_s_test_7[i] <- N_st7 + dN_st7
+  E_simu7[i] <- E7 + dE7
+  #E_test7[i] <- E_t7 + dE_test7
+  C_s_simu7[i] <- C_s7 + dC_s7
+  C_w_simu7[i] <- C_w7 + dC_w7
+  cpue_s_simu7[i] <- cpue_s7 + dcpue_s7
+  cpue_w_simu7[i] <- cpue_w7 + dcpue_w7
+  Pi_sum_simu7[i] <- pi7 + dPi7
+  Pi_s_simu7[i] <- pi_s7 + dPi_s7
+  Pi_w_simu7[i] <- pi_w7 + dPi_w7  
+  
+  
+}
+```
+
+```{r scenario 8 catchability ratio 0.1, echo = FALSE}
+# set up the parameter space
+q_s8 <- 0.09
+q_w8 <- 0.9
+```
+
+```{r, echo = FALSE}
+tset <- seq(from = 0, to = 500, length.out = 10000)
+
+N_w_simu8 <- NaN*tset; N_w_simu8[1] <- N_w
+
+N_s_simu8 <- NaN*tset; N_s_simu8[1] <- N_s
+
+#N_w_test_8 <- NaN*tset; N_w_test_8[1] <- N_w
+
+#N_s_test_8 <- NaN*tset; N_s_test_8[1] <- N_s
+
+E_simu8 <- NaN*tset; E_simu8[1] <- E
+
+#E_test8 <- NaN*tset; E_test8[1] <- E
+
+C_s_simu8 <- NaN*tset; C_s_simu8[1] <- 1
+
+C_w_simu8 <- NaN*tset; C_w_simu8[1] <- 1
+
+cpue_s_simu8 <- NaN*tset; cpue_s_simu8[1] <- 1
+
+cpue_w_simu8 <- NaN*tset; cpue_w_simu8[1] <- 1
+
+Pi_sum_simu8 <- NaN*tset; Pi_sum_simu8[1] <- 2
+
+Pi_s_simu8 <- NaN*tset; Pi_s_simu8[1] <- 1
+
+Pi_w_simu8 <- NaN*tset; Pi_w_simu8[1] <- 1
+```
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w8 <- N_w_simu8[i-1]
+  N_s8 <- N_s_simu8[i-1]
+  #N_wt8 <- N_w_test_8[i-1]
+  #N_st8 <- N_s_test_8[i-1]
+  E8 <- E_simu8[i-1]
+  #E_t8 <- E_test8[i-1]
+  C_s8 <- C_s_simu8[i-1]
+  C_w8 <- C_w_simu8[i-1]
+  cpue_s8 <- cpue_s_simu8[i-1]
+  cpue_w8 <- cpue_w_simu8[i-1]
+  pi8 <- Pi_sum_simu8[i-1]
+  pi_s8 <- Pi_s_simu8[i-1]
+  pi_w8 <- Pi_w_simu8[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s8 <- (N_s8 * (r_s * (1 - (N_s8/k_s)) - q_s8 * E8)) * dt
+  dN_w8 <- (N_w8 * (r_w * (1 - (N_w8/k_w)) - q_w8 * E8)) * dt
+  #dN_st8 <- (N_st8 * (r_s8 * (1 - (N_st8/k_s8)) - q_s8 * E_t8)) * dt
+  #dN_wt8 <- (N_wt8 * (r_w8 * (1 - (N_wt8/k_w8)) - q_w8 * E_t8)) * dt
+  dE8 <- (alpha * E8 * (p_s * q_s8 * N_s8 + p_w * q_w8 * N_w8 - c)) * dt
+  #dE_test8 <- ((p_s8 * q_s8 * N_st8 + p_w8 * q_w8 * N_wt8) - c) * dt
+  dC_s8 <- (q_s8 * N_s8 * E8) * dt
+  dC_w8 <- (q_w8 * N_w8 * E8) * dt
+  dcpue_s8 <- (C_s8 / E8) * dt
+  dcpue_w8 <- (C_w8 / E8) * dt
+  dPi_s8 <- (C_s8 * p_s - C_s8 * c) * dt
+  dPi_w8 <- (C_w8 * p_w - C_w8 * c) * dt
+  dPi8 <- (C_s8 * p_s + C_w8 * p_w - ((C_s8 + C_w8) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu8[i] <- N_w8 + dN_w8
+  N_s_simu8[i] <- N_s8 + dN_s8
+  #N_w_test_8[i] <- N_wt8 + dN_wt8
+  #N_s_test_8[i] <- N_st8 + dN_st8
+  E_simu8[i] <- E8 + dE8
+  #E_test8[i] <- E_t8 + dE_test8
+  C_s_simu8[i] <- C_s8 + dC_s8
+  C_w_simu8[i] <- C_w8 + dC_w8
+  cpue_s_simu8[i] <- cpue_s8 + dcpue_s8
+  cpue_w_simu8[i] <- cpue_w8 + dcpue_w8
+  Pi_sum_simu8[i] <- pi8 + dPi8
+  Pi_s_simu8[i] <- pi_s8 + dPi_s8
+  Pi_w_simu8[i] <- pi_w8 + dPi_w8  
+  
+  
+}
+```
+
+
+```{r, echo = FALSE}
+run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
+ 
+  # Derive effort
+ E <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
+   (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+  
+  # Derive weak stock biomass
+ 
+  N_w <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
+    (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
+  
+ # Derive strong stock biomass
+ 
+   N_s <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
+     (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
+  
+  # Build output
+  output <- data.frame(E = E, N_s = N_s, N_w = N_w)
+ 
+  # Return
+  return(output)
+ 
+ 
+}
+
+sc_q_1 <- run_model(q_s = 0.9, q_w = 0.09, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
+sc_q_2 <- run_model(q_s = 0.9, q_w = 0.18, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
+sc_q_3 <- run_model(q_s = 0.9, q_w = 0.36, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
+sc_q_4 <- run_model(q_s = 0.9, q_w = 0.9, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
+sc_q_5 <- run_model(q_s = 0.675, q_w = 0.9, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
+sc_q_6 <- run_model(q_s = 0.45, q_w = 0.9, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
+sc_q_7 <- run_model(q_s = 0.225, q_w = 0.9, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
+sc_q_8 <- run_model(q_s = 0.09, q_w = 0.9, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
+
+sc_q_all <- bind_rows(sc_q_1, sc_q_2, sc_q_3, sc_q_4, sc_q_5, sc_q_6, sc_q_7, sc_q_8) %>% 
+  rownames_to_column() %>% 
+  rename(scenario = rowname) %>% 
+  mutate(tset = 5) %>% 
+  pivot_longer(cols = E:N_w,
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(q_ratio = case_when(
+    scenario == "1" ~ "QR = 10",
+    scenario == "2" ~ "QR = 5",
+    scenario == "3" ~ "QR = 2.5",
+    scenario == "4" ~ "QR = 1",
+    scenario == "5" ~ "QR = 0.75",
+    scenario == "6" ~ "QR = 0.5",
+    scenario == "7" ~ "QR = 0.25",
+    scenario == "8" ~ "QR = 0.1"
+  )) %>% 
+  pivot_wider(names_from = "variable",
+              values_from = "value") %>% 
+  mutate(b_values_s = N_s / k_s,
+         b_values_w = N_w / k_w) %>% 
+  pivot_longer(cols = N_s:N_w,
+               names_to = "variable",
+               values_to = "value") %>%
+  pivot_longer(cols = b_values_s:b_values_w,
+               names_to = "b_values",
+               values_to = "b_v_k") %>% 
+  pivot_longer(cols = E,
+               names_to = "effort",
+               values_to = "ef_value") %>% 
+  mutate(variable = case_when(
+    variable == "N_s" ~ "Ns*",
+    variable == "N_w" ~ "Nw*"
+  )) %>% 
+  mutate(effort = case_when(
+    effort == "E" ~ "E*"
+  )) %>% 
+  mutate(b_values = case_when(
+    str_detect(b_values, "_w") ~ "Nw/Kw*",
+    str_detect(b_values, "_s") ~ "Ns/Ks*"
+  ))
+```
+
+```{r building df for the catchability parameter space, echo = FALSE}
+eq_q_par <- data.frame(parameter = c("q_w", "q_s", "k_w", "k_s", "r_w", "r_s", "p_w", "p_s", "c"),
+                     "QR_10" =  c(0.9, 0.09, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "QR_5" =   c(0.9, 0.18, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "QR_2.5" = c(0.9, 0.36, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "QR_1" =   c(0.9, 0.9, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "QR_0.75" =c(0.675, 0.9, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "QR_0.5" = c(0.45, 0.9, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "QR_0.25" =c(0.225, 0.9, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "QR_0.1" = c(0.09, 0.9, 4, 2, 0.8, 0.45, 1, 1, 0.05))
+
+eq_q_par %>% 
+  gt() %>%
+  tab_header(title = "Parameter space for equilibrium points") %>% 
+  cols_align(align = "center")
+  
+```
+
+
+```{r, echo = FALSE}
+effort_df <- cbind(E_simu1, E_simu2, E_simu3, E_simu4, E_simu5, E_simu6, E_simu7, E_simu8, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("E_"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "7",
+    str_detect(variable, "8") ~ "8")
+         )
+
+# effort_test_df <- cbind(E_test1, E_test2, E_test3, E_test4, E_test5, E_test6, E_test7, E_test8, tset) %>% 
+#   as.data.frame() %>% 
+#   pivot_longer(cols = starts_with("E_"),
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id = case_when(
+#     str_detect(variable, "1") ~ "1",
+#     str_detect(variable, "2") ~ "2",
+#     str_detect(variable, "3") ~ "3",
+#     str_detect(variable, "4") ~ "4",
+#     str_detect(variable, "5") ~ "5",
+#     str_detect(variable, "6") ~ "6",
+#     str_detect(variable, "7") ~ "7",
+#     str_detect(variable, "8") ~ "8")
+#     )
+
+nw_df <- cbind(N_w_simu1, N_w_simu2, N_w_simu3, N_w_simu4, N_w_simu5, N_w_simu6, N_w_simu7,N_w_simu8, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("N_w_simu"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "7",
+    str_detect(variable, "8") ~ "8")) %>% 
+  mutate(b_v_k = value/k_w)
+
+
+ns_df <- cbind(N_s_simu1, N_s_simu2, N_s_simu3, N_s_simu4, N_s_simu5, N_s_simu6, N_s_simu7, N_s_simu8, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("N_s_simu"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "7",
+    str_detect(variable, "8") ~ "8")) %>% 
+  mutate(b_v_k = value/k_s)
+
+# ns_t_df <- cbind(N_s_test_1, N_s_test_2, N_s_test_3, N_s_test_4, N_s_test_5, N_s_test_6, N_s_test_7, N_s_test_8, tset) %>% 
+#   as.data.frame() %>% 
+#   pivot_longer(cols = starts_with("N_s_test_"),
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id = case_when(
+#     str_detect(variable, "1") ~ "1",
+#     str_detect(variable, "2") ~ "2",
+#     str_detect(variable, "3") ~ "3",
+#     str_detect(variable, "4") ~ "4",
+#     str_detect(variable, "5") ~ "5",
+#     str_detect(variable, "6") ~ "6",
+#     str_detect(variable, "7") ~ "7",
+#     str_detect(variable, "8") ~ "8")) %>% 
+#   mutate(b_v_k = value/4)
+# 
+# nw_t_df <- cbind(N_w_test_1, N_w_test_2, N_w_test_3, N_w_test_4, N_w_test_5, N_w_test_6, N_w_test_7, N_w_test_8, tset) %>% 
+#   as.data.frame() %>% 
+#   pivot_longer(cols = starts_with("N_w_test_"),
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id = case_when(
+#     str_detect(variable, "1") ~ "1",
+#     str_detect(variable, "2") ~ "2",
+#     str_detect(variable, "3") ~ "3",
+#     str_detect(variable, "4") ~ "4",
+#     str_detect(variable, "5") ~ "5",
+#     str_detect(variable, "6") ~ "6",
+#     str_detect(variable, "7") ~ "7",
+#     str_detect(variable, "8") ~ "8")) %>% 
+#   mutate(b_v_k = value/2)
+
+catch_s_df <- cbind(C_s_simu1, C_s_simu2, C_s_simu3, C_s_simu4, C_s_simu5, C_s_simu6, C_s_simu7, C_s_simu8, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("C_s_"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "7",
+    str_detect(variable, "8") ~ "8"))
+
+catch_w_df <- cbind(C_w_simu1, C_w_simu2, C_w_simu3, C_w_simu4, C_w_simu5, C_w_simu6, C_w_simu7, C_w_simu8, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("C_w_"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "7",
+    str_detect(variable, "8") ~ "8"))
+
+
+cpue_s_df <- cbind(cpue_s_simu1, cpue_s_simu2, cpue_s_simu3, cpue_s_simu4, cpue_s_simu5, cpue_s_simu6, cpue_s_simu7, cpue_s_simu8, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("cpue_s_"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "7",
+    str_detect(variable, "8") ~ "8"))
+
+
+cpue_w_df <- cbind(cpue_w_simu1, cpue_w_simu2, cpue_w_simu3, cpue_w_simu4, cpue_w_simu5, cpue_w_simu6, cpue_w_simu7, cpue_w_simu8, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("cpue_w_"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "7",
+    str_detect(variable, "8") ~ "8"))
+
+profits_df <- cbind(Pi_sum_simu1, Pi_sum_simu2, Pi_sum_simu3, Pi_sum_simu4, Pi_sum_simu5, Pi_sum_simu6, Pi_sum_simu7, Pi_sum_simu8, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("Pi_sum"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "7",
+    str_detect(variable, "8") ~ "8"))
+
+profits_s_df <- cbind(Pi_s_simu1, Pi_s_simu2, Pi_s_simu3, Pi_s_simu4, Pi_s_simu5, Pi_s_simu6, Pi_s_simu7, Pi_s_simu8, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("Pi_s_"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "7",
+    str_detect(variable, "8") ~ "8"))
+
+profits_w_df <- cbind(Pi_w_simu1, Pi_w_simu2, Pi_w_simu3, Pi_w_simu4, Pi_w_simu5, Pi_w_simu6, Pi_w_simu7, Pi_w_simu8, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = starts_with("Pi_w_"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = case_when(
+    str_detect(variable, "1") ~ "1",
+    str_detect(variable, "2") ~ "2",
+    str_detect(variable, "3") ~ "3",
+    str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "5",
+    str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "7",
+    str_detect(variable, "8") ~ "8"))
+
+# Gathered the results from each model scenario run into a single df
+
+var_full_q <- bind_rows(effort_df, nw_df, ns_df, catch_s_df, catch_w_df, cpue_s_df, cpue_w_df, profits_df, profits_w_df, profits_s_df)
+
+# Tidy dataset for plotting
+
+var_plot_q <- var_full_q %>%
+  mutate(q_ratio = case_when(
+    str_detect(scenario_id, "1") ~ "QR = 10",
+    str_detect(scenario_id, "2") ~ "QR = 5",
+    str_detect(scenario_id, "3") ~ "QR = 2.5",
+    str_detect(scenario_id, "4") ~ "QR = 1",
+    str_detect(scenario_id, "5") ~ "QR = 0.75",
+    str_detect(scenario_id, "6") ~ "QR = 0.5",
+    str_detect(scenario_id, "7") ~ "QR = 0.25",
+    str_detect(scenario_id, "8") ~ "QR = 0.1"
+  )) %>% 
+  mutate(variable_clean = case_when(
+    str_detect(variable, "N_w") ~ "Weak stock",
+    str_detect(variable, "N_s") ~ "Strong stock",
+    str_detect(variable, "E_simu") ~ "Effort simulation",
+    str_detect(variable, "Pi_sum_") ~ "Profit sum",
+    str_detect(variable, "Pi_s") ~ "Strong stock profits",
+    str_detect(variable, "Pi_w") ~ "Weak stock profits",
+    str_detect(variable, "cpue_w") ~ "Weak stock CPUE",
+    str_detect(variable, "cpue_s") ~ "Strong stock CPUE",
+    str_detect(variable, "C_w") ~ "Weak stock catch",
+    str_detect(variable, "C_s") ~ "Strong stock catch"
+  ))
+```
+
+```{r, echo = FALSE, fig.height=4, fig.width=8}
+equal_scales_EWS_q <-
+  var_plot_q %>% 
+  filter(variable_clean %in% c("Effort simulation", "Weak stock", "Strong stock")) %>% 
+  ggplot() +
+  geom_line(aes(x = tset/100, y = value, color = variable_clean),
+            size = .8,
+            alpha = .8,
+            show.legend = T) +
+  geom_point(data = sc_q_all, 
+             aes(x = tset, y = value, color = variable)) +
+  geom_point(data = sc_q_all,
+             aes(x = tset, y = ef_value, color = effort)) +
+  facet_wrap(~ factor(q_ratio, 
+                      levels = c("QR = 10",
+                                 "QR = 5",
+                                 "QR = 2.5",
+                                 "QR = 1",
+                                 "QR = 0.75",
+                                 "QR = 0.5",
+                                 "QR = 0.25",
+                                 "QR = 0.1")),
+             nrow = 1) +
+  scale_color_manual(values = c("#1B9E77", "#1B9E77", "#D95F02", "#7570B3",  "#D95F02", "#7570B3")) +
+#  scale_y_continuous(breaks = seq(0, 50, 10)) +
+  labs(x = "",
+       y = "Nw, Ns, E",
+       color = "") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        axis.title.x = element_text(color = "black", size = 12),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom")
+
+# equal_scales_EWS_test <-
+#   var_plot %>% 
+#   filter(variable_clean %in% c("Effort test", "Weak stock test", "Strong stock test")) %>% 
+#   ggplot() +
+#   geom_line(aes(x = tset/100, y = value, color = variable_clean),
+#             size = .8,
+#             alpha = .8,
+#             show.legend = T) +
+#   geom_point(data = sc_all, 
+#              aes(x = tset, y = value, color = variable)) +
+#   geom_point(data = sc_all, 
+#              aes(x = tset, y = ef_value, color = effort)) +
+#   facet_wrap(~ factor(price_ratio, 
+#                       levels = c("PR = 10",
+#                                  "PR = 5",
+#                                  "PR = 2.5",
+#                                  "PR = 1",
+#                                  "PR = 0.75",
+#                                  "PR = 0.5",
+#                                  "PR = 0.25",
+#                                  "PR = 0.1")),
+#              nrow = 1) +
+#   scale_color_manual(values = c("#1B9E77", "#1B9E77", "#D95F02", "#7570B3",  "#D95F02", "#7570B3")) +
+# #  scale_y_continuous(breaks = seq(0, 50, 10)) +
+#   labs(x = "",
+#        y = "Nw, Ns, E",
+#        color = "") +
+#   theme_bw() +
+#   theme(panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank(),
+#         panel.grid.minor.y = element_blank(),
+#         strip.background = element_rect(fill = "transparent"),
+#         strip.text = element_text(color = "black", size = 11),
+#         axis.title.x = element_text(color = "black", size = 12),
+#         axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+#         axis.text = element_text(color = "black", size = 10),
+#         legend.position = "bottom")
+
+dif_scales_q <-
+  var_plot_q %>% 
+  filter(variable_clean %in% c("Strong stock", "Weak stock")) %>% 
+  ggplot() +
+  geom_line(aes(x = tset/100, y = b_v_k, color = variable_clean),
+            size = .8,
+            alpha = .8,
+            show.legend = F) +
+  geom_point(data = sc_q_all %>% filter(!variable == "E"), 
+             aes(x = tset, y = b_v_k, color = b_values)) +
+  facet_wrap(~ factor(q_ratio, 
+                      levels = c("QR = 10",
+                                 "QR = 5",
+                                 "QR = 2.5",
+                                 "QR = 1",
+                                 "QR = 0.75",
+                                 "QR = 0.5",
+                                 "QR = 0.25",
+                                 "QR = 0.1")),
+             nrow = 1) +
+  scale_color_manual(values = c("#D95F02", "#7570B3", "#D95F02", "#7570B3")) +
+#  scale_x_continuous(breaks = seq(0, 500, 100)) +
+  labs(x = "",
+       y = "N/K (Nw, Ns)",
+       color = "") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        axis.title.x = element_text(color = "black", size = 12, vjust = -2),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom")
+
+equal_scales_CPE_q <-
+  var_plot_q %>% 
+  filter(variable_clean %in% c("Weak stock catch", "Strong stock catch", "Weak stock CPUE", "Strong stock CPUE")) %>% 
+  ggplot() +
+  geom_line(aes(x = tset/100, y = value, color = variable_clean),
+            size = .8,
+            alpha = .8,
+            show.legend = T) +
+  facet_wrap(~ factor(q_ratio, 
+                      levels = c("QR = 10",
+                                 "QR = 5",
+                                 "QR = 2.5",
+                                 "QR = 1",
+                                 "QR = 0.75",
+                                 "QR = 0.5",
+                                 "QR = 0.25",
+                                 "QR = 0.1")),
+             nrow = 1) +
+  scale_color_manual(values = c("#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F")) +
+#  scale_y_continuous(breaks = seq(0, 50, 10)) +
+  labs(x = "",
+       y = "CPUE, Catch (S and W)",
+       color = "") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        axis.title.x = element_text(color = "black", size = 12),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom")
+
+equal_scales_pi_q <-
+  var_plot_q %>% 
+  filter(variable_clean %in% c("Profit sum", "Weak stock profits", "Strong stock profits")) %>% 
+  ggplot() +
+  geom_line(aes(x = tset/100, y = value, color = variable_clean),
+            size = .8,
+            alpha = .8,
+            show.legend = T) +
+  facet_wrap(~ factor(q_ratio, 
+                      levels = c("QR = 10",
+                                 "QR = 5",
+                                 "QR = 2.5",
+                                 "QR = 1",
+                                 "QR = 0.75",
+                                 "QR = 0.5",
+                                 "QR = 0.25",
+                                 "QR = 0.1")),
+             nrow = 1) +
+  scale_color_manual(values = c("#FF7F00", "#CAB2D6", "#6A3D9A")) +
+#  scale_y_continuous(breaks = seq(0, 50, 10)) +
+  labs(x = "Time (x100)",
+       y = "Profits",
+       color = "") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        axis.title.x = element_text(color = "black", size = 12),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom")
+```
+
+```{r, fig.height=15, fig.width=10, echo = FALSE}
+equal_scales_EWS_q /
+  dif_scales_q /
+  equal_scales_CPE_q /
+  equal_scales_pi_q +
+  plot_annotation(tag_level = "A") 
+```
 
 
 
