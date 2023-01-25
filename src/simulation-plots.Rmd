@@ -28,6 +28,8 @@ output_growth_ranges <- read_csv(file.path(outdir, "output_r_ranges.csv"))
 
 output_q_ranges <- read_csv(file.path(outdir, "output_q_ranges.csv"))
 
+output_weak_test <- read_csv(file.path(outdir, "output_weak_test.csv"))
+
 #output_full <- read_csv(file.path(outdir, "output_full.csv"))
 ```
 
@@ -40,7 +42,7 @@ output_test_updated <- output_test %>%
               values_from = "values") %>% 
   mutate(b_values_s = N_s / k_s,
          b_values_w = N_w / k_w) %>% 
-  pivot_longer(cols = e:N_w,
+  pivot_longer(cols = E:N_w,
                names_to = "variables",
                values_to = "values") %>% 
   pivot_longer(cols = starts_with("b_values"),
@@ -540,18 +542,22 @@ ss_p_pos + ws_p_pos +
 output_growth_ranges %>% 
   pivot_wider(names_from = "stock_growth_r",
               values_from = "r") %>% 
-  filter(variables %in% c("N_w", "N_s") & values < 0) %>% 
+  filter(variables == "N_w" & r_s >= r_w & values >= 0) %>% 
   ggplot() +  
-  geom_raster(aes(x = r_w, y = r_s, fill = values)) +
-  scale_x_continuous(breaks = seq(0, 1.5, 0.2)) +
-  scale_y_continuous(breaks = seq(0, 1.6, 0.2)) +
-  facet_wrap(~ variables,
-            scales = "free_y") +
-  scale_fill_gradientn(name = "Stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
-  labs(x = "Weak stock r ranges",
-       y = "Strong stock r ranges",
-       title = "Simulation of r ranges on variable size") +
-  theme_bw() 
+  geom_raster(aes(x = r_w, y = r_s, fill = values/2)) +
+  scale_x_continuous(breaks = seq(0, 1, 0.1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 1.1, 0.2),
+                     expand = c(0,0)) +
+  scale_fill_gradientn(name = "B/K", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+  labs(x = "rw",
+       y = "rs",
+       title = "Weak stock positive equilibria ranges") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10),
+        strip.background = element_rect(fill = "transparent"),
+        panel.grid.minor = element_blank())
 ```
 
 
@@ -960,60 +966,125 @@ ss_test + labs(tag = 'A') + ws_test + labs(tag = 'B') +
 ```
 
 ```{r, echo = FALSE, include = FALSE}
-test <- output_test_updated %>% 
-  filter(q_s == 0.1 & q_w == 0.1) %>% 
-  pivot_wider(names_from = "variables",
-              values_from = "values") %>% 
-  mutate(vuln_ratio_test = (q_s * e/ r_s * N_s) / (q_w * e/ r_w * N_w)) %>% 
-  pivot_longer(cols = e:N_w,
-               names_to = "variables",
-               values_to = "values")
-
-test %>% 
-   mutate(b_v_k = case_when(
-     b_v_k < 0 ~ 0,
-     TRUE ~ b_v_k
-   )) %>% 
-  filter(variables == "N_s" & b_stocks == "b_values_s" & b_v_k <= 1) %>% 
-  ggplot() +
-  geom_point(aes(x = log1p(price_ratio), y = log1p(vuln_ratio), color = b_v_k),
-             alpha = 0.2) +
-  scale_color_paletteer_c("viridis::plasma",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
-  labs(x = "Price ratio",
-       y = "Vulnerability ratio",
-       title = "Strong stock",
-       color = "B/K") +
-  theme_bw() +
-  theme(panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.minor.y = element_blank(),
-        axis.title = element_text(size = 10, color = "black"),
-        axis.text = element_text(size = 10, color = "black"))
+# test <- output_test_updated %>% 
+#   filter(q_s == 0.1 & q_w == 0.1)
+# 
+# test %>% 
+#   #  mutate(b_v_k = case_when(
+#   #    b_v_k < 0 ~ 0,
+#   #    TRUE ~ b_v_k
+#   #  )) %>% 
+#   # filter(variables == "N_s" & b_stocks == "b_values_s" & b_v_k <= 1) %>% 
+#   ggplot() +
+#   geom_point(aes(x = log1p(price_ratio), y = log1p(vuln_ratio), color = b_v_k),
+#              alpha = 0.2) +
+#   scale_color_paletteer_c("viridis::plasma",
+#                           rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+#   labs(x = "Price ratio",
+#        y = "Vulnerability ratio",
+#        title = "Strong stock",
+#        color = "B/K") +
+#   theme_bw() +
+#   theme(panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank(),
+#         panel.grid.minor.y = element_blank(),
+#         axis.title = element_text(size = 10, color = "black"),
+#         axis.text = element_text(size = 10, color = "black"))
 ```
 
 ```{r, include = FALSE}
-test %>% 
-   mutate(b_v_k = case_when(
-     b_v_k < 0 ~ 0,
-     TRUE ~ b_v_k
-   )) %>% 
-  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k <= 1) %>% 
-  ggplot() +
-  geom_point(aes(x = log1p(price_ratio), y = log1p(vuln_ratio), color = b_v_k),
-             alpha = 0.2) +
-  scale_color_paletteer_c("viridis::plasma",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
-  labs(x = "Price ratio",
-       y = "Vulnerability ratio",
-       title = "Weak stock",
-       color = "B/K") +
+# test %>% 
+#    mutate(b_v_k = case_when(
+#      b_v_k < 0 ~ 0,
+#      TRUE ~ b_v_k
+#    )) %>% 
+#   filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k <= 1) %>% 
+#   ggplot() +
+#   geom_point(aes(x = log1p(price_ratio), y = log1p(vuln_ratio), color = b_v_k),
+#              alpha = 0.2) +
+#   scale_color_paletteer_c("viridis::plasma",
+#                           rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+#   labs(x = "Price ratio",
+#        y = "Vulnerability ratio",
+#        title = "Weak stock",
+#        color = "B/K") +
+#   theme_bw() +
+#   theme(panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank(),
+#         panel.grid.minor.y = element_blank(),
+#         axis.title = element_text(size = 10, color = "black"),
+#         axis.text = element_text(size = 10, color = "black"))
+```
+
+### First test plot with weak stock having zero price
+
+```{r, echo = FALSE, fig.height=6, fig.width=10}
+weak_stock_test <- 
+  output_test_updated %>% 
+  mutate(growth_ratio = r_w / r_s) %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w") %>% 
+  ggplot() + 
+  geom_raster(aes(x = growth_ratio, y = p_s, fill = b_v_k)) +
+  scale_fill_paletteer_c("viridis::plasma",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.6)) +
+  scale_x_continuous(breaks = seq(0.87, 1, 0.02),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 10, 1),
+                     expand = c(0,0)) +
+  labs(x = "Growth rate ratio (rw/rs)",
+       y = "Strong stock price",
+       fill = "B/K",
+       title = "Weak stock heatmap full data") +
   theme_bw() +
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
         axis.title = element_text(size = 10, color = "black"),
         axis.text = element_text(size = 10, color = "black"))
+
+
+weak_stock_test_pos <- 
+  output_test_updated %>% 
+  mutate(growth_ratio = r_w / r_s) %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k >= 0 & b_v_k <= 1) %>% 
+  ggplot() + 
+  geom_raster(aes(x = growth_ratio, y = p_s, fill = b_v_k)) +
+  scale_fill_paletteer_c("viridis::plasma",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.3),
+                         breaks = seq(0, 0.6, 0.1)) +
+  scale_x_continuous(breaks = seq(0.87, 1, 0.02),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 10, 1),
+                     expand = c(0,0)) +
+  labs(x = "Growth rate ratio (rw/rs)",
+       y = "Strong stock price",
+       fill = "B/K",
+       title = "Weak stock heatmap with 0 >= B/K >= 1") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        axis.title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 10, color = "black"))
+
+
+weak_stock_test + weak_stock_test_pos
+```
+
+### Second test plot with only the weak stock equilibrium
+
+```{r, echo = FALSE}
+output_weak_test %>%
+  ggplot() +
+  geom_line(aes(x = p_w_star, y = N_w_star, color = b_v_k),
+            size = 1) +
+  scale_color_paletteer_c("viridis::plasma") +
+  labs(x = "Pw*",
+       y = "Nw*",
+       color = "B/K") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 10),
+        axis.text = element_text(color = "black", size = 10))
 ```
 
 
@@ -1176,7 +1247,7 @@ q_w <- 0.1
 k_s <- 4
 k_w <- 2
 r_s <- 0.8
-r_w <- 0.45
+r_w <- 0.71
 p_s1 <- 1
 p_w1 <- 0.1
 alpha <- 1
@@ -1191,7 +1262,7 @@ E <- 0.1
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+tset <- seq(from = 0, to = 200, length.out = 1000)
 
 N_w_simu1 <- NaN*tset; N_w_simu1[1] <- N_w
 
@@ -1277,14 +1348,13 @@ for(i in 2:length(tset)) {
 ```
 
 
-
 ```{r scenario 2 price ratio 5, echo = FALSE}
 p_s2 <- 1
 p_w2 <- 0.2
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+#tset <- seq(from = 0, to = 500, length.out = 10000)
 
 N_w_simu2 <- NaN*tset; N_w_simu2[1] <- N_w
 
@@ -1375,7 +1445,7 @@ p_w3 <- 0.4
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+#tset <- seq(from = 0, to = 500, length.out = 10000)
 
 N_w_simu3 <- NaN*tset; N_w_simu3[1] <- N_w
 
@@ -1467,7 +1537,7 @@ p_w4 <- 1
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+#tset <- seq(from = 0, to = 500, length.out = 10000)
 
 N_w_simu4 <- NaN*tset; N_w_simu4[1] <- N_w
 
@@ -1554,12 +1624,12 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 5 price ratio 0.75, echo = FALSE}
 # set up the parameter space
-p_s5 <- 0.75
-p_w5 <- 1
+p_s5 <- 1
+p_w5 <- 1.33
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+#tset <- seq(from = 0, to = 500, length.out = 10000)
 
 N_w_simu5 <- NaN*tset; N_w_simu5[1] <- N_w
 
@@ -1645,12 +1715,12 @@ for(i in 2:length(tset)) {
 
 
 ```{r scenario 6 price ratio 0.5, echo = FALSE}
-p_s6 <- 0.5
-p_w6 <- 1
+p_s6 <- 1
+p_w6 <- 2
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+#tset <- seq(from = 0, to = 500, length.out = 10000)
 
 N_w_simu6 <- NaN*tset; N_w_simu6[1] <- N_w
 
@@ -1734,35 +1804,13 @@ for(i in 2:length(tset)) {
 ```
 
 
-```{r, echo = FALSE, include = FALSE}
-plot(x = tset, y = N_s_simu6,
-     type = "l",
-     col = "blue",
-     las = 1,
-     lwd = 2,
-     ylim = c(0, 20),
-     xlab = "Time", ylab = "Variable size")
-lines(x = tset, y = N_w_simu6,
-      type = "l", col = "orange")
-lines(x = tset, y = E_simu6,
-      type = "l", col = "green")
-title(main = "Sixth simulation - Price ratio = 0.5",
-      sub = "Params: q_s = 0.1, q_w = 0.1, r_s = 0.75, r_w = 0.25, k_s = 4, k_w = 2, p_s = 2.5, p_w = 5")
-legend(x = 80, y = 20,
-       lwd = 2,
-       legend = c("Ns", "Nw", "E"),
-       col = c("blue", "orange", "green"))
-```
-
-
-
 ```{r scenario 7 price ratio 0.25, echo = FALSE}
-p_s7 <- 0.25
-p_w7 <- 1
+p_s7 <- 1
+p_w7 <- 4
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+#tset <- seq(from = 0, to = 500, length.out = 10000)
 
 N_w_simu7 <- NaN*tset; N_w_simu7[1] <- N_w
 
@@ -1849,12 +1897,12 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 8 price ratio 0.25, echo = FALSE}
 # set up the parameter space
-p_s8 <- 0.1
-p_w8 <- 1
+p_s8 <- 1
+p_w8 <- 10
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+#tset <- seq(from = 0, to = 500, length.out = 10000)
 
 N_w_simu8 <- NaN*tset; N_w_simu8[1] <- N_w
 
@@ -1966,19 +2014,19 @@ run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
  
 }
 
-sc_1 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 0.1, c = 0.05)
-sc_2 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 0.2, c = 0.05)
-sc_3 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 0.4, c = 0.05)
-sc_4 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
-sc_5 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 0.75, p_w = 1, c = 0.05)
-sc_6 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 0.5, p_w = 1, c = 0.05)
-sc_7 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 0.2, p_w = 1, c = 0.05)
-sc_8 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = .1, p_w = 1, c = 0.05)
+sc_1 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 0.1, c = 0.05)
+sc_2 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 0.2, c = 0.05)
+sc_3 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 0.4, c = 0.05)
+sc_4 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 1, c = 0.05)
+sc_5 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 1.33, c = 0.05)
+sc_6 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 12, c = 0.05)
+sc_7 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 14, c = 0.05)
+sc_8 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 10, c = 0.05)
 
 sc_all <- bind_rows(sc_1, sc_2, sc_3, sc_4, sc_5, sc_6, sc_7, sc_8) %>% 
   rownames_to_column() %>% 
   rename(scenario = rowname) %>% 
-  mutate(tset = 5) %>% 
+  mutate(tset = 200) %>% 
   pivot_longer(cols = E:N_w,
                names_to = "variable",
                values_to = "value") %>% 
@@ -1994,8 +2042,8 @@ sc_all <- bind_rows(sc_1, sc_2, sc_3, sc_4, sc_5, sc_6, sc_7, sc_8) %>%
   )) %>% 
   pivot_wider(names_from = "variable",
               values_from = "value") %>% 
-  mutate(b_values_s = N_s / 4,
-         b_values_w = N_w / 2) %>% 
+  mutate(b_values_s = N_s / k_s,
+         b_values_w = N_w / k_w) %>% 
   pivot_longer(cols = N_s:N_w,
                names_to = "variable",
                values_to = "value") %>%
@@ -2019,15 +2067,15 @@ sc_all <- bind_rows(sc_1, sc_2, sc_3, sc_4, sc_5, sc_6, sc_7, sc_8) %>%
 ```
 
 ```{r building df for the parameter space, echo = FALSE}
-eq_par <- data.frame(parameter = c("q_w", "q_s", "k_w", "k_s", "r_w", "r_s", "p_w", "p_s", "c"),
-                     "PR_10" =  c(0.1, 0.1, 4, 2, 0.8, 0.45, 1, 0.1, 0.05),
-                     "PR_5" =   c(0.1, 0.1, 4, 2, 0.8, 0.45, 1, 0.2, 0.05),
-                     "PR_2.5" = c(0.1, 0.1, 4, 2, 0.8, 0.45, 1, 0.4, 0.05),
-                     "PR_1" =   c(0.1, 0.1, 4, 2, 0.8, 0.45, 1, 1, 0.05),
-                     "PR_0.75" =c(0.1, 0.1, 4, 2, 0.8, 0.45, 0.75, 1, 0.05),
-                     "PR_0.5" = c(0.1, 0.1, 4, 2, 0.8, 0.45, 0.5, 1, 0.05),
-                     "PR_0.25" =c(0.1, 0.1, 4, 2, 0.8, 0.45, 0.25, 1, 0.05),
-                     "PR_0.1" = c(0.1, 0.1, 4, 2, 0.8, 0.45, 0.1, 1, 0.05))
+eq_par <- data.frame(parameter = c("q_w", "q_s", "k_w", "k_s", "r_w", "r_s", "p_s", "p_w", "c"),
+                     "PR_10" =  c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 0.1, 0.05),
+                     "PR_5" =   c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 0.2, 0.05),
+                     "PR_2.5" = c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 0.4, 0.05),
+                     "PR_1" =   c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 1, 0.05),
+                     "PR_0.75" =c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 1.33, 0.05),
+                     "PR_0.5" = c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 2, 0.05),
+                     "PR_0.25" =c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 4, 0.05),
+                     "PR_0.1" = c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 10, 0.05))
 
 eq_par %>% 
   gt() %>%
@@ -2084,7 +2132,7 @@ nw_df <- cbind(N_w_simu1, N_w_simu2, N_w_simu3, N_w_simu4, N_w_simu5, N_w_simu6,
     str_detect(variable, "6") ~ "6",
     str_detect(variable, "7") ~ "7",
     str_detect(variable, "8") ~ "8")) %>% 
-  mutate(b_v_k = value/2)
+  mutate(b_v_k = value/k_w)
 
 
 ns_df <- cbind(N_s_simu1, N_s_simu2, N_s_simu3, N_s_simu4, N_s_simu5, N_s_simu6, N_s_simu7, N_s_simu8, tset) %>% 
@@ -2101,7 +2149,7 @@ ns_df <- cbind(N_s_simu1, N_s_simu2, N_s_simu3, N_s_simu4, N_s_simu5, N_s_simu6,
     str_detect(variable, "6") ~ "6",
     str_detect(variable, "7") ~ "7",
     str_detect(variable, "8") ~ "8")) %>% 
-  mutate(b_v_k = value/4)
+  mutate(b_v_k = value/k_s)
 
 # ns_t_df <- cbind(N_s_test_1, N_s_test_2, N_s_test_3, N_s_test_4, N_s_test_5, N_s_test_6, N_s_test_7, N_s_test_8, tset) %>% 
 #   as.data.frame() %>% 
@@ -2281,7 +2329,7 @@ equal_scales_EWS <-
   var_plot %>% 
   filter(variable_clean %in% c("Effort simulation", "Weak stock", "Strong stock")) %>% 
   ggplot() +
-  geom_line(aes(x = tset/100, y = value, color = variable_clean),
+  geom_line(aes(x = tset, y = value, color = variable_clean),
             size = .8,
             alpha = .8,
             show.legend = T) +
@@ -2300,7 +2348,7 @@ equal_scales_EWS <-
                                  "PR = 0.1")),
              nrow = 1) +
   scale_color_manual(values = c("#1B9E77", "#1B9E77", "#D95F02", "#7570B3",  "#D95F02", "#7570B3")) +
-#  scale_y_continuous(breaks = seq(0, 50, 10)) +
+  scale_x_continuous(breaks = seq(0, 200, 50)) +
   labs(x = "",
        y = "Nw, Ns, E",
        color = "") +
@@ -2357,7 +2405,7 @@ dif_scales <-
   var_plot %>% 
   filter(variable_clean %in% c("Strong stock", "Weak stock")) %>% 
   ggplot() +
-  geom_line(aes(x = tset/100, y = b_v_k, color = variable_clean),
+  geom_line(aes(x = tset, y = b_v_k, color = variable_clean),
             size = .8,
             alpha = .8,
             show.legend = F) +
@@ -2374,7 +2422,7 @@ dif_scales <-
                                  "PR = 0.1")),
              nrow = 1) +
   scale_color_manual(values = c("#D95F02", "#7570B3", "#D95F02", "#7570B3")) +
-#  scale_x_continuous(breaks = seq(0, 500, 100)) +
+  scale_x_continuous(breaks = seq(0, 200, 50)) +
   labs(x = "",
        y = "N/K (Nw, Ns)",
        color = "") +
@@ -2393,7 +2441,7 @@ equal_scales_CPE <-
   var_plot %>% 
   filter(variable_clean %in% c("Weak stock catch", "Strong stock catch", "Weak stock CPUE", "Strong stock CPUE")) %>% 
   ggplot() +
-  geom_line(aes(x = tset/100, y = value, color = variable_clean),
+  geom_line(aes(x = tset, y = value, color = variable_clean),
             size = .8,
             alpha = .8,
             show.legend = T) +
@@ -2408,7 +2456,7 @@ equal_scales_CPE <-
                                  "PR = 0.1")),
              nrow = 1) +
   scale_color_manual(values = c("#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F")) +
-#  scale_y_continuous(breaks = seq(0, 50, 10)) +
+  scale_x_continuous(breaks = seq(0, 200, 50)) +
   labs(x = "",
        y = "CPUE, Catch (S and W)",
        color = "") +
@@ -2427,7 +2475,7 @@ equal_scales_pi <-
   var_plot %>% 
   filter(variable_clean %in% c("Profit sum", "Weak stock profits", "Strong stock profits")) %>% 
   ggplot() +
-  geom_line(aes(x = tset/100, y = value, color = variable_clean),
+  geom_line(aes(x = tset, y = value, color = variable_clean),
             size = .8,
             alpha = .8,
             show.legend = T) +
@@ -2442,8 +2490,8 @@ equal_scales_pi <-
                                  "PR = 0.1")),
              nrow = 1) +
   scale_color_manual(values = c("#FF7F00", "#CAB2D6", "#6A3D9A")) +
-#  scale_y_continuous(breaks = seq(0, 50, 10)) +
-  labs(x = "Time (x100)",
+  scale_x_continuous(breaks = seq(0, 200, 50)) +
+  labs(x = "Time",
        y = "Profits",
        color = "") +
   theme_bw() +
@@ -2475,14 +2523,14 @@ Panel A shows the time series dynamics for the strong and weak stocks, and effor
 
 ### Scenarios for a range of productivity ratios:
 
-```{r scenario 1 productivity ratio 2, echo = FALSE}
+```{r scenario 1 productivity ratio 0.7, echo = FALSE}
 # set up the parameter space
 q_s <- 0.1
 q_w <- 0.1
 k_s <- 4
 k_w <- 2
 r_s1 <- 1
-r_w1 <- 0.5
+r_w1 <- 0.7
 p_s <- 1
 p_w <- 1
 alpha <- 1
@@ -2497,7 +2545,7 @@ E <- 0.1
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+tset <- seq(from = 0, to = 200, length.out = 1000)
 
 N_w_simu1 <- NaN*tset; N_w_simu1[1] <- N_w
 
@@ -2583,13 +2631,13 @@ for(i in 2:length(tset)) {
 ```
 
 
-```{r scenario 2 productivity ratio 1.75, echo = FALSE}
+```{r scenario 2 productivity ratio 0.88, echo = FALSE}
 r_s2 <- 1
-r_w2 <- 0.57
+r_w2 <- 0.88
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+#tset <- seq(from = 0, to = 500, length.out = 10000)
 
 N_w_simu2 <- NaN*tset; N_w_simu2[1] <- N_w
 
@@ -2674,14 +2722,14 @@ for(i in 2:length(tset)) {
 
 
 
-```{r scenario 3 productivity ratio 1.5, echo = FALSE}
+```{r scenario 3 productivity ratio 0.9, echo = FALSE}
 # set up the parameter space
 r_s3 <- 1
-r_w3 <- 0.69
+r_w3 <- 0.9
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+#tset <- seq(from = 0, to = 500, length.out = 10000)
 
 N_w_simu3 <- NaN*tset; N_w_simu3[1] <- N_w
 
@@ -2766,14 +2814,14 @@ for(i in 2:length(tset)) {
 ```
 
 
-```{r scenario 4 productivity ratio 1.25, echo = FALSE}
+```{r scenario 4 productivity ratio 0.92, echo = FALSE}
 # set up the parameter space
 r_s4 <- 1
-r_w4 <- 0.8
+r_w4 <- 0.92
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+#tset <- seq(from = 0, to = 500, length.out = 10000)
 
 N_w_simu4 <- NaN*tset; N_w_simu4[1] <- N_w
 
@@ -2862,11 +2910,11 @@ for(i in 2:length(tset)) {
 ```{r scenario 5 productivity ratio 1.1, echo = FALSE}
 # set up the parameter space
 r_s5 <- 1
-r_w5 <- 0.9
+r_w5 <- 0.95
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+#tset <- seq(from = 0, to = 500, length.out = 10000)
 
 N_w_simu5 <- NaN*tset; N_w_simu5[1] <- N_w
 
@@ -2954,11 +3002,11 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 6 productivity ratio 1, echo = FALSE}
 r_s6 <- 1
-r_w6 <- 1
+r_w6 <- 0.97
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+#tset <- seq(from = 0, to = 500, length.out = 10000)
 
 N_w_simu6 <- NaN*tset; N_w_simu6[1] <- N_w
 
@@ -3067,27 +3115,27 @@ run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
  
 }
 
-sc_r_1 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.5, p_s = 1, p_w = 1, c = 0.05)
-sc_r_2 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.57, p_s = 1, p_w = 1, c = 0.05)
-sc_r_3 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.69, p_s = 1, p_w = 1, c = 0.05)
-sc_r_4 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.8, p_s = 1, p_w = 1, c = 0.05)
-sc_r_5 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.9, p_s = 1, p_w = 1, c = 0.05)
-sc_r_6 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 1, p_s = 1, p_w = 1, c = 0.05)
+sc_r_1 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.7, p_s = 1, p_w = 1, c = 0.05)
+sc_r_2 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.88, p_s = 1, p_w = 1, c = 0.05)
+sc_r_3 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.9, p_s = 1, p_w = 1, c = 0.05)
+sc_r_4 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.92, p_s = 1, p_w = 1, c = 0.05)
+sc_r_5 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.95, p_s = 1, p_w = 1, c = 0.05)
+sc_r_6 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.97, p_s = 1, p_w = 1, c = 0.05)
 
 sc_r_all <- bind_rows(sc_r_1, sc_r_2, sc_r_3, sc_r_4, sc_r_5, sc_r_6) %>% 
   rownames_to_column() %>% 
   rename(scenario = rowname) %>% 
-  mutate(tset = 5) %>% 
+  mutate(tset = 200) %>% 
   pivot_longer(cols = E:N_w,
                names_to = "variable",
                values_to = "value") %>% 
   mutate(price_ratio = case_when(
-    scenario == "1" ~ "RR = 2",
-    scenario == "2" ~ "RR = 1.75",
-    scenario == "3" ~ "RR = 1.5",
-    scenario == "4" ~ "RR = 1.25",
-    scenario == "5" ~ "RR = 1.1",
-    scenario == "6" ~ "RR = 1"
+    scenario == "1" ~ "Rw/Rs = 0.7",
+    scenario == "2" ~ "Rw/Rs = 0.88",
+    scenario == "3" ~ "Rw/Rs = 0.9",
+    scenario == "4" ~ "Rw/Rs = 0.92",
+    scenario == "5" ~ "Rw/Rs = 0.95",
+    scenario == "6" ~ "Rw/Rs = 0.97"
   )) %>% 
   pivot_wider(names_from = "variable",
               values_from = "value") %>% 
@@ -3117,12 +3165,12 @@ sc_r_all <- bind_rows(sc_r_1, sc_r_2, sc_r_3, sc_r_4, sc_r_5, sc_r_6) %>%
 
 ```{r building df for the growth rate parameter space, echo = FALSE}
 eq_par <- data.frame(parameter = c("q_w", "q_s", "k_w", "k_s", "r_w", "r_s", "p_w", "p_s", "c"),
-                     "RR_2" =    c(0.1, 0.1, 4, 2, 1, 0.5, 1, 1, 0.05),
-                     "RR_1.75" = c(0.1, 0.1, 4, 2, 1, 0.57, 1, 1, 0.05),
-                     "RR_1.5" =  c(0.1, 0.1, 4, 2, 1, 0.69, 1, 1, 0.05),
-                     "RR_1.25" = c(0.1, 0.1, 4, 2, 1, 0.8, 1, 1, 0.05),
-                     "RR_1.1" =  c(0.1, 0.1, 4, 2, 1, 0.9, 1, 1, 0.05),
-                     "RR_1" =    c(0.1, 0.1, 4, 2, 1, 1, 1, 1, 0.05))
+                     "RR_2" =    c(0.1, 0.1, 4, 2, 1, 0.7, 1, 1, 0.05),
+                     "RR_1.75" = c(0.1, 0.1, 4, 2, 1, 0.88, 1, 1, 0.05),
+                     "RR_1.5" =  c(0.1, 0.1, 4, 2, 1, 0.9, 1, 1, 0.05),
+                     "RR_1.25" = c(0.1, 0.1, 4, 2, 1, 0.92, 1, 1, 0.05),
+                     "RR_1.1" =  c(0.1, 0.1, 4, 2, 1, 0.95, 1, 1, 0.05),
+                     "RR_1" =    c(0.1, 0.1, 4, 2, 1, 0.97, 1, 1, 0.05))
 
 eq_par %>% 
   gt() %>%
@@ -3326,12 +3374,12 @@ var_full_r <- bind_rows(effort_df, nw_df, ns_df, catch_s_df, catch_w_df, cpue_s_
 
 var_plot_r <- var_full_r %>%
   mutate(price_ratio = case_when(
-    str_detect(scenario_id, "1") ~ "RR = 2",
-    str_detect(scenario_id, "2") ~ "RR = 1.75",
-    str_detect(scenario_id, "3") ~ "RR = 1.5",
-    str_detect(scenario_id, "4") ~ "RR = 1.25",
-    str_detect(scenario_id, "5") ~ "RR = 1.1",
-    str_detect(scenario_id, "6") ~ "RR = 1"
+    str_detect(scenario_id, "1") ~ "Rw/Rs = 0.7",
+    str_detect(scenario_id, "2") ~ "Rw/Rs = 0.88",
+    str_detect(scenario_id, "3") ~ "Rw/Rs = 0.9",
+    str_detect(scenario_id, "4") ~ "Rw/Rs = 0.92",
+    str_detect(scenario_id, "5") ~ "Rw/Rs = 0.95",
+    str_detect(scenario_id, "6") ~ "Rw/Rs = 0.97"
   )) %>% 
   mutate(variable_clean = case_when(
     str_detect(variable, "N_w") ~ "Weak stock",
@@ -3352,7 +3400,7 @@ equal_scales_EWS_r <-
   var_plot_r %>% 
   filter(variable_clean %in% c("Effort simulation", "Weak stock", "Strong stock")) %>% 
   ggplot() +
-  geom_line(aes(x = tset/100, y = value, color = variable_clean),
+  geom_line(aes(x = tset, y = value, color = variable_clean),
             size = .8,
             alpha = .8,
             show.legend = T) +
@@ -3361,15 +3409,15 @@ equal_scales_EWS_r <-
   geom_point(data = sc_r_all,
              aes(x = tset, y = ef_value, color = effort)) +
   facet_wrap(~ factor(price_ratio, 
-                      levels = c("RR = 2",
-                                 "RR = 1.75",
-                                 "RR = 1.5",
-                                 "RR = 1.25",
-                                 "RR = 1.1",
-                                 "RR = 1")),
+                      levels = c("Rw/Rs = 0.7",
+                                 "Rw/Rs = 0.88",
+                                 "Rw/Rs = 0.9",
+                                 "Rw/Rs = 0.92",
+                                 "Rw/Rs = 0.95",
+                                 "Rw/Rs = 0.97")),
              nrow = 1) +
   scale_color_manual(values = c("#1B9E77", "#1B9E77", "#D95F02", "#7570B3",  "#D95F02", "#7570B3")) +
-#  scale_y_continuous(breaks = seq(0, 50, 10)) +
+  scale_x_continuous(breaks = seq(0, 200, 50)) +
   labs(x = "",
        y = "Nw, Ns, E",
        color = "") +
@@ -3426,22 +3474,22 @@ dif_scales_r <-
   var_plot_r %>% 
   filter(variable_clean %in% c("Strong stock", "Weak stock")) %>% 
   ggplot() +
-  geom_line(aes(x = tset/100, y = b_v_k, color = variable_clean),
+  geom_line(aes(x = tset, y = b_v_k, color = variable_clean),
             size = .8,
             alpha = .8,
             show.legend = F) +
   geom_point(data = sc_r_all %>% filter(!variable == "E"), 
              aes(x = tset, y = b_v_k, color = b_values)) +
   facet_wrap(~ factor(price_ratio, 
-                      levels = c("RR = 2",
-                                 "RR = 1.75",
-                                 "RR = 1.5",
-                                 "RR = 1.25",
-                                 "RR = 1.1",
-                                 "RR = 1")),
+                      levels = c("Rw/Rs = 0.7",
+                                 "Rw/Rs = 0.88",
+                                 "Rw/Rs = 0.9",
+                                 "Rw/Rs = 0.92",
+                                 "Rw/Rs = 0.95",
+                                 "Rw/Rs = 0.97")),
              nrow = 1) +
   scale_color_manual(values = c("#D95F02", "#7570B3", "#D95F02", "#7570B3")) +
-#  scale_x_continuous(breaks = seq(0, 500, 100)) +
+  scale_x_continuous(breaks = seq(0, 200, 50)) +
   labs(x = "",
        y = "N/K (Nw, Ns)",
        color = "") +
@@ -3460,20 +3508,20 @@ equal_scales_CPE_r <-
   var_plot_r %>% 
   filter(variable_clean %in% c("Weak stock catch", "Strong stock catch", "Weak stock CPUE", "Strong stock CPUE")) %>% 
   ggplot() +
-  geom_line(aes(x = tset/100, y = value, color = variable_clean),
+  geom_line(aes(x = tset, y = value, color = variable_clean),
             size = .8,
             alpha = .8,
             show.legend = T) +
   facet_wrap(~ factor(price_ratio, 
-                      levels = c("RR = 2",
-                                 "RR = 1.75",
-                                 "RR = 1.5",
-                                 "RR = 1.25",
-                                 "RR = 1.1",
-                                 "RR = 1")),
+                      levels = c("Rw/Rs = 0.7",
+                                 "Rw/Rs = 0.88",
+                                 "Rw/Rs = 0.9",
+                                 "Rw/Rs = 0.92",
+                                 "Rw/Rs = 0.95",
+                                 "Rw/Rs = 0.97")),
              nrow = 1) +
   scale_color_manual(values = c("#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F")) +
-#  scale_y_continuous(breaks = seq(0, 50, 10)) +
+  scale_x_continuous(breaks = seq(0, 200, 50)) +
   labs(x = "",
        y = "CPUE, Catch (S and W)",
        color = "") +
@@ -3492,20 +3540,20 @@ equal_scales_pi_r <-
   var_plot_r %>% 
   filter(variable_clean %in% c("Profit sum", "Weak stock profits", "Strong stock profits")) %>% 
   ggplot() +
-  geom_line(aes(x = tset/100, y = value, color = variable_clean),
+  geom_line(aes(x = tset, y = value, color = variable_clean),
             size = .8,
             alpha = .8,
             show.legend = T) +
   facet_wrap(~ factor(price_ratio, 
-                      levels = c("RR = 2",
-                                 "RR = 1.75",
-                                 "RR = 1.5",
-                                 "RR = 1.25",
-                                 "RR = 1.1",
-                                 "RR = 1")),
+                      levels = c("Rw/Rs = 0.7",
+                                 "Rw/Rs = 0.88",
+                                 "Rw/Rs = 0.9",
+                                 "Rw/Rs = 0.92",
+                                 "Rw/Rs = 0.95",
+                                 "Rw/Rs = 0.97")),
              nrow = 1) +
   scale_color_manual(values = c("#FF7F00", "#CAB2D6", "#6A3D9A")) +
-#  scale_y_continuous(breaks = seq(0, 50, 10)) +
+  scale_x_continuous(breaks = seq(0, 200, 50)) +
   labs(x = "Time (x100)",
        y = "Profits",
        color = "") +
@@ -3537,8 +3585,8 @@ q_s1 <- 0.9
 q_w1 <- 0.09
 k_s <- 4
 k_w <- 2
-r_s <- 0.8
-r_w <- 0.45
+r_s <- 1
+r_w <- 0.88
 p_s <- 1
 p_w <- 1
 alpha <- 1

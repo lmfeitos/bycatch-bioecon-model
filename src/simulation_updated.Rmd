@@ -19,7 +19,7 @@ outdir <- file.path(basedir, "model_outs") # calls present data from raster file
 run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
  
   # Derive effort
- e <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
+ E <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
    (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
   
   # Derive weak stock biomass
@@ -33,7 +33,7 @@ run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
      (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
   
   # Build output
-  output <- data.frame(e = e, N_s = N_s, N_w = N_w)
+  output <- data.frame(E = E, N_s = N_s, N_w = N_w)
  
   # Return
   return(output)
@@ -372,12 +372,12 @@ output_q %>%
 ```{r}
 # Building df of scenarios
 r_scenarios_df <- expand.grid(p_s = 1,
-                            p_w = 1,
-                            r_s = seq(0.1, 1.6, 0.1),
-                            r_w = seq(0.1, 1.5, 0.1),
+                            p_w = 0,
+                            r_s = seq(0.1, 1, 0.01),
+                            r_w = seq(0.1, 0.99, 0.01),
                             q_s = 0.1,
                             q_w = 0.1,
-                            k_s = 1,
+                            k_s = 2,
                             k_w = 1,
                             c = 0.05) %>% 
   mutate(scenario_id = 1:nrow(.)) 
@@ -437,11 +437,11 @@ for(i in 1:nrow(r_scenarios_df)){
 output_join_r <- output_r %>% 
   rename(scenario_id = sc_id) %>% 
   left_join(r_scenarios_df, by = "scenario_id") %>% 
-  relocate(scenario_id, .before = e)
+  relocate(scenario_id, .before = E)
 
 output_r_tidy <- output_join_r %>% 
   mutate(r_ratio = r_s / r_w) %>% 
-  pivot_longer(cols = e:N_w,
+  pivot_longer(cols = E:N_w,
                names_to = "variables",
                values_to = "values") %>% 
   pivot_longer(cols = c(r_s, r_w),
@@ -455,22 +455,50 @@ output_growth <- output_r_tidy %>%
 #write_csv(output_growth, file = file.path(outdir, "output_r_ranges.csv"), col_names = T)
 ```
 
-```{r}
-output_growth %>% 
+```{r, echo = FALSE}
+out_r_all <- 
+  output_growth %>% 
   pivot_wider(names_from = "stock_growth_r",
               values_from = "r") %>% 
-  filter(variables %in% c("N_w", "N_s") & values <=0) %>% 
+  filter(variables == "N_w" & r_s >= r_w) %>% 
   ggplot() +  
-  geom_raster(aes(x = r_w, y = r_s, fill = values)) +
+  geom_raster(aes(x = r_w, y = r_s, fill = values/2)) +
   scale_x_continuous(breaks = seq(0, 1.5, 0.2)) +
   scale_y_continuous(breaks = seq(0, 1.6, 0.2)) +
   facet_wrap(~ variables,
             scales = "free_y") +
-  scale_fill_gradientn(name = "Stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+  scale_fill_gradientn(name = "B/K", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
   labs(x = "Weak stock r ranges",
        y = "Strong stock r ranges",
-       title = "Simulation of r ranges on variable size") +
+       title = "Weak stock equilibria ranges") +
   theme_bw() 
+```
+
+```{r, echo = FALSE}
+#out_r_pos <- 
+  output_growth %>% 
+  pivot_wider(names_from = "stock_growth_r",
+              values_from = "r") %>% 
+  filter(variables == "N_w" & r_s >= r_w & values >= 0) %>% 
+  ggplot() +  
+  geom_raster(aes(x = r_w, y = r_s, fill = values/2)) +
+  scale_x_continuous(breaks = seq(0, 1, 0.1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 1.1, 0.2),
+                     expand = c(0,0)) +
+  scale_fill_gradientn(name = "B/K", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+  labs(x = "rw",
+       y = "rs",
+       title = "Weak stock positive equilibria ranges") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10),
+        strip.background = element_rect(fill = "transparent"),
+        panel.grid.minor = element_blank())
+```
+
+```{r, echo = FALSE, fig.width=10, fig.height=8}
+out_r_all + out_r_pos
 ```
 
 ```{r}
@@ -480,7 +508,7 @@ output_full <- output_price_range %>%
   rename(values_price = values.x,
          values_growth = values.y,
          values_q = values) %>% 
-  # mutate(stock_q_2 = stock_q,
+  # mutate(stock_q_2 = sto ck_q,
   #        stock_r = stock_growth_r,
   #        q2 = q,
   #        r2 = r) %>% 
@@ -493,16 +521,21 @@ output_full <- output_price_range %>%
 #write_csv(output_full, file = file.path(outdir, "output_full.csv"), col_names = T)
 ```
 
-```{r}
+
+```{r scenario range for 1st plot for the paper}
+################### USED THIS CODE TO BUILD THE PARAMETER SET OF FIGURE 2 ################################################
+
+# In this code chunk, I'll generate the dataset to simulate a scenario where the weak stock has zero value and the strong and weak stocks growth rates vary in different ratios.
+
 # Building df of price range scenarios
-scenarios_df <- expand.grid(p_s = seq(0.1, 10, 0.5),
-                            p_w = seq(0.1, 10, 0.5),
-                            r_s = seq(0.5, 1.5, 0.5),
-                            r_w = seq(0.3, 0.8, 0.25),
-                            q_s = seq(0.1, 0.5, 0.2),
-                            q_w = seq(0.1, 0.5, 0.2),
-                            k_s = seq(3, 5, 1),
-                            k_w = seq(1, 3, 1),
+scenarios_df <- expand.grid(p_s = seq(0.1, 10, 0.1),
+                            p_w = 0,
+                            r_s = 1,
+                            r_w = seq(0.888, 0.999, 0.01),
+                            q_s = 0.1,
+                            q_w = 0.1,
+                            k_s = 4,
+                            k_w = 2,
                             c = 0.05) %>% 
   mutate(scenario_id = 1:nrow(.)) 
 
@@ -559,11 +592,11 @@ for(i in 1:nrow(scenarios_df)){
 output_join_test  <- output_1 %>% 
   rename(scenario_id = sc_id) %>% 
   left_join(scenarios_df, by = "scenario_id") %>% 
-  relocate(scenario_id, .before = e)
+  relocate(scenario_id, .before = E)
 
 output_p_tidy <- output_join_test %>% 
   mutate(price_ratio = p_s / p_w) %>% 
-  pivot_longer(cols = e:N_w,
+  pivot_longer(cols = E:N_w,
                names_to = "variables",
                values_to = "values") 
   
@@ -573,6 +606,87 @@ output_p_tidy <- output_join_test %>%
 
 #write_csv(output_p_tidy, file = file.path(outdir, "output_ranges_test.csv"), col_names = T)
 ```
+
+```{r}
+
+# In this code chunk, I'll generate the dataset to simulate a scenario in which we don't care about the strong stock and just plot the luxury price effect.
+
+weak_stock_eq_fcn <- function(c, p_w, q_w, r_w, f) {
+  
+  # N_w with price as a constant
+  N_w <- c / p_w * q_w
+  
+  # Weak stock effort
+  E_w <- 1 / (q_w / r_w)
+  
+  # Weak stock catch
+  C_w <- q_w * N_w * E_w
+  
+  p_w_star <- C_w
+  
+  N_w_star <- c / (p_w_star) * q_w
+  
+  # Build output
+  output <- data.frame(N_w = N_w, E_w = E_w, C_w = C_w, p_w_star = p_w_star, N_w_star = N_w_star)
+ 
+  # Return
+  return(output)
+ 
+}
+
+weak_scenarios_df <- expand.grid(p_w = seq(0, 10, 0.1),
+                                 q_w = 0.1,
+                                 r_w = 0.88,
+                                 f = 1,
+                                 c = 0.05) %>% 
+  mutate(scenario_id = 1:nrow(.)) 
+
+# test scenario
+q_w <- weak_scenarios_df$q_w[1]
+p_w <- weak_scenarios_df$p_w[1]
+r_w <- weak_scenarios_df$r_w[1]
+f <- weak_scenarios_df$f[1]
+c <- weak_scenarios_df$c[1]
+
+
+i = 1
+
+for(i in 1:nrow(weak_scenarios_df)){
+ 
+  # Extract params
+  q_w <- weak_scenarios_df$q_w[i]
+  p_w <- weak_scenarios_df$p_w[i]
+  r_w <- weak_scenarios_df$r_w[i]
+  f <- weak_scenarios_df$f[i]
+  c <- weak_scenarios_df$c[i]
+  sc_id <- weak_scenarios_df$scenario_id[i]
+ 
+  # Run model
+  output_w <- weak_stock_eq_fcn(q_w = q_w, p_w = p_w, c = c, r_w = r_w, f = f) %>% 
+    mutate(sc_id = sc_id)
+  
+  if(i == 1){
+    output_weak <- output_w
+  }
+  else{
+    output_weak <- rbind(output_weak, output_w)
+  }
+
+}
+
+output_weak_test  <- output_weak %>% 
+  rename(scenario_id = sc_id) %>% 
+  left_join(weak_scenarios_df, by = "scenario_id") %>% 
+  mutate(b_v_k = N_w / 2)
+
+
+# output_price_range <- output_p_tidy %>% 
+#   select(scenario_id, variables, values, stock_prices, prices, price_ratio) %>% 
+#   distinct(variables, values, stock_prices, prices, price_ratio, .keep_all = TRUE)
+
+#write_csv(output_weak_test, file = file.path(outdir, "output_weak_test.csv"), col_names = T)
+```
+
 
 ## Setting up the time series simulation
 
