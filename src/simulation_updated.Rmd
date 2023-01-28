@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(here)
+library(patchwork)
 
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses/"
 outdir <- file.path(basedir, "model_outs") # calls present data from raster files
@@ -18,23 +19,40 @@ outdir <- file.path(basedir, "model_outs") # calls present data from raster file
 ```{r model function}
 run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
  
-  # Derive effort
- E <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
-   (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
-  
-  # Derive weak stock biomass
- 
   N_w <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
     (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
   
+  E <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
+   (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+  
+  N_s <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
+     (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
+  
+  # Weak stock catch
+  #C_w <- q_w * N_w * E
+  
+  # Price as a function of catch
+  #p_w_star <- C_w
+  
+  # Derive weak stock biomass
+ 
+  #N_w_star <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
+  #  (k_w * p_w_star * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
+  
+  # Derive effort
+  #E_star <- ((- c + k_s * p_s * q_s + k_w * p_w_star * q_w) * r_s * r_w)  /
+  # (k_w * p_w_star * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+  
  # Derive strong stock biomass
  
-   N_s <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
-     (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
+  #N_s_star <- (k_s * (c * q_s * r_w + k_w * p_w_star * q_w * (q_w * r_s - q_s * r_w))) /
+  #   (k_w * p_w_star * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
+  
   
   # Build output
   output <- data.frame(E = E, N_s = N_s, N_w = N_w)
  
+  #p_w_star = p_w_star, C_w = C_w, N_w_star = N_w_star, E_star = E_star, N_s_star = N_s_star
   # Return
   return(output)
  
@@ -371,15 +389,15 @@ output_q %>%
 
 ```{r}
 # Building df of scenarios
-r_scenarios_df <- expand.grid(p_s = 1,
-                            p_w = 0,
-                            r_s = seq(0.1, 1, 0.01),
-                            r_w = seq(0.1, 0.99, 0.01),
-                            q_s = 0.1,
-                            q_w = 0.1,
-                            k_s = 2,
-                            k_w = 1,
-                            c = 0.05) %>% 
+r_scenarios_df <- expand.grid(p_s = seq(1, 6, 1),
+                              p_w = seq(0, 5, 1),
+                              r_s = seq(0.1, 1, 0.01),
+                              r_w = seq(0.1, 0.99, 0.01),
+                              q_s = 0.1,
+                              q_w = 0.1,
+                              k_s = 2,
+                              k_w = 1,
+                              c = 0.05) %>% 
   mutate(scenario_id = 1:nrow(.)) 
 
 # test scenario
@@ -446,60 +464,120 @@ output_r_tidy <- output_join_r %>%
                values_to = "values") %>% 
   pivot_longer(cols = c(r_s, r_w),
                names_to = "stock_growth_r",
-               values_to = "r") 
+               values_to = "r") %>% 
+  mutate(p_sw_ratio = round(p_s / p_w, 2)) %>% 
+  mutate(p_ws_ratio = round(p_w / p_s, 2))
 
 output_growth <- output_r_tidy %>% 
-  select(scenario_id, variables, values, stock_growth_r, r, r_ratio) %>% 
+  select(scenario_id, variables, values, stock_growth_r, r, r_ratio, p_w, p_s, p_sw_ratio, p_ws_ratio) %>% 
   distinct_all()
 
 #write_csv(output_growth, file = file.path(outdir, "output_r_ranges.csv"), col_names = T)
 ```
 
 ```{r, echo = FALSE}
-out_r_all <- 
+out_r_p_ws <- 
   output_growth %>% 
   pivot_wider(names_from = "stock_growth_r",
               values_from = "r") %>% 
-  filter(variables == "N_w" & r_s >= r_w) %>% 
+  filter(variables == "N_w" & r_s >= r_w & values > 0) %>% 
   ggplot() +  
   geom_raster(aes(x = r_w, y = r_s, fill = values/2)) +
-  scale_x_continuous(breaks = seq(0, 1.5, 0.2)) +
-  scale_y_continuous(breaks = seq(0, 1.6, 0.2)) +
-  facet_wrap(~ variables,
-            scales = "free_y") +
-  scale_fill_gradientn(name = "B/K", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
-  labs(x = "Weak stock r ranges",
-       y = "Strong stock r ranges",
-       title = "Weak stock equilibria ranges") +
-  theme_bw() 
-```
-
-```{r, echo = FALSE}
-#out_r_pos <- 
-  output_growth %>% 
-  pivot_wider(names_from = "stock_growth_r",
-              values_from = "r") %>% 
-  filter(variables == "N_w" & r_s >= r_w & values >= 0) %>% 
-  ggplot() +  
-  geom_raster(aes(x = r_w, y = r_s, fill = values/2)) +
-  scale_x_continuous(breaks = seq(0, 1, 0.1),
+  scale_x_continuous(breaks = seq(0, 1, 0.4),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 1.1, 0.2),
                      expand = c(0,0)) +
-  scale_fill_gradientn(name = "B/K", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
+  facet_wrap(~ as.factor(p_ws_ratio),
+             nrow = 3,
+             ncol = 11) +
+  scale_fill_gradientn(name = "B/K",
+                       colors = RColorBrewer::brewer.pal(9, "YlOrBr"),
+                       breaks = seq(0.01, 0.125, 0.1)) +
   labs(x = "rw",
        y = "rs",
-       title = "Weak stock positive equilibria ranges") +
+       subtitle = "pw:ps ratios") +
   theme_bw() +
   theme(axis.title = element_text(color = "black", size = 12),
         axis.text = element_text(color = "black", size = 10),
         strip.background = element_rect(fill = "transparent"),
-        panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank(),
+        panel.spacing = unit(2, "mm"),
+        legend.position = "none")
 ```
 
-```{r, echo = FALSE, fig.width=10, fig.height=8}
-out_r_all + out_r_pos
+```{r, echo = FALSE, fig.width=8, fig.height=8}
+out_r_p_sw <- 
+  output_growth %>% 
+  pivot_wider(names_from = "stock_growth_r",
+              values_from = "r") %>% 
+  filter(variables == "N_w" & r_s >= r_w & values > 0) %>% 
+  ggplot() +  
+  geom_raster(aes(x = r_w, y = r_s, fill = values/2)) +
+  scale_x_continuous(breaks = seq(0, 1, 0.4),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 1.1, 0.2),
+                     expand = c(0,0)) +
+  facet_wrap(~ as.factor(p_sw_ratio),
+             nrow = 3,
+             ncol = 11) +
+  scale_fill_gradientn(name = "B/K",
+                       colors = RColorBrewer::brewer.pal(9, "YlOrBr"),
+                       breaks = seq(0.01, 0.125, 0.1)) +
+  labs(x = "rw",
+       y = "",
+       subtitle = "ps:pw ratios") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10),
+        strip.background = element_rect(fill = "transparent"),
+        panel.grid.minor = element_blank(),
+        panel.spacing = unit(2, "mm"),
+        legend.position = "bottom")
 ```
+
+```{r, echo = FALSE, fig.width=13, fig.height=8}
+out_r_p_ws + out_r_p_sw +
+  plot_annotation(tag_levels = "A") +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+```
+
+```{r}
+p_w_labs <- c("pw = 0", "pw = 1", "pw = 2", "pw = 3", "pw = 4", "pw = 5")
+names(p_w_labs) <- c(0, 1 , 2, 3, 4, 5)
+
+p_s_labs <- c("ps = 1", "ps = 2", "ps = 3", "ps = 4", "ps = 5", "ps = 6")
+names(p_s_labs) <- c(1 , 2, 3, 4, 5, 6)
+
+
+output_growth %>% 
+  pivot_wider(names_from = "stock_growth_r",
+              values_from = "r") %>% 
+  filter(variables == "N_w" & r_s >= r_w & values > 0) %>% 
+  ggplot() +  
+  geom_raster(aes(x = r_w, y = r_s, fill = values/2)) +
+  scale_x_continuous(breaks = seq(0, 1, 0.3),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 1.1, 0.4),
+                     expand = c(0,0)) +
+  facet_grid(p_s ~ p_w,
+             labeller = labeller(p_s = p_s_labs,
+                                 p_w = p_w_labs)) +
+  scale_fill_gradientn(name = "B/K",
+                       colors = RColorBrewer::brewer.pal(9, "YlOrBr")) +
+  labs(x = "rw",
+       y = "rs",
+       subtitle = "") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10),
+        strip.background = element_rect(fill = "transparent"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.spacing = unit(2, "mm"),
+        legend.position = "right")
+```
+
 
 ```{r}
 output_full <- output_price_range %>% 
@@ -528,8 +606,8 @@ output_full <- output_price_range %>%
 # In this code chunk, I'll generate the dataset to simulate a scenario where the weak stock has zero value and the strong and weak stocks growth rates vary in different ratios.
 
 # Building df of price range scenarios
-scenarios_df <- expand.grid(p_s = seq(0.1, 10, 0.1),
-                            p_w = 0,
+scenarios_df <- expand.grid(p_s = seq(0.1, 10, 1),
+                            p_w = seq(0, 20, 5),
                             r_s = 1,
                             r_w = seq(0.888, 0.999, 0.01),
                             q_s = 0.1,
@@ -577,7 +655,8 @@ for(i in 1:nrow(scenarios_df)){
  
   # Run model
   output <- run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
-                      q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, c = c) %>% 
+                      q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, 
+                      c = c) %>% 
     mutate(sc_id = sc_id)
   
   if(i == 1){

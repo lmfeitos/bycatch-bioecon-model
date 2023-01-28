@@ -542,7 +542,7 @@ ss_p_pos + ws_p_pos +
 output_growth_ranges %>% 
   pivot_wider(names_from = "stock_growth_r",
               values_from = "r") %>% 
-  filter(variables == "N_w" & r_s >= r_w & values >= 0) %>% 
+  filter(variables == "N_w" & r_s >= r_w & values > 0 & p_w == 0 & p_s == 1) %>% 
   ggplot() +  
   geom_raster(aes(x = r_w, y = r_s, fill = values/2)) +
   scale_x_continuous(breaks = seq(0, 1, 0.1),
@@ -561,20 +561,14 @@ output_growth_ranges %>%
 ```
 
 
-```{r, echo = FALSE}
-# output_test %>% 
-#   filter(values >= 0 & variables %in% c("N_w", "N_s")) %>% 
-#   ggplot() +
-#   geom_raster(aes(x = r_w, y = r_s, fill = values)) +
-#   facet_wrap(~ variables,
-#             scales = "free_y") +
-#   scale_fill_gradientn(name = "Stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
-#   facet_wrap(~ variables,
-#              scales = "free_y") +
-#   labs(x = "Weak stock growth ranges",
-#        y = "Strong stock growth ranges",
-#        title = "Simulation of growth ranges on stock size") +
-#   theme_bw()
+```{r, include = FALSE}
+output_growth_ranges %>%
+  pivot_wider(names_from = "stock_growth_r",
+              values_from = "r") %>% 
+  filter(variables == "N_w" & r_s >= r_w & values > 0) %>% 
+  mutate(r_ratio = r_w/r_s,
+         mean_r_ratio = mean(r_ratio),
+         sd_r_ratio = sd(r_ratio)) 
 ```
 
 ```{r, echo = FALSE}
@@ -1018,7 +1012,7 @@ ss_test + labs(tag = 'A') + ws_test + labs(tag = 'B') +
 
 ### First test plot with weak stock having zero price
 
-```{r, echo = FALSE, fig.height=6, fig.width=10}
+```{r, echo = FALSE, fig.height=6, fig.width=8}
 weak_stock_test <- 
   output_test_updated %>% 
   mutate(growth_ratio = r_w / r_s) %>% 
@@ -1046,7 +1040,7 @@ weak_stock_test <-
 weak_stock_test_pos <- 
   output_test_updated %>% 
   mutate(growth_ratio = r_w / r_s) %>% 
-  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k >= 0 & b_v_k <= 1) %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k > 0 & b_v_k <= 1) %>% 
   ggplot() + 
   geom_raster(aes(x = growth_ratio, y = p_s, fill = b_v_k)) +
   scale_fill_paletteer_c("viridis::plasma",
@@ -1061,15 +1055,24 @@ weak_stock_test_pos <-
        fill = "B/K",
        title = "Weak stock heatmap with 0 >= B/K >= 1") +
   theme_bw() +
-  theme(panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.minor.y = element_blank(),
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
         axis.title = element_text(size = 10, color = "black"),
         axis.text = element_text(size = 10, color = "black"))
 
 
 weak_stock_test + weak_stock_test_pos
 ```
+
+```{r, echo = FALSE}
+output_test_updated %>% 
+  mutate(r_ratio = r_w / r_s) %>%
+  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k > 0 & b_v_k <= 1) %>% 
+  mutate(mean_r_ratio = mean(r_ratio),
+         sd_r_ratio = sd(r_ratio))
+  
+```
+
 
 ### Second test plot with only the weak stock equilibrium
 
@@ -1079,12 +1082,56 @@ output_weak_test %>%
   geom_line(aes(x = p_w_star, y = N_w_star, color = b_v_k),
             size = 1) +
   scale_color_paletteer_c("viridis::plasma") +
+  scale_x_continuous(expand = c(0.01,0)) +
+  scale_y_continuous(expand = c(0,0)) +
   labs(x = "Pw*",
        y = "Nw*",
        color = "B/K") +
   theme_bw() +
   theme(axis.title = element_text(color = "black", size = 10),
-        axis.text = element_text(color = "black", size = 10))
+        axis.text = element_text(color = "black", size = 10),
+        panel.grid.minor = element_blank())
+```
+
+
+### Third test plot
+
+```{r, echo = FALSE, fig.width=8, fig.height=8}
+p_w_labs <- c("pw = 0", "pw = 1", "pw = 2", "pw = 3", "pw = 4", "pw = 5")
+names(p_w_labs) <- c(0, 1 , 2, 3, 4, 5)
+
+p_s_labs <- c("ps = 1", "ps = 2", "ps = 3", "ps = 4", "ps = 5", "ps = 6")
+names(p_s_labs) <- c(1 , 2, 3, 4, 5, 6)
+
+
+output_growth_ranges %>% 
+  pivot_wider(names_from = "stock_growth_r",
+              values_from = "r") %>% 
+  filter(variables == "N_w" & r_s >= r_w & values > 0) %>% 
+  ggplot() +  
+  geom_raster(aes(x = r_w, y = r_s, fill = values/2)) +
+  scale_x_continuous(breaks = seq(0, 1, 0.3),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 1.1, 0.4),
+                     expand = c(0,0)) +
+  facet_grid(p_s ~ p_w,
+             labeller = labeller(p_s = p_s_labs,
+                                 p_w = p_w_labs)) +
+  scale_fill_gradientn(name = "B/K",
+                       colors = RColorBrewer::brewer.pal(9, "YlOrBr"),
+                       breaks = seq(0.01, 0.125, 0.1)) +
+  labs(x = "rw",
+       y = "rs",
+       subtitle = "") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10),
+        strip.background = element_rect(fill = "transparent"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.spacing = unit(2, "mm"),
+        legend.position = "right")
+
 ```
 
 
