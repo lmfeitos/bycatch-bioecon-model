@@ -395,8 +395,8 @@ r_scenarios_df <- expand.grid(p_s = seq(1, 6, 1),
                               r_w = seq(0.1, 0.99, 0.01),
                               q_s = 0.1,
                               q_w = 0.1,
-                              k_s = 2,
-                              k_w = 1,
+                              k_s = 4,
+                              k_w = 2,
                               c = 0.05) %>% 
   mutate(scenario_id = 1:nrow(.)) 
 
@@ -469,7 +469,7 @@ output_r_tidy <- output_join_r %>%
   mutate(p_ws_ratio = round(p_w / p_s, 2))
 
 output_growth <- output_r_tidy %>% 
-  select(scenario_id, variables, values, stock_growth_r, r, r_ratio, p_w, p_s, p_sw_ratio, p_ws_ratio) %>% 
+  select(scenario_id, variables, values, stock_growth_r, r, r_ratio, p_w, p_s, p_sw_ratio, p_ws_ratio, k_w, k_s) %>% 
   distinct_all()
 
 #write_csv(output_growth, file = file.path(outdir, "output_r_ranges.csv"), col_names = T)
@@ -482,7 +482,7 @@ out_r_p_ws <-
               values_from = "r") %>% 
   filter(variables == "N_w" & r_s >= r_w & values > 0) %>% 
   ggplot() +  
-  geom_raster(aes(x = r_w, y = r_s, fill = values/2)) +
+  geom_raster(aes(x = r_w, y = r_s, fill = values/k_w)) +
   scale_x_continuous(breaks = seq(0, 1, 0.4),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 1.1, 0.2),
@@ -512,7 +512,7 @@ out_r_p_sw <-
               values_from = "r") %>% 
   filter(variables == "N_w" & r_s >= r_w & values > 0) %>% 
   ggplot() +  
-  geom_raster(aes(x = r_w, y = r_s, fill = values/2)) +
+  geom_raster(aes(x = r_w, y = r_s, fill = values/k_w)) +
   scale_x_continuous(breaks = seq(0, 1, 0.4),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 1.1, 0.2),
@@ -555,7 +555,7 @@ output_growth %>%
               values_from = "r") %>% 
   filter(variables == "N_w" & r_s >= r_w & values > 0) %>% 
   ggplot() +  
-  geom_raster(aes(x = r_w, y = r_s, fill = values/2)) +
+  geom_raster(aes(x = r_w, y = r_s, fill = values/k_w)) +
   scale_x_continuous(breaks = seq(0, 1, 0.3),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 1.1, 0.4),

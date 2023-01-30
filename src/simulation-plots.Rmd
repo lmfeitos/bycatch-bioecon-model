@@ -544,7 +544,7 @@ output_growth_ranges %>%
               values_from = "r") %>% 
   filter(variables == "N_w" & r_s >= r_w & values > 0 & p_w == 0 & p_s == 1) %>% 
   ggplot() +  
-  geom_raster(aes(x = r_w, y = r_s, fill = values/2)) +
+  geom_raster(aes(x = r_w, y = r_s, fill = values/k_w)) +
   scale_x_continuous(breaks = seq(0, 1, 0.1),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 1.1, 0.2),
@@ -558,6 +558,43 @@ output_growth_ranges %>%
         axis.text = element_text(color = "black", size = 10),
         strip.background = element_rect(fill = "transparent"),
         panel.grid.minor = element_blank())
+```
+
+```{r, echo = FALSE}
+p_w_labs <- c("pw = 0", "pw = 1", "pw = 2", "pw = 3", "pw = 4", "pw = 5")
+names(p_w_labs) <- c(0, 1 , 2, 3, 4, 5)
+
+p_s_labs <- c("ps = 1", "ps = 2", "ps = 3", "ps = 4", "ps = 5", "ps = 6")
+names(p_s_labs) <- c(1 , 2, 3, 4, 5, 6)
+
+
+output_growth_ranges %>% 
+  pivot_wider(names_from = "stock_growth_r",
+              values_from = "r") %>% 
+  filter(variables == "N_w" & r_s >= r_w & values > 0) %>% 
+  ggplot() +  
+  geom_raster(aes(x = r_w, y = r_s, fill = values/k_w)) +
+  scale_x_continuous(breaks = seq(0, 1, 0.3),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 1.1, 0.4),
+                     expand = c(0,0)) +
+  facet_grid(p_s ~ p_w,
+             labeller = labeller(p_s = p_s_labs,
+                                 p_w = p_w_labs)) +
+  scale_fill_gradientn(name = "B/K",
+                       colors = RColorBrewer::brewer.pal(9, "YlOrBr")) +
+  labs(x = "rw",
+       y = "rs",
+       subtitle = "") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10),
+        strip.background = element_rect(fill = "transparent"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.spacing = unit(2, "mm"),
+        legend.position = "right")
+
 ```
 
 
@@ -825,9 +862,9 @@ vul_w <-
 ```
 
 ```{r, echo = FALSE, fig.height=9, fig.width=8}
-vul_s + vul_w +
-  plot_annotation(title = "Price vs vulnerability ratios for strong and weak stocks - All B/K values",
-                  caption = "Price ratio = p_s / p_w \n Vulnerability ratio = (q_s/r_s) / (q_w/r_w)")
+# vul_s + vul_w +
+#   plot_annotation(title = "Price vs vulnerability ratios for strong and weak stocks - All B/K values",
+#                   caption = "Price ratio = p_s / p_w \n Vulnerability ratio = (q_s/r_s) / (q_w/r_w)")
 ```
 
 ```{r, echo = FALSE}
@@ -861,101 +898,101 @@ vul_pos_w <-
 ```
 
 ```{r, echo = FALSE, fig.width=9, fig.height=6}
-vul_pos_s + vul_pos_w +
-  plot_annotation(title = "Price vs vulnerability ratios for strong and weak stocks - Positive B/K values",
-                  caption = "Price ratio = p_s / p_w \n Vulnerability ratio = (q_s/r_s) / (q_w/r_w)")
+# vul_pos_s + vul_pos_w +
+#   plot_annotation(title = "Price vs vulnerability ratios for strong and weak stocks - Positive B/K values",
+#                   caption = "Price ratio = p_s / p_w \n Vulnerability ratio = (q_s/r_s) / (q_w/r_w)")
 ```
 
 - When transforming the negative values of B/K into zeros, we get the following plot:
 
 ```{r, echo = FALSE}
-output_test_updated %>% 
-  mutate(b_v_k = case_when(
-    b_v_k < 0 ~ 0,
-    TRUE ~ b_v_k
-  )) %>% 
-  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k >= 0) %>% 
-  ggplot() +
-  geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k),
-             alpha = 0.2) +
-  scale_color_paletteer_c("viridis::plasma",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
-  labs(x = "Price ratio",
-       y = "Vulnerability ratio",
-       title = "Weak stock - values above 1 filtered out",
-       color = "B/K") +
-  theme_bw() +
-  theme(panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.minor.y = element_blank(),
-        axis.title = element_text(size = 10, color = "black"),
-        axis.text = element_text(size = 10, color = "black"))
+# output_test_updated %>% 
+#   mutate(b_v_k = case_when(
+#     b_v_k < 0 ~ 0,
+#     TRUE ~ b_v_k
+#   )) %>% 
+#   filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k >= 0) %>% 
+#   ggplot() +
+#   geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k),
+#              alpha = 0.2) +
+#   scale_color_paletteer_c("viridis::plasma",
+#                           rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+#   labs(x = "Price ratio",
+#        y = "Vulnerability ratio",
+#        title = "Weak stock - values above 1 filtered out",
+#        color = "B/K") +
+#   theme_bw() +
+#   theme(panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank(),
+#         panel.grid.minor.y = element_blank(),
+#         axis.title = element_text(size = 10, color = "black"),
+#         axis.text = element_text(size = 10, color = "black"))
 ```
 
 
 ```{r, echo = FALSE}
-test <- output_test_updated %>% 
-  filter(q_s == 0.1 & q_w == 0.1) %>% 
-  mutate(vuln_ratio = (q_s/r_s) / (q_w / r_w))
-
-ws_test <- test %>% 
-   mutate(b_v_k = case_when(
-     b_v_k < 0 ~ 0,
-     TRUE ~ b_v_k
-   )) %>% 
-  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k <= 1 & price_ratio <= 10) %>% 
-  ggplot() +
-  geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k),
-             alpha = 0.2) +
-  scale_color_paletteer_c("viridis::plasma",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
-  scale_x_continuous(breaks = seq(0, 10, 2),
-                     limits = c(0, 10),
-                     expand = c(0.01,0)) +
-  labs(x = "Price ratio",
-       y = "",
-       title = "",
-       color = "B/K") +
-  theme_bw() +
-  theme(panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.minor.y = element_blank(),
-        axis.title = element_text(size = 10, color = "black"),
-        axis.text = element_text(size = 10, color = "black"))
+# test <- output_test_updated %>% 
+#   filter(q_s == 0.1 & q_w == 0.1) %>% 
+#   mutate(vuln_ratio = (q_s/r_s) / (q_w / r_w))
+# 
+# ws_test <- test %>% 
+#    mutate(b_v_k = case_when(
+#      b_v_k < 0 ~ 0,
+#      TRUE ~ b_v_k
+#    )) %>% 
+#   filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k <= 1 & price_ratio <= 10) %>% 
+#   ggplot() +
+#   geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k),
+#              alpha = 0.2) +
+#   scale_color_paletteer_c("viridis::plasma",
+#                           rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+#   scale_x_continuous(breaks = seq(0, 10, 2),
+#                      limits = c(0, 10),
+#                      expand = c(0.01,0)) +
+#   labs(x = "Price ratio",
+#        y = "",
+#        title = "",
+#        color = "B/K") +
+#   theme_bw() +
+#   theme(panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank(),
+#         panel.grid.minor.y = element_blank(),
+#         axis.title = element_text(size = 10, color = "black"),
+#         axis.text = element_text(size = 10, color = "black"))
 ```
 
 ```{r, echo = FALSE}
-ss_test <- 
-  test %>% 
-   mutate(b_v_k = case_when(
-     b_v_k < 0 ~ 0,
-     TRUE ~ b_v_k
-   )) %>% 
-  filter(variables == "N_s" & b_stocks == "b_values_s" & b_v_k <= 1 & price_ratio <= 10) %>% 
-  ggplot() +
-  geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k),
-             alpha = 0.2,
-             show.legend = F) +
-  scale_color_paletteer_c("viridis::plasma",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
-  scale_x_continuous(breaks = seq(0, 10, 2),
-                     limits = c(0, 10),
-                     expand = c(0.01,0)) +
-  labs(x = "Price ratio",
-       y = "Vulnerability ratio",
-       title = "",
-       color = "B/K") +
-  theme_bw() +
-  theme(panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.minor.y = element_blank(),
-        axis.title = element_text(size = 10, color = "black"),
-        axis.text = element_text(size = 10, color = "black"))
+# ss_test <- 
+#   test %>% 
+#    mutate(b_v_k = case_when(
+#      b_v_k < 0 ~ 0,
+#      TRUE ~ b_v_k
+#    )) %>% 
+#   filter(variables == "N_s" & b_stocks == "b_values_s" & b_v_k <= 1 & price_ratio <= 10) %>% 
+#   ggplot() +
+#   geom_point(aes(x = price_ratio, y = vuln_ratio, color = b_v_k),
+#              alpha = 0.2,
+#              show.legend = F) +
+#   scale_color_paletteer_c("viridis::plasma",
+#                           rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+#   scale_x_continuous(breaks = seq(0, 10, 2),
+#                      limits = c(0, 10),
+#                      expand = c(0.01,0)) +
+#   labs(x = "Price ratio",
+#        y = "Vulnerability ratio",
+#        title = "",
+#        color = "B/K") +
+#   theme_bw() +
+#   theme(panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank(),
+#         panel.grid.minor.y = element_blank(),
+#         axis.title = element_text(size = 10, color = "black"),
+#         axis.text = element_text(size = 10, color = "black"))
 ```
 
 ```{r, echo = FALSE, fig.height=5, fig.width=8}
-ss_test + labs(tag = 'A') + ws_test + labs(tag = 'B') +
-  plot_layout(guides = "collect")
+#ss_test + labs(tag = 'A') + ws_test + labs(tag = 'B') +
+#  plot_layout(guides = "collect")
 #  plot_annotation(title = "Price vs vulnerability ratios for strong and weak stocks - B/K values above 1 filtered out")
 ```
 
@@ -1109,7 +1146,7 @@ output_growth_ranges %>%
               values_from = "r") %>% 
   filter(variables == "N_w" & r_s >= r_w & values > 0) %>% 
   ggplot() +  
-  geom_raster(aes(x = r_w, y = r_s, fill = values/2)) +
+  geom_raster(aes(x = r_w, y = r_s, fill = values/k_w)) +
   scale_x_continuous(breaks = seq(0, 1, 0.3),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 1.1, 0.4),
@@ -1118,8 +1155,7 @@ output_growth_ranges %>%
              labeller = labeller(p_s = p_s_labs,
                                  p_w = p_w_labs)) +
   scale_fill_gradientn(name = "B/K",
-                       colors = RColorBrewer::brewer.pal(9, "YlOrBr"),
-                       breaks = seq(0.01, 0.125, 0.1)) +
+                       colors = RColorBrewer::brewer.pal(9, "YlOrBr")) +
   labs(x = "rw",
        y = "rs",
        subtitle = "") +
@@ -2395,7 +2431,7 @@ equal_scales_EWS <-
                                  "PR = 0.1")),
              nrow = 1) +
   scale_color_manual(values = c("#1B9E77", "#1B9E77", "#D95F02", "#7570B3",  "#D95F02", "#7570B3")) +
-  scale_x_continuous(breaks = seq(0, 200, 50)) +
+  scale_x_continuous(breaks = seq(0, 200, 100)) +
   labs(x = "",
        y = "Nw, Ns, E",
        color = "") +
@@ -2469,7 +2505,7 @@ dif_scales <-
                                  "PR = 0.1")),
              nrow = 1) +
   scale_color_manual(values = c("#D95F02", "#7570B3", "#D95F02", "#7570B3")) +
-  scale_x_continuous(breaks = seq(0, 200, 50)) +
+  scale_x_continuous(breaks = seq(0, 200, 100)) +
   labs(x = "",
        y = "N/K (Nw, Ns)",
        color = "") +
@@ -2503,7 +2539,7 @@ equal_scales_CPE <-
                                  "PR = 0.1")),
              nrow = 1) +
   scale_color_manual(values = c("#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F")) +
-  scale_x_continuous(breaks = seq(0, 200, 50)) +
+  scale_x_continuous(breaks = seq(0, 200, 100)) +
   labs(x = "",
        y = "CPUE, Catch (S and W)",
        color = "") +
@@ -2537,7 +2573,7 @@ equal_scales_pi <-
                                  "PR = 0.1")),
              nrow = 1) +
   scale_color_manual(values = c("#FF7F00", "#CAB2D6", "#6A3D9A")) +
-  scale_x_continuous(breaks = seq(0, 200, 50)) +
+  scale_x_continuous(breaks = seq(0, 200, 100)) +
   labs(x = "Time",
        y = "Profits",
        color = "") +
