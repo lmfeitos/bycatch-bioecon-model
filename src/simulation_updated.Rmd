@@ -606,10 +606,10 @@ output_full <- output_price_range %>%
 # In this code chunk, I'll generate the dataset to simulate a scenario where the weak stock has zero value and the strong and weak stocks growth rates vary in different ratios.
 
 # Building df of price range scenarios
-scenarios_df <- expand.grid(p_s = seq(0.1, 10, 1),
-                            p_w = seq(0, 20, 5),
+scenarios_df <- expand.grid(p_s = seq(1, 15, 3),
+                            p_w = seq(0.1, 10, 0.1),
                             r_s = 1,
-                            r_w = seq(0.888, 0.999, 0.01),
+                            r_w = seq(0.5, 0.999, 0.01),
                             q_s = 0.1,
                             q_w = 0.1,
                             k_s = 4,
@@ -683,7 +683,7 @@ output_p_tidy <- output_join_test %>%
 #   select(scenario_id, variables, values, stock_prices, prices, price_ratio) %>% 
 #   distinct(variables, values, stock_prices, prices, price_ratio, .keep_all = TRUE)
 
-#write_csv(output_p_tidy, file = file.path(outdir, "output_ranges_test.csv"), col_names = T)
+#write_csv(output_p_tidy, file = file.path(outdir, "output_w_ranges_s_ranges.csv"), col_names = T)
 ```
 
 ```{r}
