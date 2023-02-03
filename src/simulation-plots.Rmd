@@ -33,12 +33,21 @@ output_w_ranges_s_zero <- read_csv(file.path(outdir, "output_w_ranges_s_zero.csv
 
 output_test <- read_csv(file.path(outdir, "output_ranges_test.csv"))  
 
-output_growth_ranges <- read_csv(file.path(outdir, "output_r_ranges.csv"))
-
 output_weak_test <- read_csv(file.path(outdir, "output_weak_test.csv"))
+
+output_r_test <- read_csv(file.path(outdir, "output_r_ranges.csv"))
+
+output_q_test <- read_csv(file.path(outdir, "output_q_ranges.csv"))
 
 #output_full <- read_csv(file.path(outdir, "output_full.csv"))
 ```
+
+```{r, echo = FALSE}
+# read in the output from the test with prices varying as a function of catch
+
+output_fcn_test <- read_csv(file.path(outdir, "output_fcn_tests.csv"))
+```
+
 
 ```{r data wrangling, echo = FALSE}
 output_test_updated <- output_test %>% 
@@ -93,7 +102,7 @@ s_w_zero_proc <- output_s_ranges_w_zero %>%
   pivot_longer(cols = starts_with("b_values"),
                names_to = "b_stocks",
                values_to = "b_v_k") %>% 
-  mutate(vuln_ratio = (q_s/r_s) / (q_w/r_w))
+  mutate(vuln_ratio = (q_s/r_s) / (q_w/r_w)) 
 
 w_s_zero_proc <- output_w_ranges_s_zero %>% 
   pivot_wider(names_from = "variables",
@@ -107,6 +116,43 @@ w_s_zero_proc <- output_w_ranges_s_zero %>%
                names_to = "b_stocks",
                values_to = "b_v_k") %>% 
   mutate(vuln_ratio = (q_s/r_s) / (q_w/r_w))
+
+output_r_test_proc <- output_r_test %>% 
+  pivot_wider(names_from = "variables",
+              values_from = "values") %>% 
+  mutate(b_values_s = N_s / k_s,
+         b_values_w = N_w / k_w) %>% 
+  pivot_longer(cols = E:N_w,
+               names_to = "variables",
+               values_to = "values") %>% 
+  pivot_longer(cols = starts_with("b_values"),
+               names_to = "b_stocks",
+               values_to = "b_v_k") %>% 
+  pivot_wider(names_from = "stock_growth_r",
+              values_from = "r") %>% 
+  mutate(vuln_ratio = (q_s/r_s) / (q_w/r_w))
+
+output_q_test_proc <- output_q_test %>% 
+  pivot_wider(names_from = "variables",
+              values_from = "values") %>% 
+  mutate(b_values_s = N_s / k_s,
+         b_values_w = N_w / k_w) %>% 
+  pivot_longer(cols = E:N_w,
+               names_to = "variables",
+               values_to = "values") %>% 
+  pivot_longer(cols = starts_with("b_values"),
+               names_to = "b_stocks",
+               values_to = "b_v_k") %>% 
+  pivot_wider(names_from = "stock_q",
+              values_from = "q") %>% 
+  mutate(vuln_ratio = (q_s/r_s) / (q_w/r_w))
+```
+
+```{r, echo = FALSE}
+# filtering for B/K < 0.1 for all scenarios
+s_w_zero_proc %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k >= 0 & b_v_k <= 0.1) %>% 
+  mutate(mean_ps = mean(p_s))
 ```
 
 
@@ -294,22 +340,147 @@ $$
 ```{r distribution of negative values for Ns and Nw for the range of qs, echo = FALSE}
 # New tests with the other parameters also being varied
 
-# output_q_ranges %>% 
-#   pivot_wider(names_from = "stock_q",
-#               values_from = "q") %>% 
-#   filter(variables %in% c("N_w", "N_s") & values < 0) %>% 
-#   ggplot() +
-#   geom_raster(aes(x = q_w, y = q_s, fill = values)) +
-#   scale_x_continuous(breaks = seq(0.1, 1, 0.2)) +
-#   scale_y_continuous(breaks = seq(0.1, 1, 0.2)) +
-#   facet_wrap(~ variables) +
-#   scale_fill_gradientn(name = "stock size", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
-#   facet_wrap(~ variables,
-#              scales = "free_y") +
-#   labs(x = "Weak stock q ranges",
-#        y = "Strong stock q ranges",
-#        title = "Simulation of catchability ranges on stock size") +
-#   theme_bw() 
+q_ranges <- 
+  output_q_test_proc %>% 
+ filter(variables == "N_w" & b_stocks == "b_values_w" & r_s >= r_w & b_v_k > 0) %>% 
+ ggplot() +
+ geom_raster(aes(x = q_w, y = q_s, fill = b_v_k)) +
+ scale_x_continuous(breaks = seq(0.01, 0.1, 0.02),
+                    expand = c(0,0)) +
+ scale_y_continuous(breaks = seq(0.01, 0.1, 0.02),
+                    expand = c(0,0)) +
+ scale_fill_gradientn(name = "Bw/Kw",
+                      colors = RColorBrewer::brewer.pal(9, "YlOrRd"),
+                      rescaler = ~scales::rescale(.x, mid = 0.5)) +
+ labs(x = "Weak stock q ranges",
+      y = "Strong stock q ranges",
+      title = "qw vs qs") +
+ theme_bw() 
+
+r_ranges <- output_q_test_proc %>% 
+ filter(variables == "N_w" & b_stocks == "b_values_w" & r_s >= r_w & b_v_k > 0) %>% 
+ ggplot() +
+ geom_raster(aes(x = r_w, y = r_s, fill = b_v_k)) +
+ scale_x_continuous(breaks = seq(0.1, 1, 0.1),
+                    expand = c(0,0)) +
+ scale_y_continuous(breaks = seq(0.1, 0.99, 0.1),
+                    expand = c(0,0)) +
+ scale_fill_gradientn(name = "Bw/Kw",
+                      colors = RColorBrewer::brewer.pal(9, "YlOrRd"),
+                      rescaler = ~scales::rescale(.x, mid = 0.5)) +
+ labs(x = "Weak stock r ranges",
+      y = "Strong stock r ranges",
+      title = "rw vs rs") +
+ theme_bw() 
+
+rw_vs_qs <- 
+  output_q_test_proc %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & r_s >= r_w & b_v_k > 0) %>% 
+  ggplot() +
+  geom_raster(aes(x = r_w, y = q_s, fill = b_v_k)) +
+  scale_x_continuous(breaks = seq(0.1, 1, 0.1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0.01, 0.1, 0.02),
+                     expand = c(0,0)) +
+  scale_fill_gradientn(name = "Bw/Kw",
+                       colors = RColorBrewer::brewer.pal(9, "YlOrRd"),
+                       rescaler = ~scales::rescale(.x, mid = 0.5)) +
+  labs(x = "Weak stock r ranges",
+       y = "Strong stock q ranges",
+       title = "rw vs qs") +
+  theme_bw() 
+
+rw_vs_qw <- 
+  output_q_test_proc %>% 
+ filter(variables == "N_w" & b_stocks == "b_values_w" & r_s >= r_w & b_v_k > 0) %>% 
+ ggplot() +
+ geom_raster(aes(x = r_w, y = q_w, fill = b_v_k)) +
+ scale_x_continuous(breaks = seq(0.1, 1, 0.1),
+                    expand = c(0,0)) +
+ scale_y_continuous(breaks = seq(0.01, 0.1, 0.02),
+                    expand = c(0,0)) +
+ scale_fill_gradientn(name = "Bw/Kw",
+                      colors = RColorBrewer::brewer.pal(9, "YlOrRd"),
+                      rescaler = ~scales::rescale(.x, mid = 0.5)) +
+ labs(x = "Weak stock r ranges",
+      y = "Weak stock q ranges",
+      title = "rw vs qw") +
+ theme_bw() 
+
+rw_vs_rs_equal_qw <-
+  output_q_test_proc %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & r_s >= r_w & b_v_k >= 0 & q_w == q_s) %>% 
+  ggplot() +
+  geom_raster(aes(x = r_w, y = r_s, fill = b_v_k)) +
+  scale_x_continuous(breaks = seq(0.1, 1, 0.1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0.1, 1, 0.1),
+                     expand = c(0,0)) +
+  scale_fill_gradientn(name = "Bw/Kw",
+                       colors = RColorBrewer::brewer.pal(9, "YlOrRd"),
+                       rescaler = ~scales::rescale(.x, mid = 0.5)) +
+  labs(x = "Weak stock r ranges",
+       y = "Strong stock r ranges",
+       title = "qw = qs") +
+  theme_bw()
+
+rw_vs_rs_qw_dif_qs <-
+  output_q_test_proc %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & r_s >= r_w & b_v_k >= 0 & q_w != q_s) %>% 
+  ggplot() +
+  geom_raster(aes(x = r_w, y = r_s, fill = b_v_k)) +
+  scale_x_continuous(breaks = seq(0.1, 1, 0.1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0.1, 1, 0.1),
+                     expand = c(0,0)) +
+  scale_fill_gradientn(name = "Bw/Kw",
+                       colors = RColorBrewer::brewer.pal(9, "YlOrRd"),
+                       rescaler = ~scales::rescale(.x, mid = 0.5)) +
+  labs(x = "Weak stock r ranges",
+       y = "Strong stock r ranges",
+       title = "qw != q_s") +
+  theme_bw()
+
+rw_vs_rs_qw_higher_qs <-
+  output_q_test_proc %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & r_s >= r_w & b_v_k >= 0 & q_w >= q_s) %>% 
+  ggplot() +
+  geom_raster(aes(x = r_w, y = r_s, fill = b_v_k)) +
+  scale_x_continuous(breaks = seq(0.1, 1, 0.1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0.1, 1, 0.1),
+                     expand = c(0,0)) +
+  scale_fill_gradientn(name = "Bw/Kw",
+                       colors = RColorBrewer::brewer.pal(9, "YlOrRd"),
+                       rescaler = ~scales::rescale(.x, mid = 0.5)) +
+  labs(x = "Weak stock r ranges",
+       y = "Strong stock r ranges",
+       title = "qw >= q_s") +
+  theme_bw()
+
+rw_vs_rs_qw_lower_qs <-
+  output_q_test_proc %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & r_s >= r_w & b_v_k >= 0 & q_w <= q_s) %>% 
+  ggplot() +
+  geom_raster(aes(x = r_w, y = r_s, fill = b_v_k)) +
+  scale_x_continuous(breaks = seq(0.1, 1, 0.1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0.1, 1, 0.1),
+                     expand = c(0,0)) +
+  scale_fill_gradientn(name = "Bw/Kw",
+                       colors = RColorBrewer::brewer.pal(9, "YlOrRd"),
+                       rescaler = ~scales::rescale(.x, mid = 0.5)) +
+  labs(x = "Weak stock r ranges",
+       y = "Strong stock r ranges",
+       title = "qw <= q_s") +
+  theme_bw()
+```
+
+```{r, echo = FALSE, fig.height=12, fig.width=12}
+(q_ranges + r_ranges) /
+  (rw_vs_qs + rw_vs_qw) /
+  (rw_vs_rs_equal_qw + rw_vs_rs_qw_dif_qs) /
+  (rw_vs_rs_qw_higher_qs + rw_vs_rs_qw_lower_qs) 
 ```
 
 
@@ -457,62 +628,27 @@ $$
 ### Growth range simulation
 
 ```{r distribution of negative values for Ns and Nw for the range of rs, echo = FALSE}
-# output_growth_ranges %>% 
-#   pivot_wider(names_from = "stock_growth_r",
-#               values_from = "r") %>% 
-#   filter(variables == "N_w" & r_s >= r_w & values > 0 & p_w == 0 & p_s == 1) %>% 
-#   ggplot() +  
-#   geom_raster(aes(x = r_w, y = r_s, fill = values/k_w)) +
-#   scale_x_continuous(breaks = seq(0, 1, 0.1),
-#                      expand = c(0,0)) +
-#   scale_y_continuous(breaks = seq(0, 1.1, 0.2),
-#                      expand = c(0,0)) +
-#   scale_fill_gradientn(name = "B/K", colors = RColorBrewer::brewer.pal(9, "YlOrRd")) +
-#   labs(x = "rw",
-#        y = "rs",
-#        title = "Weak stock positive equilibria ranges") +
-#   theme_bw() +
-#   theme(axis.title = element_text(color = "black", size = 12),
-#         axis.text = element_text(color = "black", size = 10),
-#         strip.background = element_rect(fill = "transparent"),
-#         panel.grid.minor = element_blank())
-```
+output_r_test_proc_w <-  output_r_test_proc %>% 
+   filter(variables == "N_w" & b_stocks == "b_values_w" & r_s >= r_w & b_v_k > 0) 
 
-```{r, echo = FALSE}
-p_w_labs <- c("pw = 0", "pw = 1", "pw = 2", "pw = 3", "pw = 4", "pw = 5")
-names(p_w_labs) <- c(0, 1 , 2, 3, 4, 5)
-
-p_s_labs <- c("ps = 1", "ps = 2", "ps = 3", "ps = 4", "ps = 5", "ps = 6")
-names(p_s_labs) <- c(1 , 2, 3, 4, 5, 6)
-
-
-output_growth_ranges %>% 
-  pivot_wider(names_from = "stock_growth_r",
-              values_from = "r") %>% 
-  filter(variables == "N_w" & r_s >= r_w & values > 0) %>% 
-  ggplot() +  
-  geom_raster(aes(x = r_w, y = r_s, fill = values/k_w)) +
-  scale_x_continuous(breaks = seq(0, 1, 0.3),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 1.1, 0.4),
-                     expand = c(0,0)) +
-  facet_grid(p_s ~ p_w,
-             labeller = labeller(p_s = p_s_labs,
-                                 p_w = p_w_labs)) +
-  scale_fill_gradientn(name = "B/K",
-                       colors = RColorBrewer::brewer.pal(9, "YlOrBr")) +
-  labs(x = "rw",
-       y = "rs",
-       subtitle = "") +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = 12),
-        axis.text = element_text(color = "black", size = 10),
-        strip.background = element_rect(fill = "transparent"),
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.spacing = unit(2, "mm"),
-        legend.position = "right")
-
+ggplot() +  
+   geom_raster(data = output_r_test_proc_w,
+               aes(x = r_w, y = r_s, fill = b_v_k)) +
+   scale_x_continuous(breaks = seq(0, 1, 0.1),
+                      expand = c(0,0)) +
+   scale_y_continuous(breaks = seq(0, 1.1, 0.2),
+                      expand = c(0,0)) +
+   scale_fill_gradientn(name = "B/K", 
+                        colors = RColorBrewer::brewer.pal(9, "YlOrRd"),
+                        rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+   labs(x = "rw",
+        y = "rs",
+        title = "Weak stock positive equilibria ranges (qw = qs)") +
+   theme_bw() +
+   theme(axis.title = element_text(color = "black", size = 12),
+         axis.text = element_text(color = "black", size = 10),
+         strip.background = element_rect(fill = "transparent"),
+         panel.grid.minor = element_blank())
 ```
 
 
@@ -667,30 +803,48 @@ output_growth_ranges %>%
 ```
 
 
-### Price ratio vs Vulnerability test
+```{r, echo = FALSE}
+s_w_zero_proc_test <- 
+  s_w_zero_proc %>% 
+  mutate(growth_ratio = r_w/r_s) %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k > 2)
+
+s_w_zero_proc_test %>% 
+  ggplot() +
+  geom_histogram(aes(x =  b_v_k))
+
+s_w_zero_proc_test %>% 
+  ggplot() +
+  geom_point(aes(x = growth_ratio, y = b_v_k))
+```
 
 
 ### First test plot with weak stock having zero price
 
 ```{r, echo = FALSE, fig.height=6, fig.width=8, echo = FALSE}
-# <- 
-  #s_w_zero_proc %>% 
-s_w_zero_proc_plot <- 
+s_w_zero_proc_subset <- 
   s_w_zero_proc %>% 
   mutate(growth_ratio = r_w / r_s) %>% 
-  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k > 0 & b_v_k <= 1) %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k > 0 & b_v_k <= 1)
+  
+ 
+s_w_zero_proc_plot <- 
   ggplot() + 
-  geom_raster(aes(x = growth_ratio, y = p_s, fill = b_v_k)) +
+  geom_raster(data = s_w_zero_proc_subset,
+              aes(x = growth_ratio, y = p_s, fill = b_v_k)) +
+  # geom_line(data = s_w_zero_proc_subset %>% filter(b_v_k <= 0.25),
+  #           aes(x = growth_ratio, y = p_s, color = b_v_k),
+  #           color = "darkorange") +
   scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.3),
-                         breaks = seq(0, 0.6, 0.1)) +
-  scale_x_continuous(breaks = seq(0.5, 1, 0.05),
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                         breaks = seq(0, 1, 0.25)) +
+  scale_x_continuous(breaks = seq(0.1, 1, 0.1),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 10, 1),
                      expand = c(0,0)) +
   labs(x = "Growth rate ratio (rw/rs)",
        y = "Strong stock price",
-       fill = "Weak stock \n B/K",
+       fill = "Weak stock \nBw/Kw",
        title = "Weak stock with zero value") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
@@ -700,30 +854,29 @@ s_w_zero_proc_plot <-
 ```
 
 ```{r, echo = FALSE}
-p_w_labs <- c("pw = 1", "pw = 4", "pw = 7", "pw = 10", "pw = 13")
-names(p_w_labs) <- c(1, 4, 7, 10, 13)
+p_w_labs <- c("pw = 1", "pw = 3", "pw = 5", "pw = 7", "pw = 9", "pw = 11", "pw = 13", "pw = 15")
+names(p_w_labs) <- c(1, 3, 5, 7, 9, 11, 13, 15)
 
 s_w_range_proc_plot <-
   s_w_range_proc %>% 
   mutate(growth_ratio = r_w / r_s) %>% 
-  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k > 0 & b_v_k <= 1) %>% 
+  filter(variables == "N_w" & b_stocks == "b_values_w" & b_v_k > 0) %>% 
   mutate(p_w = as.factor(p_w)) %>% 
   ggplot() + 
   geom_raster(aes(x = growth_ratio, y = p_s, fill = b_v_k)) +
   #geom_line(aes(x = growth_ratio, y = p_s, color = b_v_k)) +
   scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 1, 0.05)) +
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.25)) +
   facet_wrap(~ p_w,
              nrow = 1,
              labeller = labeller(p_w = p_w_labs)) +
-  scale_x_continuous(breaks = seq(.5, 1, .25),
+  scale_x_continuous(breaks = seq(0.1, 1, 0.5),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 10, 1),
                      expand = c(0,0)) +
   labs(x = "Growth rate ratio (rw/rs)",
        y = "Strong stock price",
-       fill = "Weak stock \nB/K",
+       fill = "Weak stock \nBw/Kw",
        title = "Weak stock with non-zero value") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
@@ -744,14 +897,14 @@ w_s_zero_proc_plot <-
   geom_raster(aes(x = growth_ratio, y = p_w, fill = b_v_k)) +
   scale_fill_paletteer_c("viridis::viridis",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
-                         breaks = seq(0, 0.9, 0.2)) +
-   scale_x_continuous(breaks = seq(0.5, 1, 0.05),
+                         breaks = seq(0, 1, 0.25)) +
+   scale_x_continuous(breaks = seq(0.1, 1, 0.1),
                       expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 10, 1),
                      expand = c(0,0)) +
   labs(x = "Growth rate ratio (rw/rs)",
        y = "Weak stock price",
-       fill = "Weak stock \nB/K",
+       fill = "Weak stock \nBw/Kw",
        title = "Strong stock with zero price") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
@@ -761,8 +914,8 @@ w_s_zero_proc_plot <-
 ```
 
 ```{r, echo = FALSE}
-p_s_labs <- c("ps = 1", "ps = 4", "ps = 7", "ps = 10")
-names(p_s_labs) <- c(1, 4, 7, 10)
+p_s_labs <- c("ps = 1", "ps = 3", "ps = 5", "ps = 7", "ps = 9", "ps = 11", "ps = 13", "ps = 15")
+names(p_s_labs) <- c(1, 3, 5, 7, 9, 11, 13, 15)
 
 w_s_range_proc_plot <-
   w_s_range_proc %>% 
@@ -773,17 +926,148 @@ w_s_range_proc_plot <-
   geom_raster(aes(x = growth_ratio, y = p_w, fill = b_v_k),
               show.legend = T) +
   scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.05)) +
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.25)) +
   facet_wrap(~ p_s,
              nrow = 1,
              labeller = labeller(p_s = p_s_labs)) +
-  scale_x_continuous(breaks = seq(0.88, 1, 0.06),
+  scale_x_continuous(breaks = seq(0.1, 1, 0.15),
                       expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 10, 1),
                      expand = c(0,0)) +
   labs(x = "Growth rate ratio (rw/rs)",
        y = "Weak stock price",
-       fill = "Weak stock \nB/K",
+       fill = "Weak stock \nBw/Kw",
+       title = "Strong stock with non-zero price") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+```
+
+```{r, fig.height=10, fig.width=12, echo = FALSE}
+(s_w_zero_proc_plot +
+  s_w_range_proc_plot) /
+  (w_s_zero_proc_plot +
+  w_s_range_proc_plot) +
+  plot_annotation(tag_levels = "A",,
+                  title = "Weak stock B/K under different strong and weak stock prices")
+```
+
+
+```{r, echo = FALSE, fig.height=6, fig.width=8, echo = FALSE}
+# <- 
+  #s_w_zero_proc %>% 
+s_w_zero_proc_plot_s <- 
+  s_w_zero_proc %>% 
+  mutate(growth_ratio = r_w / r_s) %>% 
+  filter(variables == "N_s" & b_stocks == "b_values_s" & b_v_k > 0 & b_v_k <= 1) %>% 
+  ggplot() + 
+  geom_raster(aes(x = growth_ratio, y = p_s, fill = b_v_k)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+  scale_x_continuous(breaks = seq(0.1, 1, 0.1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 10, 1),
+                     expand = c(0,0)) +
+  labs(x = "Growth rate ratio (rw/rs)",
+       y = "Strong stock price",
+       fill = "Strong stock \n Bs/Ks",
+       title = "Weak stock with zero value") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 10, color = "black"))
+```
+
+```{r, echo = FALSE}
+p_w_labs <- c("pw = 1", "pw = 3", "pw = 5", "pw = 7", "pw = 9", "pw = 11", "pw = 13", "pw = 15")
+names(p_w_labs) <- c(1, 3, 5, 7, 9, 11, 13, 15)
+
+
+s_w_range_proc_plot_s <-
+  s_w_range_proc %>% 
+  mutate(growth_ratio = r_w / r_s) %>% 
+  filter(variables == "N_s" & b_stocks == "b_values_s" & b_v_k > 0) %>% 
+  mutate(p_w = as.factor(p_w)) %>% 
+  ggplot() + 
+  geom_raster(aes(x = growth_ratio, y = p_s, fill = b_v_k)) +
+  #geom_line(aes(x = growth_ratio, y = p_s, color = b_v_k)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+  facet_wrap(~ p_w,
+             nrow = 1,
+             labeller = labeller(p_w = p_w_labs)) +
+  scale_x_continuous(breaks = seq(0.1, 1, 0.3),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 10, 1),
+                     expand = c(0,0)) +
+  labs(x = "Growth rate ratio (rw/rs)",
+       y = "Strong stock price",
+       fill = "Strong stock \nBs/Ks",
+       title = "Weak stock with non-zero value") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+```
+
+
+```{r, echo = FALSE}
+w_s_zero_proc_plot_s <- 
+  w_s_zero_proc %>% 
+  mutate(growth_ratio = r_w / r_s) %>% 
+  filter(variables == "N_s" & b_stocks == "b_values_s" & b_v_k > 0 & b_v_k <= 1) %>% 
+  ggplot() + 
+  geom_raster(aes(x = growth_ratio, y = p_w, fill = b_v_k)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                         breaks = seq(0, 0.9, 0.2)) +
+   scale_x_continuous(breaks = seq(0.1, 1, 0.1),
+                      expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 10, 1),
+                     expand = c(0,0)) +
+  labs(x = "Growth rate ratio (rw/rs)",
+       y = "Weak stock price",
+       fill = "Strong stock \nBs/Ks",
+       title = "Strong stock with zero price") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 10, color = "black"))
+```
+
+```{r, echo = FALSE}
+p_s_labs <- c("ps = 1", "ps = 3", "ps = 5", "ps = 7", "ps = 9", "ps = 11", "ps = 13", "ps = 15")
+names(p_s_labs) <- c(1, 3, 5, 7, 9, 11, 13, 15)
+
+w_s_range_proc_plot_s <-
+  w_s_range_proc %>% 
+  mutate(growth_ratio = r_w / r_s) %>% 
+  filter(variables == "N_s" & b_stocks == "b_values_s" & b_v_k > 0) %>% 
+  mutate(p_s = as.factor(p_s)) %>% 
+  ggplot() + 
+  geom_raster(aes(x = growth_ratio, y = p_w, fill = b_v_k),
+              show.legend = T) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+  facet_wrap(~ p_s,
+             nrow = 1,
+             labeller = labeller(p_s = p_s_labs)) +
+  scale_x_continuous(breaks = seq(0.1, 1, 0.3),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 10, 1),
+                     expand = c(0,0)) +
+  labs(x = "Growth rate ratio (rw/rs)",
+       y = "Weak stock price",
+       fill = "Strong stock \nBs/Ks",
        title = "Strong stock with non-zero price") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
@@ -794,12 +1078,12 @@ w_s_range_proc_plot <-
 ```
 
 ```{r, fig.height=10, fig.width=12, echo = FALSE}
-(s_w_zero_proc_plot +
-  s_w_range_proc_plot) /
-  (w_s_zero_proc_plot +
-  w_s_range_proc_plot) +
+(s_w_zero_proc_plot_s +
+  s_w_range_proc_plot_s) /
+  (w_s_zero_proc_plot_s +
+  w_s_range_proc_plot_s) +
   plot_annotation(tag_levels = "A",,
-                  title = "Weak stock B/K under different strong and weak stock prices")
+                  title = "Strong stock B/K under different strong and weak stock prices")
 ```
 
 
@@ -835,16 +1119,14 @@ output_weak_test %>%
 ### Third test plot
 
 ```{r, echo = FALSE, fig.width=8, fig.height=8}
-p_w_labs <- c("pw = 0", "pw = 1", "pw = 2", "pw = 3", "pw = 4", "pw = 5")
-names(p_w_labs) <- c(0, 1 , 2, 3, 4, 5)
+p_w_labs <- c("pw = 0", "pw = 1", "pw = 2", "pw = 3", "pw = 4", "pw = 5", "pw = 6", "pw = 7", "pw = 8")
+names(p_w_labs) <- c(0, 1, 2, 3, 4, 5, 6, 7, 8)
 
 p_s_labs <- c("ps = 1", "ps = 2", "ps = 3", "ps = 4", "ps = 5", "ps = 6")
-names(p_s_labs) <- c(1 , 2, 3, 4, 5, 6)
+names(p_s_labs) <- c(1, 2, 3, 4, 5, 6)
 
 
-output_growth_ranges %>% 
-  pivot_wider(names_from = "stock_growth_r",
-              values_from = "r") %>% 
+output_r_test_proc %>% 
   filter(variables == "N_w" & r_s >= r_w & values > 0) %>% 
   ggplot() +  
   geom_raster(aes(x = r_w, y = r_s, fill = values/k_w)) +
@@ -907,12 +1189,12 @@ where $q_s$ and $q_w$ are the catchability of the strong and the weak stock, res
 
 ```{r scenario 1 price ratio 10, echo = FALSE}
 # set up the parameter space
-q_s <- 0.1
-q_w <- 0.1
+q_s <- 0.05
+q_w <- 0.05
 k_s <- 4
 k_w <- 2
-r_s <- 0.8
-r_w <- 0.71
+r_s <- 1
+r_w <- 0.75
 p_s1 <- 1
 p_w1 <- 0.1
 alpha <- 1
@@ -1679,14 +1961,14 @@ run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
  
 }
 
-sc_1 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 0.1, c = 0.05)
-sc_2 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 0.2, c = 0.05)
-sc_3 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 0.4, c = 0.05)
-sc_4 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 1, c = 0.05)
-sc_5 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 1.33, c = 0.05)
-sc_6 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 12, c = 0.05)
-sc_7 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 14, c = 0.05)
-sc_8 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.71, p_s = 1, p_w = 10, c = 0.05)
+sc_1 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.75, p_s = 1, p_w = 0.1, c = 0.05)
+sc_2 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.75, p_s = 1, p_w = 0.2, c = 0.05)
+sc_3 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.75, p_s = 1, p_w = 0.4, c = 0.05)
+sc_4 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.75, p_s = 1, p_w = 1, c = 0.05)
+sc_5 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.75, p_s = 1, p_w = 1.33, c = 0.05)
+sc_6 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.75, p_s = 1, p_w = 12, c = 0.05)
+sc_7 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.75, p_s = 1, p_w = 14, c = 0.05)
+sc_8 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.75, p_s = 1, p_w = 10, c = 0.05)
 
 sc_all <- bind_rows(sc_1, sc_2, sc_3, sc_4, sc_5, sc_6, sc_7, sc_8) %>% 
   rownames_to_column() %>% 
@@ -1733,14 +2015,14 @@ sc_all <- bind_rows(sc_1, sc_2, sc_3, sc_4, sc_5, sc_6, sc_7, sc_8) %>%
 
 ```{r building df for the parameter space, echo = FALSE}
 eq_par <- data.frame(parameter = c("q_w", "q_s", "k_w", "k_s", "r_w", "r_s", "p_s", "p_w", "c"),
-                     "PR_10" =  c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 0.1, 0.05),
-                     "PR_5" =   c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 0.2, 0.05),
-                     "PR_2.5" = c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 0.4, 0.05),
-                     "PR_1" =   c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 1, 0.05),
-                     "PR_0.75" =c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 1.33, 0.05),
-                     "PR_0.5" = c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 2, 0.05),
-                     "PR_0.25" =c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 4, 0.05),
-                     "PR_0.1" = c(0.1, 0.1, 4, 2, 0.8, 0.71, 1, 10, 0.05))
+                     "PR_10" =  c(0.05, 0.05, 4, 2, 1, 0.75, 1, 0.1, 0.05),
+                     "PR_5" =   c(0.05, 0.05, 4, 2, 1, 0.75, 1, 0.2, 0.05),
+                     "PR_2.5" = c(0.05, 0.05, 4, 2, 1, 0.75, 1, 0.4, 0.05),
+                     "PR_1" =   c(0.05, 0.05, 4, 2, 1, 0.75, 1, 1, 0.05),
+                     "PR_0.75" =c(0.05, 0.05, 4, 2, 1, 0.75, 1, 1.33, 0.05),
+                     "PR_0.5" = c(0.05, 0.05, 4, 2, 1, 0.75, 1, 2, 0.05),
+                     "PR_0.25" =c(0.05, 0.05, 4, 2, 1, 0.75, 1, 4, 0.05),
+                     "PR_0.1" = c(0.05, 0.05, 4, 2, 1, 0.75, 1, 10, 0.05))
 
 eq_par %>% 
   gt() %>%
@@ -2190,8 +2472,8 @@ Panel A shows the time series dynamics for the strong and weak stocks, and effor
 
 ```{r scenario 1 productivity ratio 0.7, echo = FALSE}
 # set up the parameter space
-q_s <- 0.1
-q_w <- 0.1
+q_s <- 0.05
+q_w <- 0.05
 k_s <- 4
 k_w <- 2
 r_s1 <- 1
@@ -2780,12 +3062,12 @@ run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
  
 }
 
-sc_r_1 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.7, p_s = 1, p_w = 1, c = 0.05)
-sc_r_2 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.88, p_s = 1, p_w = 1, c = 0.05)
-sc_r_3 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.9, p_s = 1, p_w = 1, c = 0.05)
-sc_r_4 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.92, p_s = 1, p_w = 1, c = 0.05)
-sc_r_5 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.95, p_s = 1, p_w = 1, c = 0.05)
-sc_r_6 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.97, p_s = 1, p_w = 1, c = 0.05)
+sc_r_1 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 1, r_w = 0.7, p_s = 1, p_w = 1, c = 0.05)
+sc_r_2 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 1, r_w = 0.88, p_s = 1, p_w = 1, c = 0.05)
+sc_r_3 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 1, r_w = 0.9, p_s = 1, p_w = 1, c = 0.05)
+sc_r_4 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 1, r_w = 0.92, p_s = 1, p_w = 1, c = 0.05)
+sc_r_5 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 1, r_w = 0.95, p_s = 1, p_w = 1, c = 0.05)
+sc_r_6 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 1, r_w = 0.97, p_s = 1, p_w = 1, c = 0.05)
 
 sc_r_all <- bind_rows(sc_r_1, sc_r_2, sc_r_3, sc_r_4, sc_r_5, sc_r_6) %>% 
   rownames_to_column() %>% 
@@ -2830,12 +3112,12 @@ sc_r_all <- bind_rows(sc_r_1, sc_r_2, sc_r_3, sc_r_4, sc_r_5, sc_r_6) %>%
 
 ```{r building df for the growth rate parameter space, echo = FALSE}
 eq_par <- data.frame(parameter = c("q_w", "q_s", "k_w", "k_s", "r_w", "r_s", "p_w", "p_s", "c"),
-                     "RR_2" =    c(0.1, 0.1, 4, 2, 1, 0.7, 1, 1, 0.05),
-                     "RR_1.75" = c(0.1, 0.1, 4, 2, 1, 0.88, 1, 1, 0.05),
-                     "RR_1.5" =  c(0.1, 0.1, 4, 2, 1, 0.9, 1, 1, 0.05),
-                     "RR_1.25" = c(0.1, 0.1, 4, 2, 1, 0.92, 1, 1, 0.05),
-                     "RR_1.1" =  c(0.1, 0.1, 4, 2, 1, 0.95, 1, 1, 0.05),
-                     "RR_1" =    c(0.1, 0.1, 4, 2, 1, 0.97, 1, 1, 0.05))
+                     "RR_2" =    c(0.05, 0.05, 4, 2, 1, 0.7, 1, 1, 0.05),
+                     "RR_1.75" = c(0.05, 0.05, 4, 2, 1, 0.88, 1, 1, 0.05),
+                     "RR_1.5" =  c(0.05, 0.05, 4, 2, 1, 0.9, 1, 1, 0.05),
+                     "RR_1.25" = c(0.05, 0.05, 4, 2, 1, 0.92, 1, 1, 0.05),
+                     "RR_1.1" =  c(0.05, 0.05, 4, 2, 1, 0.95, 1, 1, 0.05),
+                     "RR_1" =    c(0.05, 0.05, 4, 2, 1, 0.97, 1, 1, 0.05))
 
 eq_par %>% 
   gt() %>%
@@ -3246,12 +3528,12 @@ equal_scales_EWS_r /
 
 ```{r scenario 1 catchability ratio 10, echo = FALSE}
 # set up the parameter space
-q_s1 <- 0.9
-q_w1 <- 0.09
+q_s1 <- 0.1
+q_w1 <- 0.01
 k_s <- 4
 k_w <- 2
 r_s <- 1
-r_w <- 0.88
+r_w <- 0.75
 p_s <- 1
 p_w <- 1
 alpha <- 1
@@ -3266,7 +3548,7 @@ E <- 0.1
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+tset <- seq(from = 0, to = 200, length.out = 1000)
 
 N_w_simu1 <- NaN*tset; N_w_simu1[1] <- N_w
 
@@ -3353,13 +3635,11 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 2 catchability ratio 5, echo = FALSE}
 # set up the parameter space
-q_s2 <- 0.9
-q_w2 <- 0.18
+q_s2 <- 0.1
+q_w2 <- 0.02
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
-
 N_w_simu2 <- NaN*tset; N_w_simu2[1] <- N_w
 
 N_s_simu2 <- NaN*tset; N_s_simu2[1] <- N_s
@@ -3445,8 +3725,8 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 3 catchability ratio 2.5, echo = FALSE}
 # set up the parameter space
-q_s3 <- 0.9
-q_w3 <- 0.36
+q_s3 <- 0.1
+q_w3 <- 0.025
 ```
 
 ```{r, echo = FALSE}
@@ -3537,13 +3817,11 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 4 catchability ratio 1, echo = FALSE}
 # set up the parameter space
-q_s4 <- 0.5
-q_w4 <- 0.5
+q_s4 <- 0.1
+q_w4 <- 0.1
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
-
 N_w_simu4 <- NaN*tset; N_w_simu4[1] <- N_w
 
 N_s_simu4 <- NaN*tset; N_s_simu4[1] <- N_s
@@ -3629,13 +3907,11 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 5 catchability ratio 0.75, echo = FALSE}
 # set up the parameter space
-q_s5 <- 0.9
-q_w5 <- 0.9
+q_s5 <- 0.1
+q_w5 <- 0.133
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
-
 N_w_simu5 <- NaN*tset; N_w_simu5[1] <- N_w
 
 N_s_simu5 <- NaN*tset; N_s_simu5[1] <- N_s
@@ -3721,13 +3997,11 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 6 catchability ratio 0.5, echo = FALSE}
 # set up the parameter space
-q_s6 <- 0.45
-q_w6 <- 0.9
+q_s6 <- 0.1
+q_w6 <- 0.2
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
-
 N_w_simu6 <- NaN*tset; N_w_simu6[1] <- N_w
 
 N_s_simu6 <- NaN*tset; N_s_simu6[1] <- N_s
@@ -3813,13 +4087,11 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 7 catchability ratio 0.25, echo = FALSE}
 # set up the parameter space
-q_s7 <- 0.225
-q_w7 <- 0.9
+q_s7 <- 0.1
+q_w7 <- 0.4
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
-
 N_w_simu7 <- NaN*tset; N_w_simu7[1] <- N_w
 
 N_s_simu7 <- NaN*tset; N_s_simu7[1] <- N_s
@@ -3905,13 +4177,11 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 8 catchability ratio 0.1, echo = FALSE}
 # set up the parameter space
-q_s8 <- 0.09
-q_w8 <- 0.9
+q_s8 <- 0.1
+q_w8 <- 1
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
-
 N_w_simu8 <- NaN*tset; N_w_simu8[1] <- N_w
 
 N_s_simu8 <- NaN*tset; N_s_simu8[1] <- N_s
@@ -4022,14 +4292,14 @@ run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
  
 }
 
-sc_q_1 <- run_model(q_s = 0.9, q_w = 0.09, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
-sc_q_2 <- run_model(q_s = 0.9, q_w = 0.18, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
-sc_q_3 <- run_model(q_s = 0.9, q_w = 0.36, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
-sc_q_4 <- run_model(q_s = 0.9, q_w = 0.9, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
-sc_q_5 <- run_model(q_s = 0.675, q_w = 0.9, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
-sc_q_6 <- run_model(q_s = 0.45, q_w = 0.9, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
-sc_q_7 <- run_model(q_s = 0.225, q_w = 0.9, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
-sc_q_8 <- run_model(q_s = 0.09, q_w = 0.9, k_s = 4, k_w = 2, r_s = 0.8, r_w = 0.45, p_s = 1, p_w = 1, c = 0.05)
+sc_q_1 <- run_model(q_s = 0.1, q_w = 0.01, k_s = 4, k_w = 2, r_s = 1, r_w = 0.75, p_s = 1, p_w = 1, c = 0.05)
+sc_q_2 <- run_model(q_s = 0.1, q_w = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.75, p_s = 1, p_w = 1, c = 0.05)
+sc_q_3 <- run_model(q_s = 0.1, q_w = 0.025, k_s = 4, k_w = 2, r_s = 1, r_w = 0.75, p_s = 1, p_w = 1, c = 0.05)
+sc_q_4 <- run_model(q_s = 0.1, q_w = 0.1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.75, p_s = 1, p_w = 1, c = 0.05)
+sc_q_5 <- run_model(q_s = 0.1, q_w = 0.133, k_s = 4, k_w = 2, r_s = 1, r_w = 0.75, p_s = 1, p_w = 1, c = 0.05)
+sc_q_6 <- run_model(q_s = 0.1, q_w = 0.2, k_s = 4, k_w = 2, r_s = 1, r_w = 0.75, p_s = 1, p_w = 1, c = 0.05)
+sc_q_7 <- run_model(q_s = 0.1, q_w = 0.4, k_s = 4, k_w = 2, r_s = 1, r_w = 0.75, p_s = 1, p_w = 1, c = 0.05)
+sc_q_8 <- run_model(q_s = 0.1, q_w = 1, k_s = 4, k_w = 2, r_s = 1, r_w = 0.75, p_s = 1, p_w = 1, c = 0.05)
 
 sc_q_all <- bind_rows(sc_q_1, sc_q_2, sc_q_3, sc_q_4, sc_q_5, sc_q_6, sc_q_7, sc_q_8) %>% 
   rownames_to_column() %>% 
@@ -4076,14 +4346,14 @@ sc_q_all <- bind_rows(sc_q_1, sc_q_2, sc_q_3, sc_q_4, sc_q_5, sc_q_6, sc_q_7, sc
 
 ```{r building df for the catchability parameter space, echo = FALSE}
 eq_q_par <- data.frame(parameter = c("q_w", "q_s", "k_w", "k_s", "r_w", "r_s", "p_w", "p_s", "c"),
-                     "QR_10" =  c(0.9, 0.09, 4, 2, 0.8, 0.45, 1, 1, 0.05),
-                     "QR_5" =   c(0.9, 0.18, 4, 2, 0.8, 0.45, 1, 1, 0.05),
-                     "QR_2.5" = c(0.9, 0.36, 4, 2, 0.8, 0.45, 1, 1, 0.05),
-                     "QR_1" =   c(0.9, 0.9, 4, 2, 0.8, 0.45, 1, 1, 0.05),
-                     "QR_0.75" =c(0.675, 0.9, 4, 2, 0.8, 0.45, 1, 1, 0.05),
-                     "QR_0.5" = c(0.45, 0.9, 4, 2, 0.8, 0.45, 1, 1, 0.05),
-                     "QR_0.25" =c(0.225, 0.9, 4, 2, 0.8, 0.45, 1, 1, 0.05),
-                     "QR_0.1" = c(0.09, 0.9, 4, 2, 0.8, 0.45, 1, 1, 0.05))
+                     "QR_10" =  c(0.1, 0.0, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "QR_5" =   c(0.1, 0.02, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "QR_2.5" = c(0.1, 0.025, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "QR_1" =   c(0.1, 0.1, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "QR_0.75" =c(0.1, 0.133, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "QR_0.5" = c(0.1, 0.2, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "QR_0.25" =c(0.1, 0.4, 4, 2, 0.8, 0.45, 1, 1, 0.05),
+                     "QR_0.1" = c(0.1, 1, 4, 2, 0.8, 0.45, 1, 1, 0.05))
 
 eq_q_par %>% 
   gt() %>%
