@@ -19,29 +19,43 @@ outdir <- file.path(basedir, "model_outs") # calls present data from raster file
 ```{r model function}
 run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
   # Weak stock equilibrium points when prices are constants
-  N_w <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
+  N_w_multi <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
     (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
   
   # Effort equilibrium point when prices are constants
-  E <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
+  E_multi <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
    (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
  
   # Strong stock equilibrium points when prices are constants 
-  N_s <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
-     (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
+  N_s_multi <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
+     (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
   
   # Single species equilibrium for the weak stock 
-  #N_w2 <- c / p_w * q_w
+  N_w_single <- c / p_w * q_w
   
   # Single species equilibrium for the strong stock  
-  #N_s2 <- c / p_s * q_s
+  N_s_single <- c / p_s * q_s
 
   # Single species effort equilibrium for the strong stock  
-  #Es <- (r_s / q_s * (1 - c / p_s * q_s * k_s))
+  E_single <- (r_s / q_s * (1 - c / (p_s * q_s * k_s)))
   
-  # Single species effort equilibrium for the weak stock  
-  #Ew <- 1 / (q_w / r_w)
+  if(N_w_multi >= 0){
+    
+    N_w = N_w_multi
+  } else { 
+    N_w = N_w_single
+  }
   
+  if(N_s_multi >= 0){
+    N_s = N_s_multi
+  } else {
+    N_s = N_s_single
+  }
+  if(N_w_multi >= 0){
+    E = E_multi
+  } else {
+    E = E_single
+  }
  #  # Weak stock catch
  #  C_w <- q_w * N_w * E
  #  
@@ -175,6 +189,103 @@ run_model_2 <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
  
   
 }
+```
+
+
+```{r scenario range for 1st plot for the paper}
+################### USED THIS CODE TO BUILD THE PARAMETER SET OF FIGURE 2 ################################################
+
+# In this code chunk, I'll generate the dataset to simulate a scenario where the weak stock has zero value and the strong and weak stocks growth rates vary in different ratios.
+
+# Building df of price range scenarios
+scenarios_df <- expand.grid(p_s = seq(0.3, 10, 0.2),
+                            p_w = seq(1, 15, 2),
+                            r_s = 1,
+                            r_w = seq(0.75, 0.999, 0.01),
+                            q_s = 0.05,
+                            q_w = 0.05,
+                            k_s = 4,
+                            k_w = 2,
+                            c = 0.05) %>% 
+  mutate(scenario_id = 1:nrow(.)) 
+
+# test scenario
+r_s <- scenarios_df$r_s[1]
+k_s <- scenarios_df$k_s[1]
+q_s <- scenarios_df$q_s[1]
+p_s <- scenarios_df$p_s[1]
+r_w <- scenarios_df$r_w[1]
+k_w <- scenarios_df$k_w[1]
+q_w <- scenarios_df$q_w[1]
+p_w <- scenarios_df$p_w[1]
+c <- scenarios_df$c[1]
+
+
+i = 1
+
+# test with purrr
+# scenarios_df_out <- scenarios_df %>% 
+#  pmap_dfr(~ run_model(scenarios_df$r_s, scenarios_df$r_w,
+#                   scenarios_df$k_s, scenarios_df$k_w,
+#                   scenarios_df$q_s, scenarios_df$q_w,
+#                   scenarios_df$p_s, scenarios_df$p_w,
+#                   scenarios_df$c)) 
+
+for(i in 1:nrow(scenarios_df)){
+ 
+  # Extract params
+  r_s <- scenarios_df$r_s[i]
+  r_w <- scenarios_df$r_w[i]
+  k_s <- scenarios_df$k_s[i]
+  k_w <- scenarios_df$k_w[i]
+  q_s <- scenarios_df$q_s[i]
+  q_w <- scenarios_df$q_w[i]
+  p_s <- scenarios_df$p_s[i]
+  p_w <- scenarios_df$p_w[i]
+  c <- scenarios_df$c[i]
+  sc_id <- scenarios_df$scenario_id[i]
+ 
+  # Run model
+  output <- run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                      q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, 
+                      c = c) %>% 
+    mutate(sc_id = sc_id)
+  
+  if(i == 1){
+    output_1 <- output
+  }
+  else{
+    output_1 <- rbind(output_1, output)
+  }
+
+}
+
+output_join_test  <- output_1 %>% 
+  rename(scenario_id = sc_id) %>% 
+  left_join(scenarios_df, by = "scenario_id") %>% 
+  relocate(scenario_id, .before = E)
+
+# output_p_tidy <- output_join_test %>% 
+#   mutate(price_ratio = p_s / p_w) %>% 
+#   pivot_longer(cols = E:N_w,
+#                names_to = "eq_p_const",
+#                values_to = "eq_p_const_val") %>% 
+#   pivot_longer(cols = ends_with("_1"),
+#                names_to = "eq_pw_fcn_c",
+#                values_to = "eq_pw_fcn_c_val") %>% 
+#   pivot_longer(cols = ends_with("_2"),
+#                names_to = "eq_ps_fcn_c",
+#                values_to = "eq_ps_fcn_c_val") %>% 
+#   pivot_longer(cols = ends_with("_3"),
+#                names_to = "eq_pw_ps_fcn_c",
+#                values_to = "eq_pw_ps_fcn_c_val") %>% 
+#   distinct_all()
+  
+# output_price_range <- output_p_tidy %>% 
+#   select(scenario_id, variables, values, stock_prices, prices, price_ratio) %>% 
+#   distinct(variables, values, stock_prices, prices, price_ratio, .keep_all = TRUE)
+
+#write_csv(output_join_test, file = file.path(outdir, "output_s_ranges_w_ranges.csv"), col_names = T)
 ```
 
 
@@ -716,101 +827,6 @@ output_full <- output_price_range %>%
 ```
 
 
-```{r scenario range for 1st plot for the paper}
-################### USED THIS CODE TO BUILD THE PARAMETER SET OF FIGURE 2 ################################################
-
-# In this code chunk, I'll generate the dataset to simulate a scenario where the weak stock has zero value and the strong and weak stocks growth rates vary in different ratios.
-
-# Building df of price range scenarios
-scenarios_df <- expand.grid(p_s = seq(0.3, 10, 0.2),
-                            p_w = seq(1, 15, 2),
-                            r_s = 1,
-                            r_w = seq(0.75, 0.999, 0.01),
-                            q_s = 0.05,
-                            q_w = 0.05,
-                            k_s = 4,
-                            k_w = 2,
-                            c = 0.05) %>% 
-  mutate(scenario_id = 1:nrow(.)) 
-
-# test scenario
-r_s <- scenarios_df$r_s[1]
-k_s <- scenarios_df$k_s[1]
-q_s <- scenarios_df$q_s[1]
-p_s <- scenarios_df$p_s[1]
-r_w <- scenarios_df$r_w[1]
-k_w <- scenarios_df$k_w[1]
-q_w <- scenarios_df$q_w[1]
-p_w <- scenarios_df$p_w[1]
-c <- scenarios_df$c[1]
-
-
-i = 1
-
-# test with purrr
-# scenarios_df_out <- scenarios_df %>% 
-#  pmap_dfr(~ run_model(scenarios_df$r_s, scenarios_df$r_w,
-#                   scenarios_df$k_s, scenarios_df$k_w,
-#                   scenarios_df$q_s, scenarios_df$q_w,
-#                   scenarios_df$p_s, scenarios_df$p_w,
-#                   scenarios_df$c)) 
-
-for(i in 1:nrow(scenarios_df)){
- 
-  # Extract params
-  r_s <- scenarios_df$r_s[i]
-  r_w <- scenarios_df$r_w[i]
-  k_s <- scenarios_df$k_s[i]
-  k_w <- scenarios_df$k_w[i]
-  q_s <- scenarios_df$q_s[i]
-  q_w <- scenarios_df$q_w[i]
-  p_s <- scenarios_df$p_s[i]
-  p_w <- scenarios_df$p_w[i]
-  c <- scenarios_df$c[i]
-  sc_id <- scenarios_df$scenario_id[i]
- 
-  # Run model
-  output <- run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
-                      q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, 
-                      c = c) %>% 
-    mutate(sc_id = sc_id)
-  
-  if(i == 1){
-    output_1 <- output
-  }
-  else{
-    output_1 <- rbind(output_1, output)
-  }
-
-}
-
-output_join_test  <- output_1 %>% 
-  rename(scenario_id = sc_id) %>% 
-  left_join(scenarios_df, by = "scenario_id") %>% 
-  relocate(scenario_id, .before = E)
-
-# output_p_tidy <- output_join_test %>% 
-#   mutate(price_ratio = p_s / p_w) %>% 
-#   pivot_longer(cols = E:N_w,
-#                names_to = "eq_p_const",
-#                values_to = "eq_p_const_val") %>% 
-#   pivot_longer(cols = ends_with("_1"),
-#                names_to = "eq_pw_fcn_c",
-#                values_to = "eq_pw_fcn_c_val") %>% 
-#   pivot_longer(cols = ends_with("_2"),
-#                names_to = "eq_ps_fcn_c",
-#                values_to = "eq_ps_fcn_c_val") %>% 
-#   pivot_longer(cols = ends_with("_3"),
-#                names_to = "eq_pw_ps_fcn_c",
-#                values_to = "eq_pw_ps_fcn_c_val") %>% 
-#   distinct_all()
-  
-# output_price_range <- output_p_tidy %>% 
-#   select(scenario_id, variables, values, stock_prices, prices, price_ratio) %>% 
-#   distinct(variables, values, stock_prices, prices, price_ratio, .keep_all = TRUE)
-
-#write_csv(output_join_test, file = file.path(outdir, "output_s_ranges_w_ranges.csv"), col_names = T)
-```
 
 
 ```{r}
