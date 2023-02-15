@@ -80,8 +80,6 @@ output_test_updated <- output_test %>%
 
 # Updated dataset to be used in the analyses
 s_w_range_proc <- output_s_ranges_w_ranges %>% 
-  pivot_wider(names_from = "variables",
-              values_from = "values") %>% 
   mutate(b_values_s = N_s / k_s,
          b_values_w = N_w / k_w) %>% 
   pivot_longer(cols = E:N_w,
@@ -90,7 +88,9 @@ s_w_range_proc <- output_s_ranges_w_ranges %>%
   pivot_longer(cols = starts_with("b_values"),
                names_to = "b_stocks",
                values_to = "b_v_k") %>% 
-  mutate(vuln_ratio = (q_s/r_s) / (q_w/r_w))
+  mutate(vuln_ratio = (q_w/r_w) / (q_s/r_s)) %>% 
+  mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
+  mutate(w_stock_rev = (p_w * q_w * k_w) / c)
 
 s_w_range_proc2 <- output_s_ranges_w_ranges2 %>% 
   mutate(b_values_s = N_s / k_s,
@@ -930,37 +930,33 @@ s_w_zero_proc_plot <-
 
 ```
 
-```{r, echo = FALSE, fig.height=10, fig.width=8}
-p_w_labs <- c("pw = 1", "pw = 3", "pw = 5", "pw = 7", "pw = 9", "pw = 11", "pw = 13", "pw = 15")
-names(p_w_labs) <- c(1, 3, 5, 7, 9, 11, 13, 15)
+```{r, echo = FALSE}
+b_labs <- c("Strong stock biomass", "Weak stock biomass")
+names(b_labs) <- c("b_values_s", "b_values_w")
 
 s_w_range_proc_subset <- 
   s_w_range_proc %>% 
-  mutate(growth_ratio = r_w / r_s) %>% 
   filter(variables == "N_w" & b_stocks == "b_values_w") %>% 
   mutate(p_w = as.factor(p_w)) %>% 
   filter(p_w %in% c("1", "5", "11", "15"))
-  
+```
 
-#s_w_range_proc_plot <-
+```{r}
+
+s_w_range_proc_plot <-
   ggplot() + 
-  geom_raster(data = s_w_range_proc_subset %>% filter(b_v_k > 0),
-              aes(x = growth_ratio, y = p_s, fill = b_v_k)) +
-  geom_point(data = s_w_range_proc_subset %>% filter(b_v_k > -0.0015 & b_v_k <= 0),
-              aes(x = growth_ratio, y = p_s, color = b_v_k)) +
+  geom_tile(data = s_w_range_proc %>% filter(p_w == 1),
+              aes(x = (q_w/r_w)/ (q_s/r_s), y = st_stock_rev, fill = b_v_k)) +
   scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.25)) +
-  facet_wrap(~ p_w,
-             ncol = 2,
-             labeller = labeller(p_w = p_w_labs)) +
-  scale_x_continuous(breaks = seq(0.1, 1, 0.5),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 10, 1),
-                     expand = c(0,0)) +
-  labs(x = "Growth rate ratio (rw/rs)",
-       y = "Strong stock price",
-       fill = "Weak stock \nBw/Kw",
-       title = "Weak stock with non-zero value") +
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+    facet_wrap(~ b_stocks,
+               labeller = labeller(b_stocks = b_labs)) +
+   scale_x_continuous(
+                      expand = c(0,0)) +
+   scale_y_continuous(expand = c(0,0)) +
+  labs(x = "Vw/Vs",
+       y = "Strong stock revenue stream (Ps * q * Ks/c)",
+       fill = "B/K") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -968,6 +964,80 @@ s_w_range_proc_subset <-
         axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
+
+s_w_range_proc_plot2 <-
+  ggplot() + 
+  geom_tile(data = s_w_range_proc %>% filter(p_w == 1),
+              aes(x =  (q_s/r_s)/(q_w/r_w), y = st_stock_rev, fill = b_v_k)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+    facet_wrap(~ b_stocks,
+               labeller = labeller(b_stocks = b_labs)) +
+   scale_x_continuous(
+                      expand = c(0,0)) +
+   scale_y_continuous(expand = c(0,0)) +
+  labs(x = "Vs/Vw",
+       y = "Strong stock revenue stream (Ps * q * Ks/c)",
+       fill = "B/K") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+s_w_range_proc_plot3 <-
+ ggplot() + 
+  geom_tile(data = s_w_range_proc %>% filter(p_s == 1.1),
+              aes(x = (q_w/r_w)/ (q_s/r_s), y = w_stock_rev, fill = b_v_k)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+    facet_wrap(~ b_stocks,
+               labeller = labeller(b_stocks = b_labs)) +
+   scale_x_continuous(
+                      expand = c(0,0)) +
+   scale_y_continuous(expand = c(0,0)) +
+  labs(x = "Vw/Vs",
+       y = "Weak stock revenue stream (Pw * q * Kw/c)",
+       fill = "B/K") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+s_w_range_proc_plot4 <-
+ ggplot() + 
+  geom_tile(data = s_w_range_proc %>% filter(p_s == 1.1),
+              aes(x = (q_s/r_s)/(q_w/r_w) , y = w_stock_rev, fill = b_v_k)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5)) +
+    facet_wrap(~ b_stocks,
+               labeller = labeller(b_stocks = b_labs)) +
+   scale_x_continuous(
+                      expand = c(0,0)) +
+   scale_y_continuous(expand = c(0,0)) +
+  labs(x = "Vs/Vw",
+       y = "Weak stock revenue stream (Pw * q * Kw/c)",
+       fill = "B/K") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+```
+
+```{r, fig.height=10, fig.width=10}
+(s_w_range_proc_plot +
+  s_w_range_proc_plot2) /
+  (s_w_range_proc_plot3 +
+  s_w_range_proc_plot4) +
+  plot_annotation(tag_levels = "A")
 ```
 
 ```{r}
@@ -1008,7 +1078,6 @@ test <-
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
-ggplotly(test)
 ```
 
 ```{r, echo = FALSE}
