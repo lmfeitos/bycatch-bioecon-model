@@ -198,16 +198,17 @@ run_model_2 <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
 # In this code chunk, I'll generate the dataset to simulate a scenario where the weak stock has zero value and the strong and weak stocks growth rates vary in different ratios.
 
 # Building df of price range scenarios
-scenarios_df <- expand.grid(p_s = seq(1, 15, 2),
-                            p_w = seq(0.1, 10, 0.2),
-                            r_s = seq(0.1, 1, 0.1),
+scenarios_df <- expand.grid(p_s = seq(1, 10, 0.1),
+                            p_w = 1,
+                            r_s = seq(0.1, 1, 0.01),
                             r_w = seq(0.1, 0.999, 0.01),
                             q_s = 0.05,
                             q_w = 0.05,
                             k_s = 4,
                             k_w = 2,
                             c = 0.05) %>% 
-  mutate(scenario_id = 1:nrow(.)) 
+  mutate(scenario_id = 1:nrow(.)) %>% 
+  filter(r_s > r_w)
 
 # test scenario
 r_s <- scenarios_df$r_s[1]
@@ -263,7 +264,9 @@ for(i in 1:nrow(scenarios_df)){
 output_join_test  <- output_1 %>% 
   rename(scenario_id = sc_id) %>% 
   left_join(scenarios_df, by = "scenario_id") %>% 
-  relocate(scenario_id, .before = E)
+  relocate(scenario_id, .before = E) %>% 
+  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w))
 
 # output_p_tidy <- output_join_test %>% 
 #   mutate(price_ratio = p_s / p_w) %>% 
@@ -285,9 +288,89 @@ output_join_test  <- output_1 %>%
 #   select(scenario_id, variables, values, stock_prices, prices, price_ratio) %>% 
 #   distinct(variables, values, stock_prices, prices, price_ratio, .keep_all = TRUE)
 
-#write_csv(output_join_test, file = file.path(outdir, "output_s_ranges_w_ranges.csv"), col_names = T)
+write_csv(output_join_test, file = file.path(outdir, "output_s_ranges_w_one.csv"), col_names = T)
 ```
 
+
+```{r}
+scenarios_df2 <- expand.grid(p_s = 1,
+                             p_w = seq(1, 10, 0.1),
+                             r_s = seq(0.1, 1, 0.01),
+                             r_w = seq(0.1, 0.999, 0.01),
+                             q_s = 0.05,
+                             q_w = 0.05,
+                             k_s = 4, 
+                             k_w = 2,
+                             c = 0.05) %>% 
+  mutate(scenario_id = 1:nrow(.)) %>% 
+  filter(r_s > r_w)
+
+# test scenario
+r_s <- scenarios_df2$r_s[1]
+k_s <- scenarios_df2$k_s[1]
+q_s <- scenarios_df2$q_s[1]
+p_s <- scenarios_df2$p_s[1]
+r_w <- scenarios_df2$r_w[1]
+k_w <- scenarios_df2$k_w[1]
+q_w <- scenarios_df2$q_w[1]
+p_w <- scenarios_df2$p_w[1]
+c <- scenarios_df2$c[1]
+
+
+i = 1
+
+# test with purrr
+# scenarios_df_out <- scenarios_df %>% 
+#  pmap_dfr(~ run_model(scenarios_df$r_s, scenarios_df$r_w,
+#                   scenarios_df$k_s, scenarios_df$k_w,
+#                   scenarios_df$q_s, scenarios_df$q_w,
+#                   scenarios_df$p_s, scenarios_df$p_w,
+#                   scenarios_df$c)) 
+
+for(i in 1:nrow(scenarios_df2)){
+ 
+  # Extract params
+  r_s <- scenarios_df2$r_s[i]
+  r_w <- scenarios_df2$r_w[i]
+  k_s <- scenarios_df2$k_s[i]
+  k_w <- scenarios_df2$k_w[i]
+  q_s <- scenarios_df2$q_s[i]
+  q_w <- scenarios_df2$q_w[i]
+  p_s <- scenarios_df2$p_s[i]
+  p_w <- scenarios_df2$p_w[i]
+  c <- scenarios_df2$c[i]
+  sc_id <- scenarios_df2$scenario_id[i]
+ 
+  # Run model
+  output2 <- run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                      q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, 
+                      c = c) %>% 
+    mutate(sc_id = sc_id)
+  
+  if(i == 1){
+    output_2 <- output2
+  }
+  else{
+    output_2 <- rbind(output_2, output2)
+  }
+
+}
+
+output_join_test2 <- output_2 %>% 
+  rename(scenario_id = sc_id) %>% 
+  left_join(scenarios_df, by = "scenario_id") %>% 
+  relocate(scenario_id, .before = E) %>% 
+  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w))
+
+write_csv(output_join_test2, file = file.path(outdir, "output_w_ranges_s_one.csv"), col_names = T)
+```
+
+```{r}
+output_join_test %>% 
+  ggplot() +
+  geom_histogram(aes(x = vuln_ratio_s))
+```
 
 ```{r scenario simulations}
 # Building df of scenarios
