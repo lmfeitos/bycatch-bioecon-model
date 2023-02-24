@@ -3068,7 +3068,7 @@ E <- 0.1
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 200, length.out = 1000)
+tset <- seq(from = 0, to = 500, length.out = 10000)
 
 N_w_simu1 <- NaN*tset; N_w_simu1[1] <- N_w
 
@@ -3090,6 +3090,68 @@ Pi_s_simu1 <- NaN*tset; Pi_s_simu1[1] <- 1
 
 Pi_w_simu1 <- NaN*tset; Pi_w_simu1[1] <- 1
 ```
+
+```{r}
+# parameter vector
+param <- c(q_s = 0.01,
+           q_w = 0.01,
+           k_s = 4,
+           k_w = 2,
+           r_s = 1,
+           r_w = 0.5,
+           p_s = 1,
+           p_w = 1,
+           alpha = 1,
+           c = 0.05,
+           A_w = 1, 
+           A_s = 1,
+           beta_w1 = 0.6,
+           beta_s1 = 0.5,
+           f_w1 = 0.2,
+           f_s1 = 0.3)
+
+# state variable vectors
+state_vars <- c(N_s1 = 4,
+                N_w1 = 2,
+                E = 0.1,
+                C_s = 1,
+                C_w = 1,
+                cpue_s = 1,
+                cpue_w = 1,
+                Pi_sum = 2,
+                Pi_s = 1,
+                Pi_w = 1)
+
+# function for the differential equations
+test_fcn <- function(time, state_vars, param){
+  with(as.list(c(state_vars, param)),{
+  # differential equations
+  dN_s1 <- (N_s1 * r_s * (1 - (N_s1/k_s)) - q_s * N_s1^beta_s1 * E)
+  dN_w1 <- (N_w1 * r_w * (1 - (N_w1/k_w)) - q_w * N_w1^beta_w1 * E)
+  dE <- (alpha * E * (A_s * (q_s * N_s1^beta_s1 * E)^-f_s1 * q_s * N_s1^beta_s1 + A_w * (q_w * N_w1^beta_w1 * E)^-f_w1 * q_w * N_w1^beta_w1) - c)
+  dC_s1 <- (q_s * N_s1 * E)
+  dC_w1 <- (q_w * N_w1 * E)
+  dcpue_s1 <- (C_s1 / E)
+  dcpue_w1 <- (C_w1 / E)
+  dPi1 <- (C_s1 * A_s * (q_s * N_s1^beta_s1 * E)^-f_s1 + C_w1 * A_w * (q_w * N_w1^beta_w1 * E)^-f_w1 - ((C_s1 + C_w1) * c))
+  dPi_s1 <- (C_s1 * A_s * (q_s * N_s1^beta_s1 * E)^-f_s1 - C_s1 * c)
+  dPi_w1 <- (C_w1 * A_w * (q_w * N_w1^beta_w1 * E)^-f_w1 - C_w1 * c)
+
+  
+  # return of rate of change
+  list(c(dN_s1, dN_w1, dE, dC_s1, dC_w1, dcpue_s1, dcpue_w1, dPi1, dPi_s1, dPi_w1))
+ })
+}
+
+time <- seq(0, 100, by = 0.01)
+library(deSolve)
+
+out <- ode(y = state_vars, times = time, func = test_fcn, parms = param)
+tail(out)
+
+out_df <- bind_rows(lapply(out, as.data.frame), .id = "time")
+```
+
 
 ```{r, echo = FALSE}
 for(i in 2:length(tset)) {
@@ -3136,57 +3198,6 @@ for(i in 2:length(tset)) {
   
 }
 
-for(i in 2:length(tset)) {
-  
-  # change in time
-  dt <- tset[i] - tset[i-1]
-  
-  # placeholder variables to plug into the equations
-  N_w1 <- N_w_simu1[i-1]
-  N_s1 <- N_s_simu1[i-1]
-  #N_wt1 <- N_w_test_1[i-1]
-  #N_st1 <- N_s_test_1[i-1]
-  E1 <- E_simu1[i-1]
-  #E_t1 <- E_test1[i-1]
-  C_s1 <- C_s_simu1[i-1]
-  C_w1 <- C_w_simu1[i-1]
-  cpue_s1 <- cpue_s_simu1[i-1]
-  cpue_w1 <- cpue_w_simu1[i-1]
-  pi1 <- Pi_sum_simu1[i-1]
-  pi_s1 <- Pi_s_simu1[i-1]
-  pi_w1 <- Pi_w_simu1[i-1]
-    
-  # Calculate change in variable size at each time step
-  dN_s1 <- (N_s1 * (r_s1 * (1 - (N_s1/k_s)) - q_s * E1)) * dt
-  dN_w1 <- (N_w1 * (r_w1 * (1 - (N_w1/k_w)) - q_w * E1)) * dt
-  #dN_st1 <- (N_st1 * (r_s * (1 - (N_st1/k_s)) - q_s * E_t1)) * dt
-  #dN_wt1 <- (N_wt1 * (r_w * (1 - (N_wt1/k_w)) - q_w * E_t1)) * dt
-  dE1 <- (alpha * E1 * (p_s * q_s * N_s1 + p_w * q_w * N_w1 - c)) * dt
-  #dE_test1 <- ((p_s1 * q_s1 * N_st1 + p_w1 * q_w1 * N_wt1) - c) * dt
-  dC_s1 <- (q_s * N_s1 * E1) * dt
-  dC_w1 <- (q_w * N_w1 * E1) * dt
-  dcpue_s1 <- (C_s1 / E1) * dt
-  dcpue_w1 <- (C_w1 / E1) * dt
-  dPi_s1 <- (C_s1 * p_s - C_s1 * c) * dt
-  dPi_w1 <- (C_w1 * p_w - C_w1 * c) * dt
-  dPi1 <- (C_s1 * p_s + C_w1 * p_w - ((C_s1 + C_w1) * c)) * dt
-  # calculate total variable size and store in holding vectors
-  
-  N_w_simu1[i] <- N_w1 + dN_w1
-  N_s_simu1[i] <- N_s1 + dN_s1
-  #N_w_test_1[i] <- N_wt1 + dN_wt1
-  #N_s_test_1[i] <- N_st1 + dN_st1
-  E_simu1[i] <- E1 + dE1
-  #E_test1[i] <- E_t1 + dE_test1
-  C_s_simu1[i] <- C_s1 + dC_s1
-  C_w_simu1[i] <- C_w1 + dC_w1
-  cpue_s_simu1[i] <- cpue_s1 + dcpue_s1
-  cpue_w_simu1[i] <- cpue_w1 + dcpue_w1
-  Pi_sum_simu1[i] <- pi1 + dPi1
-  Pi_s_simu1[i] <- pi_s1 + dPi_s1
-  Pi_w_simu1[i] <- pi_w1 + dPi_w1
-  
-}
 
 ```
 
