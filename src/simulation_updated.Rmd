@@ -56,79 +56,8 @@ run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
   } else {
     E = E_single
   }
- #  # Weak stock catch
- #  C_w <- q_w * N_w * E
- #  
- #  # Strong stock catch
- #  C_s <- q_s * N_s * E
- # 
- #  # Weak stock catch
- #  #C_w2 <- q_w * N_w2 * Ew
- #  
- #  # Strong stock catch
- #  #C_s2 <- q_s * N_s2 * Es
- #    
- #  # Weak stock price as a function of catch
- #  p_w_star <- C_w
- # 
- #  # Strong stockpPrice as a function of catch
- #  p_s_star <- C_s
- # 
- #  # Weak stock price as a function of catch
- #  #p_w_star2 <- C_w2
- # 
- #  # Strong stockpPrice as a function of catch
- #  #p_s_star2 <- C_s2
- #  
- #  # Derive weak stock biomass when weak stock price is a function of N_w catch
- # 
- #  N_w_star_1 <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
- #    (k_w * p_w_star * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
- #  
- #  # Derive effort when weak stock price is a function of N_w catch
- #  E_star_1 <- ((- c + k_s * p_s * q_s + k_w * p_w_star * q_w) * r_s * r_w)  /
- #   (k_w * p_w_star * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
- #  
- # # Derive strong stock biomass when weak stock price is a function of N_w catch
- # 
- #  N_s_star_1 <- (k_s * (c * q_s * r_w + k_w * p_w_star * q_w * (q_w * r_s - q_s * r_w))) /
- #     (k_w * p_w_star * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
- #  
- #  # Derive equilibrium abundance of weak stock with p_s as a function of N_s catch
- #  N_w_star_2 <- (k_w * (c * q_w * r_s + k_s * p_s_star * q_s * (- q_w * r_s + q_s * r_w))) / 
- #    (k_w * p_w * q_w^2 * r_s + k_s * p_s_star * q_s^2 * r_w)
- #  
- #  # Derive effort with p_s as a function of N_s catch
- #  E_star_2 <- ((- c + k_s * p_s_star * q_s + k_w * p_w * q_w) * r_s * r_w)  /
- #   (k_w * p_w * q_w^2 * r_s + k_s * p_s_star * q_s^2 * r_w) 
- #  
- #  # Derive equilibrium abundance of strong stock with p_s as a function of N_s catch
- # 
- #  N_s_star_2 <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
- #     (k_w * p_w * q_w^2 * r_s + k_s * p_s_star * q_s^2 * r_w)
- #  
- #  # Derive equilibrium abundance of weak stock with p_s and p_w as functions of N_s and N_w catch
- #  N_w_star_3 <- (k_w * (c * q_w * r_s + k_s * p_s_star * q_s * (- q_w * r_s + q_s * r_w))) / 
- #    (k_w * p_w_star * q_w^2 * r_s + k_s * p_s_star * q_s^2 * r_w)
- #  
- #  # Derive effort with p_s and p_w as functions of N_s and N_w  catch
- #  E_star_3 <- ((- c + k_s * p_s_star * q_s + k_w * p_w_star * q_w) * r_s * r_w)  /
- #   (k_w * p_w_star * q_w^2 * r_s + k_s * p_s_star * q_s^2 * r_w) 
- #  
- #  # Derive equilibrium abundance of strong stock with p_s and p_w as functions of N_s and N_w  catch
- # 
- #  N_s_star_3 <- (k_s * (c * q_s * r_w + k_w * p_w_star * q_w * (q_w * r_s - q_s * r_w))) /
- #     (k_w * p_w_star * q_w^2 * r_s + k_s * p_s_star * q_s^2 * r_w)
- #  
-  
   # Build output
   output <- data.frame(E = E, N_s = N_s, N_w = N_w)
-                       # p_w_star = p_w_star, p_s_star = p_s_star, C_w = C_w, C_s = C_s,
-                       # N_w_star_1 = N_w_star_1, E_star_1 = E_star_1, N_s_star_1 = N_s_star_1,
-                       # N_w_star_2 = N_w_star_2, E_star_2 = E_star_2, N_s_star_2 = N_s_star_2,
-                       # N_w_star_3 = N_w_star_3, E_star_3 = E_star_3, N_s_star_3 = N_s_star_3)
-
- 
   
   # Return
   return(output)
@@ -137,9 +66,7 @@ run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
 }
 
 
-run_model_2 <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_s, f_w, beta_s, beta_w, alpha, A){
-  
-  dt <- tset[i] - tset[i-1]
+run_model_2 <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_w, beta_w, A_w){
   
   # Weak stock equilibrium points when prices are constants
   N_w_multi <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
@@ -180,13 +107,141 @@ run_model_2 <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_s, f_w, bet
     E = E_single
   }
   
-  dN_s <- (r_s * N_s * (1 - N_s/k_s) - q_s * (N_s ^ beta_s) * E) * dt
+  # Weak stock catch function
+  Q_w <- q_w * N_w^beta_w * E
   
-  dN_w <- (r_w * N_w * (1 - N_w/k_w) - q_w * (N_w ^ beta_w) * E) * dt
+    # Weak stock price function
+  P_w <- (A_w * Q_w)^-f_w
   
-  dE <- (alpha * E * ((A * (q_s * (N_s^beta_s) * E)^-f_s)* q_s * (N_s^beta_s) + (A * (q_w * (N_w^beta_w) * E)^-f_w) * q_w * (N_w^beta_w)) - c) * dt
+    # Weak stock equilibrium points when prices are constants
+  N_w_multi2 <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
+    (k_w * P_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
   
-  output <- data.frame(N_s = N_s, N_w = N_w, E = E, )
+  # Effort equilibrium point when prices are constants
+  E_multi2 <- ((- c + k_s * p_s * q_s + k_w * P_w * q_w) * r_s * r_w)  /
+   (k_w * P_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+ 
+  # Strong stock equilibrium points when prices are constants 
+  N_s_multi2 <- (k_s * (c * q_s * r_w + k_w * P_w * q_w * (q_w * r_s - q_s * r_w))) /
+     (k_w * P_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+  
+    # Single species equilibrium for the weak stock 
+  N_w_single2 <- c / P_w * q_w
+  
+  
+  if(N_w_multi2 >= 0){
+    
+    N_w2 = N_w_multi2
+  } else { 
+  N_w2 = N_w_single2  
+  }
+  
+  if(N_s_multi2 >= 0){
+    N_s2 = N_s_multi2
+  } else {
+    N_s2 = N_s_single
+  }
+  if(N_w_multi >= 0){
+    E2 = E_multi2
+  } else {
+    E2 = E_single
+  }
+  
+
+  output <- data.frame(N_s = N_s, N_w = N_w, E = E, N_w2 = N_w2, N_s2 = N_s2, E2 = E2)
+
+ 
+  
+  # Return
+  return(output)
+ 
+ 
+  
+}
+
+run_model_3 <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_s, beta_s, A_s){
+  
+  # Weak stock equilibrium points when prices are constants
+  N_w_multi <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
+    (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
+  
+  # Effort equilibrium point when prices are constants
+  E_multi <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
+   (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+ 
+  # Strong stock equilibrium points when prices are constants 
+  N_s_multi <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
+     (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+  
+  # Single species equilibrium for the weak stock 
+  N_w_single <- c / p_w * q_w
+  
+  # Single species equilibrium for the strong stock  
+  N_s_single <- c / p_s * q_s
+
+  # Single species effort equilibrium for the strong stock  
+  E_single <- (r_s / q_s * (1 - c / (p_s * q_s * k_s)))
+  
+  if(N_w_multi >= 0){
+    
+    N_w = N_w_multi
+  } else { 
+    N_w = N_w_single
+  }
+  
+  if(N_s_multi >= 0){
+    N_s = N_s_multi
+  } else {
+    N_s = N_s_single
+  }
+  if(N_w_multi >= 0){
+    E = E_multi
+  } else {
+    E = E_single
+  }
+  
+  # Weak stock catch function
+  Q_s <- q_s * N_s^beta_s * E
+  
+    # Weak stock price function
+  P_s <- (A_s * Q_s)^-f_s
+  
+    # Weak stock equilibrium points when prices are constants
+  N_w_multi3 <- (k_w * (c * q_w * r_s + k_s * P_s * q_s * (- q_w * r_s + q_s * r_w))) / 
+    (k_w * p_w * q_w^2 * r_s + k_s * P_s * q_s^2 * r_w)
+  
+  # Effort equilibrium point when prices are constants
+  E_multi3 <- ((- c + k_s * P_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
+   (k_w * p_w * q_w^2 * r_s + k_s * P_s * q_s^2 * r_w) 
+ 
+  # Strong stock equilibrium points when prices are constants 
+  N_s_multi3 <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
+     (k_w * p_w * q_w^2 * r_s + k_s * P_s * q_s^2 * r_w) 
+  
+    # Single species equilibrium for the weak stock 
+  N_s_single2 <- c / P_s * q_w
+  
+  
+  if(N_w_multi3 >= 0){
+    
+    N_w3 = N_w_multi3
+  } else { 
+  N_w3 = N_w_single  
+  }
+  
+  if(N_s_multi3 >= 0){
+    N_s3 = N_s_multi3
+  } else {
+    N_s3 = N_s_single2
+  }
+  if(N_w_multi >= 0){
+    E3 = E_multi3
+  } else {
+    E3 = E_single
+  }
+  
+
+  output <- data.frame(N_s = N_s, N_w = N_w, E = E, N_w3 = N_w3, N_s3 = N_s3, E3 = E3)
 
  
   
@@ -206,11 +261,11 @@ run_model_2 <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_s, f_w, bet
 
 # Building df of price range scenarios
 scenarios_df <- expand.grid(p_s = seq(1, 10, 0.1),
-                            p_w = 1,
-                            r_s = seq(0.01, 1, 0.01),
-                            r_w = seq(0.01, 0.99, 0.01),
-                            q_s = 0.01,
-                            q_w = 0.01,
+                            p_w = c(0.0001, 1),
+                            r_s = seq(0.1, 1, 0.01),
+                            r_w = seq(0.1, 0.9, 0.01),
+                            q_s = 0.02,
+                            q_w = 0.02,
                             k_s = 4,
                             k_w = 2,
                             c = 0.05) %>% 
@@ -302,10 +357,10 @@ output_join_test  <- output_1 %>%
 ```{r}
 scenarios_df2 <- expand.grid(p_s = 1,
                              p_w = seq(1, 10, 0.1),
-                             r_s = seq(0.01, 1, 0.01),
-                             r_w = seq(0.01, 0.999, 0.01),
-                             q_s = 0.01,
-                             q_w = 0.01,
+                             r_s = seq(0.1, 1, 0.01),
+                             r_w = seq(0.1, 0.9, 0.01),
+                             q_s = 0.02,
+                             q_w = 0.02,
                              k_s = 4, 
                              k_w = 2,
                              c = 0.05) %>% 
@@ -379,7 +434,187 @@ output_join_test %>%
   geom_histogram(aes(x = vuln_ratio_s))
 ```
 
-```{r scenario simulations}
+```{r test with weak stock price as a function of catch}
+# Building df of scenarios
+scenarios_df_w_fcn <- 
+  expand.grid(p_s = 1, # 
+              p_w = 1, #seq(1, 10, 0.1),
+              r_s = seq(0.01, 1, 0.01),
+              r_w = seq(0.01, 0.999, 0.01),
+              q_s = 0.01,
+              q_w = 0.01,
+              k_s = 4,
+              k_w = 2,
+              f_w = seq(0.1, 0.5, 0.1),
+              beta_w = seq(0.4, 0.8, 0.1),
+              A_w = 1,
+              c = 0.05) %>% 
+  mutate(scenario_id = 1:nrow(.)) 
+
+# test scenario
+r_s <- scenarios_df_w_fcn$r_s[1]
+k_s <- scenarios_df_w_fcn$k_s[1]
+q_s <- scenarios_df_w_fcn$q_s[1]
+p_s <- scenarios_df_w_fcn$p_s[1]
+r_w <- scenarios_df_w_fcn$r_w[1]
+k_w <- scenarios_df_w_fcn$k_w[1]
+q_w <- scenarios_df_w_fcn$q_w[1]
+p_w <- scenarios_df_w_fcn$p_w[1]
+f_w <- scenarios_df_w_fcn$f_w[1]
+beta_w <- scenarios_df_w_fcn$beta_w[1]
+A_w <- scenarios_df_w_fcn$A_w[1]
+c <- scenarios_df_w_fcn$c[1]
+
+i = 1
+
+# test with purrr
+#scenarios_df %>% 
+#  pmap(~ run_model(scenarios_df$r_s, scenarios_df$r_w,
+#                   scenarios_df$k_s, scenarios_df$k_w,
+#                   scenarios_df$q_s, scenarios_df$q_w,
+#                   scenarios_df$p_s, scenarios_df$p_w,
+#                   scenarios_df$c)) %>% 
+#    mutate(sc_id = sc_id)
+
+for(i in 1:nrow(scenarios_df_w_fcn)){
+ 
+  # Extract params
+  r_s <- scenarios_df_w_fcn$r_s[i]
+  k_s <- scenarios_df_w_fcn$k_s[i]
+  q_s <- scenarios_df_w_fcn$q_s[i]
+  p_s <- scenarios_df_w_fcn$p_s[i]
+  r_w <- scenarios_df_w_fcn$r_w[i]
+  k_w <- scenarios_df_w_fcn$k_w[i]
+  q_w <- scenarios_df_w_fcn$q_w[i]
+  p_w <- scenarios_df_w_fcn$p_w[i]
+  f_w <- scenarios_df_w_fcn$f_w[i]
+  beta_w <- scenarios_df_w_fcn$beta_w[i]
+  A_w <- scenarios_df_w_fcn$A_w[i]
+  c <- scenarios_df_w_fcn$c[i]
+  sc_id <- scenarios_df_w_fcn$scenario_id[i]
+ 
+  # Run model
+  output_w_fcn <- run_model_2(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                        q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w,
+                        f_w = f_w, beta_w = beta_w, A_w = A_w, c = c) %>% 
+    mutate(sc_id = sc_id)
+  
+  if(i == 1){
+    output_w <- output_w_fcn
+  }
+  else{
+    output_w <- rbind(output_w, output_w_fcn)
+  }
+
+}
+
+output_join_test_w <- output_w %>% 
+  rename(scenario_id = sc_id) %>% 
+  left_join(scenarios_df_w_fcn, by = "scenario_id") %>% 
+  relocate(scenario_id, .before = E) %>% 
+  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w))
+
+#write_csv(output_join_test_w, file = file.path(outdir, "output_w_fcn.csv"), col_names = T)
+```
+
+```{r test with strong stock price as a function of catch}
+# Building df of scenarios
+scenarios_df_s_fcn <- 
+  expand.grid(p_s = 1,
+              p_w = 1, #seq(1, 10, 0.1),
+              r_s = seq(0.01, 1, 0.01),
+              r_w = seq(0.01, 0.999, 0.01),
+              q_s = 0.01,
+              q_w = 0.01,
+              k_s = 4,
+              k_w = 2,
+              f_s = seq(0.1, 0.5, 0.1),
+              beta_s = seq(0.4, 0.8, 0.1),
+              A_s = 1,
+              c = 0.05) %>% 
+  mutate(scenario_id = 1:nrow(.)) 
+
+# test scenario
+r_s <- scenarios_df_s_fcn$r_s[1]
+k_s <- scenarios_df_s_fcn$k_s[1]
+q_s <- scenarios_df_s_fcn$q_s[1]
+p_s <- scenarios_df_s_fcn$p_s[1]
+r_w <- scenarios_df_s_fcn$r_w[1]
+k_w <- scenarios_df_s_fcn$k_w[1]
+q_w <- scenarios_df_s_fcn$q_w[1]
+p_w <- scenarios_df_s_fcn$p_w[1]
+f_s <- scenarios_df_s_fcn$f_s[1]
+beta_s <- scenarios_df_s_fcn$beta_s[1]
+A_s <- scenarios_df_s_fcn$A_s[1]
+c <- scenarios_df_s_fcn$c[1]
+
+i = 1
+
+# test with purrr
+#scenarios_df %>% 
+#  pmap(~ run_model(scenarios_df$r_s, scenarios_df$r_w,
+#                   scenarios_df$k_s, scenarios_df$k_w,
+#                   scenarios_df$q_s, scenarios_df$q_w,
+#                   scenarios_df$p_s, scenarios_df$p_w,
+#                   scenarios_df$c)) %>% 
+#    mutate(sc_id = sc_id)
+
+for(i in 1:nrow(scenarios_df_s_fcn)){
+ 
+  # Extract params
+  r_s <- scenarios_df_s_fcn$r_s[i]
+  k_s <- scenarios_df_s_fcn$k_s[i]
+  q_s <- scenarios_df_s_fcn$q_s[i]
+  p_s <- scenarios_df_s_fcn$p_s[i]
+  r_w <- scenarios_df_s_fcn$r_w[i]
+  k_w <- scenarios_df_s_fcn$k_w[i]
+  q_w <- scenarios_df_s_fcn$q_w[i]
+  p_w <- scenarios_df_s_fcn$p_w[i]
+  f_s <- scenarios_df_s_fcn$f_s[i]
+  beta_s <- scenarios_df_s_fcn$beta_s[i]
+  A_s <- scenarios_df_s_fcn$A_s[i]
+  c <- scenarios_df_s_fcn$c[i]
+  sc_id <- scenarios_df_s_fcn$scenario_id[i]
+ 
+  # Run model
+  output_s_fcn <- run_model_3(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                        q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w,
+                        f_s = f_s, beta_s = beta_s, A_s = A_s, c = c) %>% 
+    mutate(sc_id = sc_id)
+  
+  if(i == 1){
+    output_s <- output_s_fcn
+  }
+  else{
+    output_s <- rbind(output_s, output_s_fcn)
+  }
+
+}
+
+output_join_test_s <- output_s %>% 
+  rename(scenario_id = sc_id) %>% 
+  left_join(scenarios_df_s_fcn, by = "scenario_id") %>% 
+  relocate(scenario_id, .before = E) %>% 
+  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w))
+
+#write_csv(output_join_test_w, file = file.path(outdir, "output_s_fcn.csv"), col_names = T)
+```
+
+```{r}
+output_join_test_w %>% 
+  pivot_longer(cols = N_w2:E2,
+               names_to = "variables_2",
+               values_to = "values_2") %>% 
+  ggplot() +
+  geom_histogram(aes(x = values_2)) +
+  facet_wrap(~ variables_2,
+             scales = "free_x")
+```
+
+
+```{r output wrangling}
 # Building df of scenarios
 scenarios_df <- expand.grid(r_s = seq(0.1, 1, 0.1),
                             r_w = seq(0.1, 1, 0.1),
@@ -389,6 +624,8 @@ scenarios_df <- expand.grid(r_s = seq(0.1, 1, 0.1),
                             q_w = seq(0.1, 1, 0.1),
                             p_s = seq(0, 10, 1),
                             p_w = seq(0, 10, 1),
+                            f_w = seq(0.1, 0.5, 0.1),
+                            beta_w = seq(0.4, 0.8, 0.1)
                             c = 0.05) %>% 
   mutate(scenario_id = 1:nrow(.)) 
 
@@ -441,9 +678,7 @@ for(i in 1:nrow(scenarios_df)){
   }
 
 }
-```
 
-```{r output wrangling}
 output_join <- output_1 %>% 
   rename(scenario_id = sc_id) %>% 
   left_join(scenarios_df, by = "scenario_id") %>% 

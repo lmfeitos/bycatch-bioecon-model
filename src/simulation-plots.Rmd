@@ -14,6 +14,7 @@ library(here)
 library(patchwork)
 library(gt)
 library(paletteer)
+library(deSolve)
 
 # file path
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses/"
@@ -49,33 +50,40 @@ output_q_test <- read_csv(file.path(outdir, "output_q_ranges.csv"))
 ```{r, echo = FALSE}
 # read in the output from the test with prices varying as a function of catch
 
-## only parameters
-output_fcn_test_param <- read_csv(file.path(outdir, "output_fcn_test_param.csv"))
-
 ## pw as a function of catch
-output_fcn_test_pw <- read_csv(file.path(outdir, "output_fcn_test_pw.csv"))
+output_fcn_test_pw <- read_csv(file.path(outdir, "output_w_fcn.csv"))
 
 ## ps as a function of catch
-output_fcn_test_ps <- read_csv(file.path(outdir, "output_fcn_test_ps.csv"))
-
-## pw and ps as a function of catch
-output_fcn_test_pw_ps <- read_csv(file.path(outdir, "output_fcn_test_pw_ps.csv"))
+output_fcn_test_ps <- read_csv(file.path(outdir, "output_s_fcn.csv"))
 ```
 
 
 ```{r data wrangling, echo = FALSE}
-output_test_updated <- output_test %>% 
-  pivot_wider(names_from = "variables",
-              values_from = "values") %>% 
-  mutate(b_values_s = N_s / k_s,
-         b_values_w = N_w / k_w) %>% 
-  pivot_longer(cols = E:N_w,
-               names_to = "variables",
-               values_to = "values") %>% 
-  pivot_longer(cols = starts_with("b_values"),
-               names_to = "b_stocks",
-               values_to = "b_v_k") %>% 
-  mutate(vuln_ratio = (q_s/r_s) / (q_w/r_w))
+# wrangling dataset with outputs from the test with weak stock price as a function of catch
+output_fcn_test_pw_proc <- output_fcn_test_pw %>% 
+  mutate(b_v_k_s = N_s / k_s,
+         b_v_k_w = N_w / k_w,
+         b_v_k_s2 = N_s2 / k_s,
+         b_v_k_w2 = N_w2 / k_w) %>% 
+  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
+  mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
+         vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
+  mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
+  mutate(w_stock_rev = (p_w * q_w * k_w) / c)
+
+# wrangling dataset with outputs from the test with strong stock price as a function of catch
+output_fcn_test_ps_proc <- output_fcn_test_ps %>% 
+  mutate(b_v_k_s = N_s / k_s,
+         b_v_k_w = N_w / k_w,
+         b_v_k_s2 = N_s2 / k_s,
+         b_v_k_w2 = N_w2 / k_w) %>% 
+  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
+  mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
+         vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
+  mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
+  mutate(w_stock_rev = (p_w * q_w * k_w) / c)
 
 
 # Updated dataset to be used in the analyses
@@ -197,19 +205,19 @@ s_w_zero_proc %>%
 - Strong stock size ($N_s$)
 
 $$
-N_s = r_s (1 - \frac{N_s}{K_s}) - q_s E
+\frac{dN_s}{N_wdt} = r_s (1 - \frac{N_s}{K_s}) - q_s E
 $$
 
 - Weak stock size ($N_w$):
 
 $$
-N_w = r_w (1 - \frac{N_w}{K_w}) - q_w E
+\frac{dN_w}{N_wdt} = r_w (1 - \frac{N_w}{K_w}) - q_w E
 $$
 
 - Effort ($E$):
 
 $$
-E = (p_s q_s N_s + p_w q_w N_w) - C
+\frac{dE}{Edt} = (p_s q_s N_s + p_w q_w N_w) - C
 $$
 
 ## Equilibrium points for the three variables:
@@ -251,7 +259,7 @@ $$
 ### Catchability range simulation
 
 
-```{r distribution of negative values for Ns and Nw for the range of qs, echo = FALSE}
+```{r distribution of negative values for Ns and Nw for the range of qs, echo = FALSE, include = FALSE}
 # New tests with the other parameters also being varied
 
 q_ranges <- 
@@ -556,59 +564,19 @@ s_w_zero_proc_test %>%
 
 
 ```{r, echo = FALSE}
-s_w_range_proc_plot <-
-  ggplot(data = s_w_range_proc) +
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_v_k_w, width = 1)) +
+# s_w_range_proc_plot <-
+  ggplot(data = s_w_range_proc %>% filter(p_w < 1)) +
+  geom_tile(aes(x = log1p(vuln_ratio_w), y = st_stock_rev, fill = log1p(b_v_k_w), width = 1)) +
   scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.25),
                          breaks = seq(0, 0.85, 0.15)) +
-  scale_x_continuous(breaks = seq(1, 100, 19),
+  scale_x_continuous(breaks = seq(0, 3, 0.5),
                      expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Strong stock revenue stream (Ps * q * Ks/c)",
-       fill = "B/K") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 10, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-
-s_w_range_proc_plot2 <-
-  ggplot(data = s_w_range_proc) +
-  geom_tile(aes(x = log1p(vuln_ratio_w), y = st_stock_rev, fill = b_v_k_w, width = 1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
-                         breaks = seq(0, 0.85, 0.15)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "log(Vw/Vs + 1)",
-       y = "Strong stock revenue stream (Ps * q * Ks/c)",
-       fill = "B/K") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 10, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-
-s_w_range_proc_plot3 <-
-  ggplot(data = w_s_range_proc) + 
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = b_v_k_w, width = 1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
-                         breaks = seq(0, 0.85, 0.15)) +
-  scale_x_continuous(breaks = seq(1, 100, 19),
+  scale_y_continuous(breaks = seq(1, 16, 3),
                      expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Weak stock revenue stream (Pw * q * Kw/c)",
-       fill = "B/K") +
+  labs(x = "log(Vw/Vs)",
+       y = "Strong stock revenue stream (Ps * q * Ks/c)",
+       fill = "log(B/K)") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -617,33 +585,68 @@ s_w_range_proc_plot3 <-
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
-s_w_range_proc_plot4 <-
-  ggplot(data = w_s_range_proc) + 
-  geom_tile(aes(x = log1p(vuln_ratio_w), y = w_stock_rev, fill = b_v_k_w, width = 1)) +
+
+#s_w_range_proc_plot2 <-
+  ggplot(data = s_w_range_proc %>% filter(p_w == 1)) +
+  geom_tile(aes(x = log1p(vuln_ratio_w), y = st_stock_rev, fill = log1p(b_v_k_w), width = 1)) +
   scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.15),
                          breaks = seq(0, 0.85, 0.15)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "log(Vw/Vs + 1)",
-       y = "Weak stock revenue stream (Pw * q * Kw/c)",
-       fill = "B/K") +
+  scale_x_continuous(breaks = seq(0, 3, 0.5),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(1, 16, 1),
+                     expand = c(0,0)) +
+  labs(x = "log(Vw/Vs)",
+       y = "Strong stock revenue stream",
+       fill = "log(B/K)") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 10, color = "black"),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+#w_s_range_proc_plot1 <-
+  ggplot(data = w_s_range_proc) + 
+  geom_tile(aes(x = log1p(vuln_ratio_w), y = w_stock_rev, fill = log1p(b_v_k_w), width = 1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.15)) +
+  scale_x_continuous(breaks = seq(0, 3, 0.5),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 8, 1),
+                     expand = c(0,0)) +
+  labs(x = "log(Vw/Vs)",
+       y = "Weak stock revenue stream",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
         axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 ```
 
-```{r, fig.height=10, fig.width=10}
-(s_w_range_proc_plot +
-  s_w_range_proc_plot2) /
+### Vulnerability ratios vs revenue stream with prices as constants
+- in the top plots, $p_w$ = 1
+- in the bottom plots, $p_s$ = 1
+
+```{r, fig.height=10, fig.width=10, echo = FALSE}
+range_plot_1 <- 
+  (s_w_range_proc_plot +
+  s_w_range_proc_plot2)  +
+  plot_annotation(tag_levels = "A") +
+  plot_layout(guides = "collect")
+
+range_plot_2 <-
   (s_w_range_proc_plot3 +
   s_w_range_proc_plot4) +
   plot_annotation(tag_levels = "A") +
   plot_layout(guides = "collect")
+
+range_plot_1 / range_plot_2
 ```
 
 ```{r, echo = FALSE, include = FALSE}
@@ -653,21 +656,96 @@ s_w_range_proc %>%
 ```
 
 
-```{r}
-output_r_test_2_pw <- 
-  output_r_test_2 %>% 
-  ggplot() +
-  geom_histogram(aes(x = p_w_star))
+```{r, echo = FALSE}
+w_fcn_s_rev_plot <-
+  ggplot(data = output_fcn_test_pw_proc) +
+  geom_tile(aes(x = log1p(vuln_ratio_w), y = st_stock_rev, fill = b_v_k_w2, width = 1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                         breaks = seq(0, 1, 0.2)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "log(Vw/Vs + 1)",
+       y = "Strong stock revenue stream (Ps * q * Ks/c)",
+       fill = "B/K") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
 
-output_r_test_2_ps <-
-  output_r_test_2 %>% 
-  ggplot() +
-  geom_histogram(aes(x = p_s_star))
-
-output_r_test_2_pw + output_r_test_2_ps
-
+w_fcn_w_rev_plot <-
+  ggplot(data = output_fcn_test_pw_proc) +
+  geom_tile(aes(x = log1p(vuln_ratio_w), y = w_stock_rev, fill = b_v_k_w2, width = 1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                         breaks = seq(0, 1, 0.2)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "log(Vw/Vs + 1)",
+       y = "Weak stock revenue stream (Pw * q * Kw/c)",
+       fill = "B/K") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
 ```
 
+```{r, echo = FALSE}
+s_fcn_s_rev_plot <-
+  ggplot(data = output_fcn_test_ps_proc) +
+  geom_tile(aes(x = log1p(vuln_ratio_w), y = st_stock_rev, fill = b_v_k_w2, width = 1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                         breaks = seq(0, 1, 0.2)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "log(Vw/Vs + 1)",
+       y = "Strong stock revenue stream (Ps * q * Ks/c)",
+       fill = "B/K") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+s_fcn_w_rev_plot <-
+  ggplot(data = output_fcn_test_ps_proc) +
+  geom_tile(aes(x = log1p(vuln_ratio_w), y = w_stock_rev, fill = b_v_k_w2, width = 1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                         breaks = seq(0, 1, 0.2)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "log(Vw/Vs + 1)",
+       y = "weak stock revenue stream (Pw * q * Kw/c)",
+       fill = "B/K") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 10, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+```
+
+### Vulnerability ratios vs revenue stream with prices as functions of catch
+- in the top plots, $p_s$ is a parameter and $p_w$ is a variable
+- in the bottom plots, $p_w$ is a parameter and $p_s$ is a variable
+
+```{r, fig.height = 10, fig.width = 10, echo = FALSE}
+(w_fcn_s_rev_plot + w_fcn_w_rev_plot) /
+  (s_fcn_s_rev_plot + s_fcn_w_rev_plot) +
+  plot_annotation(tag_levels = "A") + 
+  plot_layout(guides = "collect")
+```
 
 
 ## Time series equations
@@ -680,9 +758,9 @@ $$
 \newline
 \frac{d E}{dt} &= \alpha  E  (p_s  q_s  N_S + p_w q_w N_W - c)
 \newline
-\frac{d C_s}{dt} &= q N_s E
+\frac{d C_s}{dt} &= q_s N_s E
 \newline
-\frac{d C_w}{dt} &= q N_w E
+\frac{d C_w}{dt} &= q_w N_w E
 \newline
 \frac{d CPUE_s}{dt} &= \frac{C_s} {E}
 \newline
@@ -3038,9 +3116,45 @@ equal_scales_EWS_r /
   plot_annotation(tag_level = "A") 
 ```
 
-### Estimating equilibria for when prices vary as a function of catch
+### Estimating equilibria for when both prices vary as a function of their catches
 
-```{r scenario 1 catchability ratio 10, echo = FALSE}
+#### Equations
+
+$$ 
+\begin{align}
+\frac{d N_s}{dt} &= N_S  r_s  (1 - (\frac{N_S}{K_s})) - q_s N_s^\beta_s E \\
+
+\newline
+\frac{d N_w}{dt} &= N_W  r_w  (1 - (\frac{N_W}{K_w})) - q_w N_w^\beta_w E \\
+
+\newline
+\frac{d E}{dt} &= \alpha  E  (A_s(q_s N_s^\beta E)^-f_s + A_w(q_w N_w^\beta_w E)^-f_w)- c)
+
+\newline
+\frac{d C_s}{dt} &= q N_s^\beta_s E
+
+\newline
+\frac{d C_w}{dt} &= q N_w^\beta_w E
+
+\newline
+\frac{d CPUE_s}{dt} &= \frac{C_s} {E}
+
+\newline
+\frac{d CPUE_w}{dt} &= \frac{C_w} {E}
+
+\newline
+\frac{d \pi_s}{dt} &= C_s A_s(q_s N_s^\beta E)^-f_s - C_s  c
+
+\newline
+\frac{d \pi_w}{dt} &= C_w A_w(q_w N_w^\beta_w E)^-f_w - C_w  c
+
+\newline
+\frac{d \pi}{dt} &= C_s  A_s(q_s N_s^\beta E)^-f_s + C_w  A_w(q_w N_w^\beta_w E)^-f_w - (C_s + C_w) * c
+
+\end{align} 
+$$
+
+```{r scenario 1, echo = FALSE}
 # set up the parameter space
 q_s <- 0.01
 q_w <- 0.01
@@ -3048,8 +3162,6 @@ k_s <- 4
 k_w <- 2
 r_s <- 1
 r_w <- 0.5
-p_s <- 1
-p_w <- 1
 alpha <- 1
 c <- 0.05
 A_w <- 1
@@ -3064,11 +3176,11 @@ N_w <- k_w
 
 N_s <- k_s
 
-E <- 0.1
+E <- 0.5
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 500, length.out = 10000)
+tset <- seq(from = 0, to = 200, length.out = 10000)
 
 N_w_simu1 <- NaN*tset; N_w_simu1[1] <- N_w
 
@@ -3089,67 +3201,6 @@ Pi_sum_simu1 <- NaN*tset; Pi_sum_simu1[1] <- 2
 Pi_s_simu1 <- NaN*tset; Pi_s_simu1[1] <- 1
 
 Pi_w_simu1 <- NaN*tset; Pi_w_simu1[1] <- 1
-```
-
-```{r}
-# parameter vector
-param <- c(q_s = 0.01,
-           q_w = 0.01,
-           k_s = 4,
-           k_w = 2,
-           r_s = 1,
-           r_w = 0.5,
-           p_s = 1,
-           p_w = 1,
-           alpha = 1,
-           c = 0.05,
-           A_w = 1, 
-           A_s = 1,
-           beta_w1 = 0.6,
-           beta_s1 = 0.5,
-           f_w1 = 0.2,
-           f_s1 = 0.3)
-
-# state variable vectors
-state_vars <- c(N_s1 = 4,
-                N_w1 = 2,
-                E = 0.1,
-                C_s = 1,
-                C_w = 1,
-                cpue_s = 1,
-                cpue_w = 1,
-                Pi_sum = 2,
-                Pi_s = 1,
-                Pi_w = 1)
-
-# function for the differential equations
-test_fcn <- function(time, state_vars, param){
-  with(as.list(c(state_vars, param)),{
-  # differential equations
-  dN_s1 <- (N_s1 * r_s * (1 - (N_s1/k_s)) - q_s * N_s1^beta_s1 * E)
-  dN_w1 <- (N_w1 * r_w * (1 - (N_w1/k_w)) - q_w * N_w1^beta_w1 * E)
-  dE <- (alpha * E * (A_s * (q_s * N_s1^beta_s1 * E)^-f_s1 * q_s * N_s1^beta_s1 + A_w * (q_w * N_w1^beta_w1 * E)^-f_w1 * q_w * N_w1^beta_w1) - c)
-  dC_s1 <- (q_s * N_s1 * E)
-  dC_w1 <- (q_w * N_w1 * E)
-  dcpue_s1 <- (C_s1 / E)
-  dcpue_w1 <- (C_w1 / E)
-  dPi1 <- (C_s1 * A_s * (q_s * N_s1^beta_s1 * E)^-f_s1 + C_w1 * A_w * (q_w * N_w1^beta_w1 * E)^-f_w1 - ((C_s1 + C_w1) * c))
-  dPi_s1 <- (C_s1 * A_s * (q_s * N_s1^beta_s1 * E)^-f_s1 - C_s1 * c)
-  dPi_w1 <- (C_w1 * A_w * (q_w * N_w1^beta_w1 * E)^-f_w1 - C_w1 * c)
-
-  
-  # return of rate of change
-  list(c(dN_s1, dN_w1, dE, dC_s1, dC_w1, dcpue_s1, dcpue_w1, dPi1, dPi_s1, dPi_w1))
- })
-}
-
-time <- seq(0, 100, by = 0.01)
-library(deSolve)
-
-out <- ode(y = state_vars, times = time, func = test_fcn, parms = param)
-tail(out)
-
-out_df <- bind_rows(lapply(out, as.data.frame), .id = "time")
 ```
 
 
@@ -3175,8 +3226,8 @@ for(i in 2:length(tset)) {
   dN_s1 <- (N_s1 * r_s * (1 - (N_s1/k_s)) - q_s * N_s1^beta_s1 * E) * dt
   dN_w1 <- (N_w1 * r_w * (1 - (N_w1/k_w)) - q_w * N_w1^beta_w1 * E) * dt
   dE <- (alpha * E * (A_s * (q_s * N_s1^beta_s1 * E)^-f_s1 * q_s * N_s1^beta_s1 + A_w * (q_w * N_w1^beta_w1 * E)^-f_w1 * q_w * N_w1^beta_w1) - c) * dt
-  dC_s1 <- (q_s * N_s1 * E) * dt
-  dC_w1 <- (q_w * N_w1 * E) * dt
+  dC_s1 <- (q_s * N_s1^beta_s1 * E) * dt
+  dC_w1 <- (q_w * N_w1^beta_w1 * E) * dt
   dcpue_s1 <- (C_s1 / E) * dt
   dcpue_w1 <- (C_w1 / E) * dt
   dPi_s1 <- (C_s1 * A_s * (q_s * N_s1^beta_s1 * E)^-f_s1 - C_s1 * c) * dt
@@ -3201,9 +3252,338 @@ for(i in 2:length(tset)) {
 
 ```
 
+```{r scenario 2, echo = FALSE}
+# set up the parameter space
+beta_w2 <- 0.8
+beta_s2 <- 0.5
+f_w2 <- 0.05
+f_s2 <- 0.3
+
+E <- 0.5
+```
 
 ```{r, echo = FALSE}
-effort_df <- cbind(E_simu1, tset) %>% 
+N_w_simu2 <- NaN*tset; N_w_simu2[1] <- N_w
+
+N_s_simu2 <- NaN*tset; N_s_simu2[1] <- N_s
+
+E_simu2 <- NaN*tset; E_simu2[1] <- E
+
+C_s_simu2 <- NaN*tset; C_s_simu2[1] <- 1
+
+C_w_simu2 <- NaN*tset; C_w_simu2[1] <- 1
+
+cpue_s_simu2 <- NaN*tset; cpue_s_simu2[1] <- 1
+
+cpue_w_simu2 <- NaN*tset; cpue_w_simu2[1] <- 1
+
+Pi_sum_simu2 <- NaN*tset; Pi_sum_simu2[1] <- 2
+
+Pi_s_simu2 <- NaN*tset; Pi_s_simu2[1] <- 1
+
+Pi_w_simu2 <- NaN*tset; Pi_w_simu2[1] <- 1
+```
+
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w2 <- N_w_simu2[i-1]
+  N_s2 <- N_s_simu2[i-1]
+  E2 <- E_simu2[i-1]
+  C_s2 <- C_s_simu2[i-1]
+  C_w2 <- C_w_simu2[i-1]
+  cpue_s2 <- cpue_s_simu2[i-1]
+  cpue_w2 <- cpue_w_simu2[i-1]
+  pi2 <- Pi_sum_simu2[i-1]
+  pi_s2 <- Pi_s_simu2[i-1]
+  pi_w2 <- Pi_w_simu2[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s2 <- (N_s2 * r_s * (1 - (N_s2/k_s)) - q_s * N_s2^beta_s2 * E2) * dt
+  dN_w2 <- (N_w2 * r_w * (1 - (N_w2/k_w)) - q_w * N_w2^beta_w2 * E2) * dt
+  dE2 <- (alpha * E2 * (A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 * q_s * N_s2^beta_s2 + A_w * (q_w * N_w2^beta_w2 * E2)^-f_w2 * q_w * N_w2^beta_w2) - c) * dt
+  dC_s2 <- (q_s * N_s2^beta_s2 * E2) * dt
+  dC_w2 <- (q_w * N_w2^beta_w2 * E2) * dt
+  dcpue_s2 <- (C_s2 / E2) * dt
+  dcpue_w2 <- (C_w2 / E2) * dt
+  dPi_s2 <- (C_s2 * A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 - C_s2 * c) * dt
+  dPi_w2 <- (C_w2 * A_w * (q_w * N_w2^beta_w2 * E2)^-f_w2 - C_w2 * c) * dt
+  dPi2 <- (C_s2 * A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 + C_w2 * A_w * (q_w * N_w2^beta_w2 * E2)^-f_w2 - ((C_s2 + C_w2) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu2[i] <- N_w2 + dN_w2
+  N_s_simu2[i] <- N_s2 + dN_s2
+  E_simu2[i] <- E2 + dE2
+  C_s_simu2[i] <- C_s2 + dC_s2
+  C_w_simu2[i] <- C_w2 + dC_w2
+  cpue_s_simu2[i] <- cpue_s2 + dcpue_s2
+  cpue_w_simu2[i] <- cpue_w2 + dcpue_w2
+  Pi_sum_simu2[i] <- pi2 + dPi2
+  Pi_s_simu2[i] <- pi_s2 + dPi_s2
+  Pi_w_simu2[i] <- pi_w2 + dPi_w2  
+  
+}
+
+
+```
+
+```{r scenario 3, echo = FALSE}
+# set up the parameter space
+beta_w3 <- 0.4
+beta_s3 <- 0.5
+f_w3 <- 0.3
+f_s3 <- 0.3
+
+# Initial values for the variables
+N_w <- k_w
+
+N_s <- k_s
+
+E <- 0.5
+```
+
+```{r, echo = FALSE}
+N_w_simu3 <- NaN*tset; N_w_simu3[1] <- N_w
+
+N_s_simu3 <- NaN*tset; N_s_simu3[1] <- N_s
+
+E_simu3 <- NaN*tset; E_simu3[1] <- E
+
+C_s_simu3 <- NaN*tset; C_s_simu3[1] <- 1
+
+C_w_simu3 <- NaN*tset; C_w_simu3[1] <- 1
+
+cpue_s_simu3 <- NaN*tset; cpue_s_simu3[1] <- 1
+
+cpue_w_simu3 <- NaN*tset; cpue_w_simu3[1] <- 1
+
+Pi_sum_simu3 <- NaN*tset; Pi_sum_simu3[1] <- 2
+
+Pi_s_simu3 <- NaN*tset; Pi_s_simu3[1] <- 1
+
+Pi_w_simu3 <- NaN*tset; Pi_w_simu3[1] <- 1
+```
+
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w3 <- N_w_simu3[i-1]
+  N_s3 <- N_s_simu3[i-1]
+  E3 <- E_simu3[i-1]
+  C_s3 <- C_s_simu3[i-1]
+  C_w3 <- C_w_simu3[i-1]
+  cpue_s3 <- cpue_s_simu3[i-1]
+  cpue_w3 <- cpue_w_simu3[i-1]
+  pi3 <- Pi_sum_simu3[i-1]
+  pi_s3 <- Pi_s_simu3[i-1]
+  pi_w3 <- Pi_w_simu3[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s3 <- (N_s3 * r_s * (1 - (N_s3/k_s)) - q_s * N_s3^beta_s3 * E3) * dt
+  dN_w3 <- (N_w3 * r_w * (1 - (N_w3/k_w)) - q_w * N_w3^beta_w3 * E3) * dt
+  dE3 <- (alpha * E3 * (A_s * (q_s * N_s3^beta_s3 * E3)^-f_s3 * q_s * N_s3^beta_s3 + A_w * (q_w * N_w3^beta_w3 * E3)^-f_w3 * q_w * N_w3^beta_w3) - c) * dt
+  dC_s3 <- (q_s * N_s3^beta_s3 * E3) * dt
+  dC_w3 <- (q_w * N_w3^beta_w3 * E3) * dt
+  dcpue_s3 <- (C_s3 / E3) * dt
+  dcpue_w3 <- (C_w3 / E3) * dt
+  dPi_s3 <- (C_s3 * A_s * (q_s * N_s3^beta_s3 * E3)^-f_s3 - C_s3 * c) * dt
+  dPi_w3 <- (C_w3 * A_w * (q_w * N_w3^beta_w3 * E3)^-f_w3 - C_w3 * c) * dt
+  dPi3 <- (C_s3 * A_s * (q_s * N_s3^beta_s3 * E3)^-f_s3 + C_w3 * A_w * (q_w * N_w3^beta_w3 * E3)^-f_w3 - ((C_s3 + C_w3) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu3[i] <- N_w3 + dN_w3
+  N_s_simu3[i] <- N_s3 + dN_s3
+  E_simu3[i] <- E3 + dE3
+  C_s_simu3[i] <- C_s3 + dC_s3
+  C_w_simu3[i] <- C_w3 + dC_w3
+  cpue_s_simu3[i] <- cpue_s3 + dcpue_s3
+  cpue_w_simu3[i] <- cpue_w3 + dcpue_w3
+  Pi_sum_simu3[i] <- pi3 + dPi3
+  Pi_s_simu3[i] <- pi_s3 + dPi_s3
+  Pi_w_simu3[i] <- pi_w3 + dPi_w3  
+  
+}
+
+
+```
+
+```{r scenario 4, echo = FALSE}
+# set up the parameter space
+beta_w4 <- 0.4
+beta_s4 <- 0.5
+f_w4 <- 0.6
+f_s4 <- 0.3
+
+# Initial values for the variables
+N_w <- k_w
+
+N_s <- k_s
+
+E <- 0.5
+```
+
+```{r, echo = FALSE}
+
+N_w_simu4 <- NaN*tset; N_w_simu4[1] <- N_w
+
+N_s_simu4 <- NaN*tset; N_s_simu4[1] <- N_s
+
+E_simu4 <- NaN*tset; E_simu4[1] <- E
+
+C_s_simu4 <- NaN*tset; C_s_simu4[1] <- 1
+
+C_w_simu4 <- NaN*tset; C_w_simu4[1] <- 1
+
+cpue_s_simu4 <- NaN*tset; cpue_s_simu4[1] <- 1
+
+cpue_w_simu4 <- NaN*tset; cpue_w_simu4[1] <- 1
+
+Pi_sum_simu4 <- NaN*tset; Pi_sum_simu4[1] <- 2
+
+Pi_s_simu4 <- NaN*tset; Pi_s_simu4[1] <- 1
+
+Pi_w_simu4 <- NaN*tset; Pi_w_simu4[1] <- 1
+```
+
+
+```{r, echo = FALSE}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w4 <- N_w_simu4[i-1]
+  N_s4 <- N_s_simu4[i-1]
+  E4 <- E_simu4[i-1]
+  C_s4 <- C_s_simu4[i-1]
+  C_w4 <- C_w_simu4[i-1]
+  cpue_s4 <- cpue_s_simu4[i-1]
+  cpue_w4 <- cpue_w_simu4[i-1]
+  pi4 <- Pi_sum_simu4[i-1]
+  pi_s4 <- Pi_s_simu4[i-1]
+  pi_w4 <- Pi_w_simu4[i-1]
+
+  # Calculate change in variable size at each time step
+  dN_s4 <- (N_s4 * r_s * (1 - (N_s4/k_s)) - q_s * N_s4^beta_s4 * E4) * dt
+  dN_w4 <- (N_w4 * r_w * (1 - (N_w4/k_w)) - q_w * N_w4^beta_w4 * E4) * dt
+  dE4 <- (alpha * E4 * (A_s * (q_s * N_s4^beta_s4 * E4)^-f_s4 * q_s * N_s4^beta_s4 + A_w * (q_w * N_w4^beta_w4 * E4)^-f_w4 * q_w * N_w4^beta_w4) - c) * dt
+  dC_s4 <- (q_s * N_s4^beta_s4 * E4) * dt
+  dC_w4 <- (q_w * N_w4^beta_w4 * E4) * dt
+  dcpue_s4 <- (C_s4 / E4) * dt
+  dcpue_w4 <- (C_w4 / E4) * dt
+  dPi_s4 <- (C_s4 * A_s * (q_s * N_s4^beta_s4 * E4)^-f_s4 - C_s4 * c) * dt
+  dPi_w4 <- (C_w4 * A_w * (q_w * N_w4^beta_w4 * E4)^-f_w4 - C_w4 * c) * dt
+  dPi4 <- (C_s4 * A_s * (q_s * N_s4^beta_s4 * E4)^-f_s4 + C_w4 * A_w * (q_w * N_w4^beta_w4 * E4)^-f_w4 - ((C_s4 + C_w4) * c)) * dt
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu4[i] <- N_w4 + dN_w4
+  N_s_simu4[i] <- N_s4 + dN_s4
+  E_simu4[i] <- E4 + dE4
+  C_s_simu4[i] <- C_s4 + dC_s4
+  C_w_simu4[i] <- C_w4 + dC_w4
+  cpue_s_simu4[i] <- cpue_s4 + dcpue_s4
+  cpue_w_simu4[i] <- cpue_w4 + dcpue_w4
+  Pi_sum_simu4[i] <- pi4 + dPi4
+  Pi_s_simu4[i] <- pi_s4 + dPi_s4
+  Pi_w_simu4[i] <- pi_w4 + dPi_w4  
+  
+}
+
+
+```
+
+
+```{r, include = FALSE}
+# run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, beta_s, beta_w, f_w, f_s, A_s, A_w){
+#   
+#   # Derive effort
+#   E <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
+#    (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+#   
+#   # Derive weak stock biomass
+#  
+#   N_w <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
+#     (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
+#   
+#  # Derive strong stock biomass
+#  
+#    N_s <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
+#      (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
+#   
+#   # Build output
+#   output <- data.frame(E = E, N_s = N_s, N_w = N_w)
+#  
+#   # Return
+#   return(output)
+#  
+#  
+# }
+# 
+# sc_r_1 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 1, r_w = 0.75, p_s = 1, p_w = 1, c = 0.05)
+# sc_r_2 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 1, r_w = 0.88, p_s = 1, p_w = 1, c = 0.05)
+# sc_r_3 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 1, r_w = 0.9, p_s = 1, p_w = 1, c = 0.05)
+# sc_r_4 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 1, r_w = 0.92, p_s = 1, p_w = 1, c = 0.05)
+# sc_r_5 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 1, r_w = 0.95, p_s = 1, p_w = 1, c = 0.05)
+# sc_r_6 <- run_model(q_s = 0.05, q_w = 0.05, k_s = 4, k_w = 2, r_s = 1, r_w = 0.97, p_s = 1, p_w = 1, c = 0.05)
+# 
+# sc_r_all <- bind_rows(sc_r_1, sc_r_2, sc_r_3, sc_r_4, sc_r_5, sc_r_6) %>% 
+#   rownames_to_column() %>% 
+#   rename(scenario = rowname) %>% 
+#   mutate(tset = 200) %>% 
+#   pivot_longer(cols = E:N_w,
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(price_ratio = case_when(
+#     scenario == "1" ~ "Rw/Rs = 0.75",
+#     scenario == "2" ~ "Rw/Rs = 0.88",
+#     scenario == "3" ~ "Rw/Rs = 0.9",
+#     scenario == "4" ~ "Rw/Rs = 0.92",
+#     scenario == "5" ~ "Rw/Rs = 0.95",
+#     scenario == "6" ~ "Rw/Rs = 0.97"
+#   )) %>% 
+#   pivot_wider(names_from = "variable",
+#               values_from = "value") %>% 
+#   mutate(b_values_s = N_s / k_s,
+#          b_values_w = N_w / k_w) %>% 
+#   pivot_longer(cols = N_s:N_w,
+#                names_to = "variable",
+#                values_to = "value") %>%
+#   pivot_longer(cols = b_values_s:b_values_w,
+#                names_to = "b_values",
+#                values_to = "b_v_k") %>% 
+#   pivot_longer(cols = E,
+#                names_to = "effort",
+#                values_to = "ef_value") %>% 
+#   mutate(variable = case_when(
+#     variable == "N_s" ~ "Ns*",
+#     variable == "N_w" ~ "Nw*"
+#   )) %>% 
+#   mutate(effort = case_when(
+#     effort == "E" ~ "E*"
+#   )) %>% 
+#   mutate(b_values = case_when(
+#     str_detect(b_values, "_w") ~ "Nw/Kw*",
+#     str_detect(b_values, "_s") ~ "Ns/Ks*"
+#   ))
+```
+ 
+
+```{r, echo = FALSE}
+effort_df <- cbind(E_simu1, E_simu2, E_simu3, E_simu4, tset) %>% 
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("E_"),
                names_to = "variable",
@@ -3212,28 +3592,10 @@ effort_df <- cbind(E_simu1, tset) %>%
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
     str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6")
-         )
-#, E_simu2, E_simu3, E_simu4, E_simu5, E_simu6,
-# effort_test_df <- cbind(E_test1, E_test2, E_test3, E_test4, E_test5, E_test6, E_test7, E_test8, tset) %>% 
-#   as.data.frame() %>% 
-#   pivot_longer(cols = starts_with("E_"),
-#                names_to = "variable",
-#                values_to = "value") %>% 
-#   mutate(scenario_id = case_when(
-#     str_detect(variable, "1") ~ "1",
-#     str_detect(variable, "2") ~ "2",
-#     str_detect(variable, "3") ~ "3",
-#     str_detect(variable, "4") ~ "4",
-#     str_detect(variable, "5") ~ "5",
-#     str_detect(variable, "6") ~ "6",
-#     str_detect(variable, "7") ~ "7",
-#     str_detect(variable, "8") ~ "8")
-#     )
+    str_detect(variable, "4") ~ "4"))
+# E_simu5, E_simu6,
 
-nw_df <- cbind(N_w_simu1, tset) %>% 
+nw_df <- cbind(N_w_simu1, N_w_simu2, N_w_simu3, N_w_simu4, tset) %>% 
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("N_w_simu"),
                names_to = "variable",
@@ -3242,13 +3604,11 @@ nw_df <- cbind(N_w_simu1, tset) %>%
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
     str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6")) %>% 
+    str_detect(variable, "4") ~ "4")) %>% 
   mutate(b_v_k = value/k_w)
-#N_w_simu2, N_w_simu3, N_w_simu4, N_w_simu5, N_w_simu6, 
+# N_w_simu5, N_w_simu6, 
 
-ns_df <- cbind(N_s_simu1,tset) %>% 
+ns_df <- cbind(N_s_simu1,N_s_simu2, N_s_simu3, N_s_simu4, tset) %>% 
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("N_s_simu"),
                names_to = "variable",
@@ -3257,44 +3617,12 @@ ns_df <- cbind(N_s_simu1,tset) %>%
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
     str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6")) %>% 
+    str_detect(variable, "4") ~ "4")) %>% 
   mutate(b_v_k = value/k_s)
-# N_s_simu2, N_s_simu3, N_s_simu4, N_s_simu5, N_s_simu6, 
-# ns_t_df <- cbind(N_s_test_1, N_s_test_2, N_s_test_3, N_s_test_4, N_s_test_5, N_s_test_6, N_s_test_7, N_s_test_8, tset) %>% 
-#   as.data.frame() %>% 
-#   pivot_longer(cols = starts_with("N_s_test_"),
-#                names_to = "variable",
-#                values_to = "value") %>% 
-#   mutate(scenario_id = case_when(
-#     str_detect(variable, "1") ~ "1",
-#     str_detect(variable, "2") ~ "2",
-#     str_detect(variable, "3") ~ "3",
-#     str_detect(variable, "4") ~ "4",
-#     str_detect(variable, "5") ~ "5",
-#     str_detect(variable, "6") ~ "6",
-#     str_detect(variable, "7") ~ "7",
-#     str_detect(variable, "8") ~ "8")) %>% 
-#   mutate(b_v_k = value/4)
-# 
-# nw_t_df <- cbind(N_w_test_1, N_w_test_2, N_w_test_3, N_w_test_4, N_w_test_5, N_w_test_6, N_w_test_7, N_w_test_8, tset) %>% 
-#   as.data.frame() %>% 
-#   pivot_longer(cols = starts_with("N_w_test_"),
-#                names_to = "variable",
-#                values_to = "value") %>% 
-#   mutate(scenario_id = case_when(
-#     str_detect(variable, "1") ~ "1",
-#     str_detect(variable, "2") ~ "2",
-#     str_detect(variable, "3") ~ "3",
-#     str_detect(variable, "4") ~ "4",
-#     str_detect(variable, "5") ~ "5",
-#     str_detect(variable, "6") ~ "6",
-#     str_detect(variable, "7") ~ "7",
-#     str_detect(variable, "8") ~ "8")) %>% 
-#   mutate(b_v_k = value/2)
+#  N_s_simu5, N_s_simu6, 
 
-catch_s_df <- cbind(C_s_simu1,tset) %>% 
+
+catch_s_df <- cbind(C_s_simu1,C_s_simu2, C_s_simu3, C_s_simu4, tset) %>% 
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("C_s_"),
                names_to = "variable",
@@ -3303,11 +3631,10 @@ catch_s_df <- cbind(C_s_simu1,tset) %>%
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
     str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6"))
-#  C_s_simu2, C_s_simu3, C_s_simu4, C_s_simu5, C_s_simu6, 
-catch_w_df <- cbind(C_w_simu1,tset) %>% 
+    str_detect(variable, "4") ~ "4"))
+#  C_s_simu5, C_s_simu6, 
+
+catch_w_df <- cbind(C_w_simu1,C_w_simu2, C_w_simu3, C_w_simu4, tset) %>% 
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("C_w_"),
                names_to = "variable",
@@ -3316,12 +3643,10 @@ catch_w_df <- cbind(C_w_simu1,tset) %>%
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
     str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6"))
-# C_w_simu2, C_w_simu3, C_w_simu4, C_w_simu5, C_w_simu6, 
+    str_detect(variable, "4") ~ "4"))
+#  C_w_simu5, C_w_simu6, 
 
-cpue_s_df <- cbind(cpue_s_simu1,  tset) %>% 
+cpue_s_df <- cbind(cpue_s_simu1, cpue_s_simu2, cpue_s_simu3, cpue_s_simu4, tset) %>% 
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("cpue_s_"),
                names_to = "variable",
@@ -3330,13 +3655,11 @@ cpue_s_df <- cbind(cpue_s_simu1,  tset) %>%
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
     str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6"))
+    str_detect(variable, "4") ~ "4"))
 
-#cpue_s_simu2, cpue_s_simu3, cpue_s_simu4, cpue_s_simu5, cpue_s_simu6,
+# cpue_s_simu5, cpue_s_simu6,
 
-cpue_w_df <- cbind(cpue_w_simu1,  tset) %>% 
+cpue_w_df <- cbind(cpue_w_simu1, cpue_w_simu2, cpue_w_simu3, cpue_w_simu4, tset) %>% 
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("cpue_w_"),
                names_to = "variable",
@@ -3345,11 +3668,10 @@ cpue_w_df <- cbind(cpue_w_simu1,  tset) %>%
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
     str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6"))
-#cpue_w_simu2, cpue_w_simu3, cpue_w_simu4, cpue_w_simu5, cpue_w_simu6,
-profits_df <- cbind(Pi_sum_simu1,tset) %>% 
+    str_detect(variable, "4") ~ "4"))
+# cpue_w_simu5, cpue_w_simu6,
+
+profits_df <- cbind(Pi_sum_simu1, Pi_sum_simu2, Pi_sum_simu3, Pi_sum_simu4, tset) %>% 
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("Pi_sum"),
                names_to = "variable",
@@ -3358,12 +3680,10 @@ profits_df <- cbind(Pi_sum_simu1,tset) %>%
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
     str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6"))
-# Pi_sum_simu2, Pi_sum_simu3, Pi_sum_simu4, Pi_sum_simu5, Pi_sum_simu6,
+    str_detect(variable, "4") ~ "4"))
+# Pi_sum_simu5, Pi_sum_simu6,
 
-profits_s_df <- cbind(Pi_s_simu1, tset) %>% 
+profits_s_df <- cbind(Pi_s_simu1, Pi_s_simu2, Pi_s_simu3, Pi_s_simu4, tset) %>% 
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("Pi_s_"),
                names_to = "variable",
@@ -3372,13 +3692,11 @@ profits_s_df <- cbind(Pi_s_simu1, tset) %>%
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
     str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6"))
+    str_detect(variable, "4") ~ "4"))
 
-#Pi_s_simu2, Pi_s_simu3, Pi_s_simu4, Pi_s_simu5, Pi_s_simu6,
+# Pi_s_simu5, Pi_s_simu6,
 
-profits_w_df <- cbind(Pi_w_simu1, tset) %>% 
+profits_w_df <- cbind(Pi_w_simu1, Pi_w_simu2, Pi_w_simu3, Pi_w_simu4, tset) %>% 
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("Pi_w_"),
                names_to = "variable",
@@ -3387,10 +3705,8 @@ profits_w_df <- cbind(Pi_w_simu1, tset) %>%
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
     str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6"))
-# Pi_w_simu2, Pi_w_simu3, Pi_w_simu4, Pi_w_simu5, Pi_w_simu6,
+    str_detect(variable, "4") ~ "4"))
+# Pi_w_simu5, Pi_w_simu6,
 # Gathered the results from each model scenario run into a single df
 
 var_full_price <- bind_rows(effort_df, nw_df, ns_df, catch_s_df, catch_w_df, cpue_s_df, cpue_w_df, profits_df, profits_w_df, profits_s_df)
@@ -3398,14 +3714,18 @@ var_full_price <- bind_rows(effort_df, nw_df, ns_df, catch_s_df, catch_w_df, cpu
 # Tidy dataset for plotting
 
 var_plot_price <- var_full_price %>%
-  # mutate(price_ratio = case_when(
-  #   str_detect(scenario_id, "1") ~ "Rw/Rs = 0.75",
-  #   str_detect(scenario_id, "2") ~ "Rw/Rs = 0.88",
-  #   str_detect(scenario_id, "3") ~ "Rw/Rs = 0.90",
-  #   str_detect(scenario_id, "4") ~ "Rw/Rs = 0.92",
-  #   str_detect(scenario_id, "5") ~ "Rw/Rs = 0.95",
-  #   str_detect(scenario_id, "6") ~ "Rw/Rs = 0.97"
-  # )) %>% 
+   mutate(f_ratio = case_when(
+     str_detect(scenario_id, "1") ~ "f_w/f_s = 0.6",
+     str_detect(scenario_id, "2") ~ "f_w/f_s = 0.16",
+     str_detect(scenario_id, "3") ~ "f_w/f_s = 1",
+     str_detect(scenario_id, "4") ~ "f_w/f_s = 2",
+   )) %>% 
+   mutate(beta_ratio = case_when(
+     str_detect(scenario_id, "1") ~ "beta_w/beta_s = 1.2",
+     str_detect(scenario_id, "2") ~ "beta_w/beta_s = 1.6",
+     str_detect(scenario_id, "3") ~ "beta_w/beta_s = 0.8",
+     str_detect(scenario_id, "4") ~ "beta_w/beta_s = 0.8",
+   )) %>% 
   mutate(variable_clean = case_when(
     str_detect(variable, "N_w") ~ "Weak stock",
     str_detect(variable, "N_s") ~ "Strong stock",
@@ -3417,13 +3737,13 @@ var_plot_price <- var_full_price %>%
     str_detect(variable, "cpue_s") ~ "Strong stock CPUE",
     str_detect(variable, "C_w") ~ "Weak stock catch",
     str_detect(variable, "C_s") ~ "Strong stock catch"
-  ))
+  )) 
 
 ```
 
 
 ```{r, echo = FALSE}
-#equal_scales_EWS_r <-
+equal_scales_EWS_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Effort simulation", "Weak stock", "Strong stock")) %>% 
   ggplot() +
@@ -3431,20 +3751,10 @@ var_plot_price <- var_full_price %>%
             size = .8,
             alpha = .8,
             show.legend = T) +
-  # geom_point(data = sc_r_all, 
-  #            aes(x = tset, y = value, color = variable)) +
-  # geom_point(data = sc_r_all,
-  #            aes(x = tset, y = ef_value, color = effort)) +
-  # facet_wrap(~ factor(price_ratio, 
-  #                     levels = c("Rw/Rs = 0.75",
-  #                                "Rw/Rs = 0.88",
-  #                                "Rw/Rs = 0.90",
-  #                                "Rw/Rs = 0.92",
-  #                                "Rw/Rs = 0.95",
-  #                                "Rw/Rs = 0.97")),
-  #            nrow = 1) +
-  scale_color_manual(values = c("#1B9E77", "black", "#D95F02")) +
-  #scale_x_continuous(breaks = seq(0, 200, 50)) +
+  facet_wrap(f_ratio ~ beta_ratio,
+             nrow = 1) +
+  scale_color_manual(values = c("#1B9E77", "#7570B3", "#D95F02")) +
+  scale_x_continuous(expand = c(0,0)) +
   labs(x = "",
        y = "Nw, Ns, E",
        color = "") +
@@ -3458,8 +3768,96 @@ var_plot_price <- var_full_price %>%
         axis.title.y = element_text(color = "black", size = 12, vjust = 2),
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
+
+dif_scales_fcn <-
+  var_plot_price %>% 
+  filter(variable_clean %in% c("Strong stock", "Weak stock")) %>% 
+  ggplot() +
+  geom_line(aes(x = tset, y = b_v_k, color = variable_clean),
+            size = .8,
+            alpha = .8,
+            show.legend = T) +
+  facet_wrap(f_ratio ~ beta_ratio,
+             scales = "free",
+             nrow = 1) +
+  scale_color_manual(values = c("#D95F02", "#7570B3", "#D95F02", "#7570B3")) +
+  scale_x_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "N/K (Nw, Ns)",
+       color = "") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        axis.title.x = element_text(color = "black", size = 12, vjust = -2),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom")
+
+equal_scales_CPE_fcn <-
+  var_plot_price %>% 
+  filter(variable_clean %in% c("Weak stock catch", "Strong stock catch", "Weak stock CPUE", "Strong stock CPUE")) %>% 
+  ggplot() +
+  geom_line(aes(x = tset, y = value, color = variable_clean),
+            size = .8,
+            alpha = .8,
+            show.legend = T) +
+  facet_wrap(f_ratio ~ beta_ratio,
+             scales = "free_x",
+             nrow = 1) +
+  scale_color_manual(values = c("#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F")) +
+  scale_x_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "CPUE, Catch (S and W)",
+       color = "") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        axis.title.x = element_text(color = "black", size = 12),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom")
+
+equal_scales_pi_fcn <-
+  var_plot_price %>% 
+  filter(variable_clean %in% c("Profit sum", "Weak stock profits", "Strong stock profits")) %>% 
+  ggplot() +
+  geom_line(aes(x = tset, y = value, color = variable_clean),
+            size = .8,
+            alpha = .8,
+            show.legend = T) +
+  facet_wrap(f_ratio ~ beta_ratio,
+             scales = "free_x",
+             nrow = 1) +
+  scale_color_manual(values = c("#FF7F00", "#CAB2D6", "#6A3D9A")) +
+  scale_x_continuous(expand = c(0,0)) +
+  labs(x = "Time",
+       y = "Profits",
+       color = "") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        axis.title.x = element_text(color = "black", size = 12),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom")
 ```
 
+```{r, fig.height=15, fig.width=10, echo = FALSE}
+equal_scales_EWS_fcn /
+   dif_scales_fcn /
+  equal_scales_CPE_fcn /
+     equal_scales_pi_fcn +
+  plot_annotation(tag_levels = "A") 
+```
 
 
 
