@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(here)
 library(patchwork)
+library(beepr)
 
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses/"
 outdir <- file.path(basedir, "model_outs") # calls present data from raster files
@@ -66,7 +67,7 @@ run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
 }
 
 
-run_model_2 <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_w, beta_w, A_w){
+run_model_pw_fcn <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_w, beta_w, A_w){
   
   # Weak stock equilibrium points when prices are constants
   N_w_multi <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
@@ -113,39 +114,42 @@ run_model_2 <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_w, beta_w, 
     # Weak stock price function
   P_w <- (A_w * Q_w)^-f_w
   
-    # Weak stock equilibrium points when prices are constants
+  # Weak stock equilibrium point when weak stock price is a function of catch
   N_w_multi2 <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
     (k_w * P_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
   
-  # Effort equilibrium point when prices are constants
+  # Effort equilibrium point when weak stock price is a function of catch
   E_multi2 <- ((- c + k_s * p_s * q_s + k_w * P_w * q_w) * r_s * r_w)  /
    (k_w * P_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
  
-  # Strong stock equilibrium points when prices are constants 
+  # Strong stock equilibrium point when weak stock price is a function of catch
   N_s_multi2 <- (k_s * (c * q_s * r_w + k_w * P_w * q_w * (q_w * r_s - q_s * r_w))) /
      (k_w * P_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
   
     # Single species equilibrium for the weak stock 
   N_w_single2 <- c / P_w * q_w
   
+    # Single species equilibrium for the strong stock  
+#  N_s_single2 <- c / p_s * q_s
   
   if(N_w_multi2 >= 0){
     
     N_w2 = N_w_multi2
   } else { 
-  N_w2 = N_w_single2  
+    N_w2 = N_w_single2
   }
   
-  if(N_s_multi2 >= 0){
+  if(N_s_multi2 > 0){
     N_s2 = N_s_multi2
   } else {
     N_s2 = N_s_single
   }
-  if(N_w_multi >= 0){
+  if(N_w_multi2 >= 0){
     E2 = E_multi2
   } else {
     E2 = E_single
   }
+  
   
 
   output <- data.frame(N_s = N_s, N_w = N_w, E = E, N_w2 = N_w2, N_s2 = N_s2, E2 = E2)
@@ -155,9 +159,9 @@ run_model_2 <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_w, beta_w, 
   # Return
   return(output)
  
- 
-  
 }
+
+
 
 run_model_3 <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_s, beta_s, A_s){
   
@@ -220,7 +224,9 @@ run_model_3 <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_s, beta_s, 
   
     # Single species equilibrium for the weak stock 
   N_s_single2 <- c / P_s * q_w
-  
+
+    # Single species effort equilibrium for the strong stock  
+  E_single2 <- (r_s / q_s * (1 - c / (P_s * q_s * k_s)))
   
   if(N_w_multi3 >= 0){
     
@@ -237,7 +243,7 @@ run_model_3 <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_s, beta_s, 
   if(N_w_multi >= 0){
     E3 = E_multi3
   } else {
-    E3 = E_single
+    E3 = E_single2
   }
   
 
@@ -260,8 +266,8 @@ run_model_3 <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_s, beta_s, 
 # In this code chunk, I'll generate the dataset to simulate a scenario where the weak stock has zero value and the strong and weak stocks growth rates vary in different ratios.
 
 # Building df of price range scenarios
-scenarios_df <- expand.grid(p_s = seq(1, 10, 0.1),
-                            p_w = c(0.0001, 1),
+scenarios_df <- expand.grid(p_s = seq(1, 10, 0.2),
+                            p_w = c(0.001, 1),
                             r_s = seq(0.1, 1, 0.01),
                             r_w = seq(0.1, 0.9, 0.01),
                             q_s = 0.02,
@@ -350,13 +356,15 @@ output_join_test  <- output_1 %>%
 #   select(scenario_id, variables, values, stock_prices, prices, price_ratio) %>% 
 #   distinct(variables, values, stock_prices, prices, price_ratio, .keep_all = TRUE)
 
-#write_csv(output_join_test, file = file.path(outdir, "output_s_ranges_w_one.csv"), col_names = T)
+write_csv(output_join_test, file = file.path(outdir, "output_s_ranges_w_one.csv"), col_names = T)
+
+beep()
 ```
 
 
 ```{r}
-scenarios_df2 <- expand.grid(p_s = 1,
-                             p_w = seq(1, 10, 0.1),
+scenarios_df2 <- expand.grid(p_s = seq(1, 2, 1),
+                             p_w = seq(1, 10, 0.2),
                              r_s = seq(0.1, 1, 0.01),
                              r_w = seq(0.1, 0.9, 0.01),
                              q_s = 0.02,
@@ -426,6 +434,8 @@ output_join_test2 <- output_2 %>%
   mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w))
 
 #write_csv(output_join_test2, file = file.path(outdir, "output_w_ranges_s_one.csv"), col_names = T)
+
+beep()
 ```
 
 ```{r}
@@ -437,19 +447,20 @@ output_join_test %>%
 ```{r test with weak stock price as a function of catch}
 # Building df of scenarios
 scenarios_df_w_fcn <- 
-  expand.grid(p_s = 1, # 
-              p_w = 1, #seq(1, 10, 0.1),
+  expand.grid(p_s = seq(1, 5, 4), # 
+              p_w = seq(1, 5, 4), #seq(1, 10, 0.1),
               r_s = seq(0.01, 1, 0.01),
-              r_w = seq(0.01, 0.999, 0.01),
-              q_s = 0.01,
-              q_w = 0.01,
+              r_w = seq(0.01, 0.99, 0.01),
+              q_s = 0.02,
+              q_w = 0.02,
               k_s = 4,
               k_w = 2,
               f_w = seq(0.1, 0.5, 0.1),
               beta_w = seq(0.4, 0.8, 0.1),
               A_w = 1,
               c = 0.05) %>% 
-  mutate(scenario_id = 1:nrow(.)) 
+  mutate(scenario_id = 1:nrow(.)) %>% 
+  filter(r_s > r_w)
 
 # test scenario
 r_s <- scenarios_df_w_fcn$r_s[1]
@@ -494,7 +505,7 @@ for(i in 1:nrow(scenarios_df_w_fcn)){
   sc_id <- scenarios_df_w_fcn$scenario_id[i]
  
   # Run model
-  output_w_fcn <- run_model_2(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+  output_w_fcn <- run_model_pw_fcn(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
                         q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w,
                         f_w = f_w, beta_w = beta_w, A_w = A_w, c = c) %>% 
     mutate(sc_id = sc_id)
