@@ -568,7 +568,7 @@ s_w_range_proc_plot <-
   ggplot(data = s_w_range_proc %>% filter(p_w < 1)) +
   geom_tile(aes(x = log1p(vuln_ratio_w), y = st_stock_rev, fill = log1p(b_v_k_w), width = 1)) +
   scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.15),
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.20),
                          breaks = seq(0, 0.7, 0.2)) +
   scale_x_continuous(breaks = seq(0, 3, 0.5),
                      expand = c(0,0)) +
@@ -633,7 +633,7 @@ w_s_range_proc_plot2 <-
   ggplot(data = w_s_range_proc %>% filter(p_s == 2)) + 
   geom_tile(aes(x = log1p(vuln_ratio_w), y = w_stock_rev, fill = log1p(b_v_k_w), width = 1)) +
   scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.15)) +
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1)) +
   scale_x_continuous(breaks = seq(0, 3, 0.5),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 8, 1),
@@ -3225,6 +3225,12 @@ Pi_w_simu1 <- NaN*tset; Pi_w_simu1[1] <- 1
 
 ```{r, echo = FALSE}
 for(i in 2:length(tset)) {
+  
+  # if the time before N_w goes negative, run N_w as usual. Else, continue populating the vector with zeros.
+  if(tset[i] < 160){ N_w_simu1 <- N_w_simu1} else {N_w_simu1 <- 0}
+  if(tset[i] < 160){ N_s_simu1 <- N_s_simu1} else {N_s_simu1 <- (N_s1 * r_s * (1 - (N_s1/k_s)) - q_s * N_s1^beta_s1 * E) * dt}
+  if(tset[i] < 160){ E_simu1 <- E_simu1} else {E_simu1 <- (alpha * E * (A_s * (q_s * N_s1^beta_s1 * E)^-f_s1 * q_s * N_s1^beta_s1) - c) * dt}
+  if(tset[i] < 160){ Pi_sum_simu1 <- Pi_sum_simu1} else {Pi_sum_simu1 <- Pi_s_simu1}
   
   # change in time
   dt <- tset[i] - tset[i-1]
