@@ -658,88 +658,97 @@ plot_1
 ```
 
 ```{r, echo = FALSE}
-s_w_range_proc_plot_v2 <-
-  ggplot(data = s_w_range_proc %>% filter(p_w < 1 & st_stock_rev <= 10)) +
-  geom_tile(aes(x = log1p(vuln_ratio_w), y = st_stock_rev, fill = log1p(b_v_k_w), width = 1)) +
+s_w_range_proc_plot <-
+  ggplot(data = s_w_range_proc %>% 
+           filter(p_w < 1 & st_stock_rev <= 5 & vuln_ratio_w <= 4)) +
+  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
   scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0),
-                         breaks = seq(0, 0.7, 0.2)) +
-  scale_x_continuous(breaks = seq(0, 3, 0.5),
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.5, 0.1)) +
+  scale_x_continuous(breaks = seq(1, 4, 0.5),
                      expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(1, 16, 1),
+  scale_y_continuous(breaks = seq(1, 5, 0.5),
                      expand = c(0,0)) +
-  labs(x = "log(Vw/Vs)",
+  labs(x = "",
        y = "Strong stock revenue stream",
        fill = "log(B/K)") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
 
-s_w_range_proc_plot2_v2 <-
-  ggplot(data = s_w_range_proc %>% filter(p_w == 1 & st_stock_rev <= 10)) +
-  geom_tile(aes(x = log1p(vuln_ratio_w), y = st_stock_rev, fill = log1p(b_v_k_w), width = 1)) +
+s_w_range_proc_plot2 <-
+  ggplot(data = s_w_range_proc %>% 
+           filter(p_w == 1 & st_stock_rev <= 5 & vuln_ratio_w <= 4)) +
+  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
   scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0),
-                         breaks = seq(0, 0.35, 0.15)) +
-  scale_x_continuous(breaks = seq(0, 3, 0.5),
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.35, 0.1)) +
+  scale_x_continuous(breaks = seq(1, 4, 0.5),
                      expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(1, 16, 1),
+  scale_y_continuous(breaks = seq(1, 5, 0.5),
                      expand = c(0,0)) +
-  labs(x = "log(Vw/Vs)",
+  labs(x = "",
        y = "Strong stock revenue stream",
        fill = "log(B/K)") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
 
-w_s_range_proc_plot1_v2 <-
-  ggplot(data = w_s_range_proc %>% filter(p_s == 1)) + 
-  geom_tile(aes(x = log1p(vuln_ratio_w), y = w_stock_rev, fill = log1p(b_v_k_w), width = 1)) +
+w_s_range_proc_plot1 <-
+  ggplot(data = w_s_range_proc %>%
+           filter(p_s == 1 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
   scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0),
-                         breaks = seq(0, 0.4, 0.15)) +
-  scale_x_continuous(breaks = seq(0, 3, 0.5),
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.4, 0.1)) +
+  scale_x_continuous(breaks = seq(0, 4, 0.5),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 8, 1),
                      expand = c(0,0)) +
-  labs(x = "log(Vw/Vs)",
+  labs(x = "Vw/Vs",
        y = "Weak stock revenue stream",
        fill = "log(B/K)") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
   
-w_s_range_proc_plot2_v2 <- 
-  ggplot(data = w_s_range_proc %>% filter(p_s == 2)) + 
-  geom_tile(aes(x = log1p(vuln_ratio_w), y = w_stock_rev, fill = log1p(b_v_k_w), width = 1)) +
+w_s_range_proc_plot2 <- 
+  ggplot(data = w_s_range_proc %>% 
+           filter(p_s == 2 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
   scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0)) +
-  scale_x_continuous(breaks = seq(0, 3, 0.5),
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.25, 0.05)) +
+  scale_x_continuous(breaks = seq(0, 4, 0.5),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 8, 1),
                      expand = c(0,0)) +
-  labs(x = "log(Vw/Vs)",
+  labs(x = "Vw/Vs",
        y = "Weak stock revenue stream",
        fill = "log(B/K)") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 ```
@@ -751,18 +760,24 @@ w_s_range_proc_plot2_v2 <-
 - in the bottom plots, $p_s$ = 1
 
 ```{r, fig.height=10, fig.width=10, echo = FALSE}
-range_plot_1_v2 <- 
-  (s_w_range_proc_plot_v2 +
-  s_w_range_proc_plot2_v2)  
+range_plot_1 <- 
+  (s_w_range_proc_plot +
+  s_w_range_proc_plot2)  
 
-range_plot_2_v2 <-
-  (w_s_range_proc_plot1_v2 +
-  w_s_range_proc_plot2_v2) 
+range_plot_2 <-
+  (w_s_range_proc_plot1 +
+  w_s_range_proc_plot2) 
 
-range_plot_1_v2 / 
-  range_plot_2_v2 +
+plot_1 <-
+  range_plot_1 / 
+  range_plot_2 +
   plot_annotation(tag_levels = "A")
-```
+
+plot_1
+
+ ggsave(file.path(outdir, "plot_1.png"),
+        width = 12, height = 8, bg = "white", dpi = 300)
+ ```
 
 ```{r, echo = FALSE}
 s_w_range_proc_plot_v3 <-
@@ -2450,7 +2465,7 @@ E <- 0.5
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 100, length.out = 10000)
+tset <- seq(from = 0, to = 200, length.out = 10000)
 
 N_w_simu1 <- NaN*tset; N_w_simu1[1] <- N_w
 
@@ -2519,17 +2534,26 @@ for(i in 2:length(tset)) {
   pi_s1 <- Pi_s_simu1[i-1]
   pi_w1 <- Pi_w_simu1[i-1]
 
+  # set each equation's terms separately
+  s1_1 = N_s1 * (r_s * (1 - (N_s1/k_s)))
+  s1_2 = q_s * N_s1^beta_s1 * E1
+  s2_1 = N_w1 * (r_w * (1 - (N_w1/k_w)))
+  s2_2 = q_w * N_w1^beta_w1 * E1
+  s3_1 = A_s * ((s1_2)-f_s1 * q_s * N_s1^beta_s1)
+  s3_2 = A_w * ((s2_2)-f_w1 * q_w * N_w1^beta_w1)
+  
   # Calculate change in variable size at each time step
-  dN_s1 <- (N_s1 * r_s * (1 - (N_s1/k_s)) - q_s * N_s1^beta_s1 * E1) * dt
-  dN_w1 <- (N_w1 * r_w * (1 - (N_w1/k_w)) - q_w * N_w1^beta_w1 * E1) * dt
-  dE1 <- (alpha * E1 * (A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1 * q_s * N_s1^beta_s1) + (A_w * (q_w * N_w1^beta_w1 * E1)^-f_w1 * q_w * N_w1^beta_w1) - c) * dt
+  dN_s1 <- (r_s * N_s1 * (1 - (N_s1/k_s)) - (q_s * N_s1^beta_s1 * E1)) * dt
+  dN_w1 <- (r_w * N_w1 * (1 - (N_w1/k_w)) - (q_w * N_w1^beta_w1 * E1)) * dt
+  dE1 <- (alpha * E1 * (A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1 * q_s * N_s1^beta_s1 +
+                        A_w * (q_w * N_w1^beta_w1 * E1)^-f_w1 * q_w * N_w1^beta_w1 - (c))) * dt
   dC_s1 <- (q_s * N_s1^beta_s1 * E1) * dt
   dC_w1 <- (q_w * N_w1^beta_w1 * E1) * dt
   dcpue_s1 <- (C_s1 / E1) * dt
   dcpue_w1 <- (C_w1 / E1) * dt
-  dPi_s1 <- (C_s1 * A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1 - C_s1 * c) * dt
-  dPi_w1 <- (C_w1 * A_w * (q_w * N_w1^beta_w1 * E1)^-f_w1 - C_w1 * c) * dt
-  dPi1 <- (C_s1 * A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1 + C_w1 * A_w * (q_w * N_w1^beta_w1 * E1)^-f_w1 - ((C_s1 + C_w1) * c)) * dt
+  dPi_s1 <- ((C_s1 * A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1 * q_s * N_s1^beta_s1) - (C_s1 * c)) * dt
+  dPi_w1 <- ((C_w1 * A_w * (q_s * N_w1^beta_w1 * E1)^-f_w1 * q_w * N_w1^beta_w1) - (C_w1 * c)) * dt
+  dPi1 <- (C_s1 * A_s * (q_s * N_s1^beta_s1 * E1)^(-f_s1) + C_w1 * A_w * (q_w * N_w1^beta_w1 * E1)^(-f_w1) - ((C_s1 + C_w1) * c)) * dt
   
   # calculate total variable size and store in holding vectors
   
@@ -2579,12 +2603,26 @@ Pi_sum_simu2 <- NaN*tset; Pi_sum_simu2[1] <- 2
 Pi_s_simu2 <- NaN*tset; Pi_s_simu2[1] <- 1
 
 Pi_w_simu2 <- NaN*tset; Pi_w_simu2[1] <- 1
+
+t_Nw_0 <- 66.81668
 ```
 
 
 ```{r, echo = FALSE}
 for(i in 2:length(tset)) {
   
+  # if(N_w_simu2 >= 0){ 
+  #   N_w_simu2 <- N_w_simu2
+  # } else { 
+  #   N_w_simu2 <- 0
+  # }
+  # 
+  # if(N_w_simu2 <= 0){
+  #   E_simu2 <- (alpha * E2 * (A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 * q_s * N_s2^beta_s2 - (c))) * dt
+  # } else {
+  #   E_simu2 <- E_simu2
+  # }
+
   # change in time
   dt <- tset[i] - tset[i-1]
   
@@ -2601,29 +2639,30 @@ for(i in 2:length(tset)) {
   pi_w2 <- Pi_w_simu2[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s2 <- (N_s2 * r_s * (1 - (N_s2/k_s)) - q_s * N_s2^beta_s2 * E2) * dt
-  dN_w2 <- (N_w2 * r_w * (1 - (N_w2/k_w)) - q_w * N_w2^beta_w2 * E2) * dt
-  dE2 <- (alpha * E2 * (A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 * q_s * N_s2^beta_s2) + (A_w * (q_w * N_w2^beta_w2 * E2)^-f_w2 * q_w * N_w2^beta_w2) - c) * dt
+  dN_s2 <- (r_s * N_s2 * (1 - (N_s2/k_s)) - (q_s * N_s2^beta_s2 * E2)) * dt
+  dN_w2 <- (r_w * N_w2 * (1 - (N_w2/k_w)) - (q_w * N_w2^beta_w2 * E2)) * dt
+  dE2 <- (alpha * E2 * (A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 * q_s * N_s2^beta_s2 +
+                        A_w * (q_w * N_w2^beta_w2 * E2)^-f_w2 * q_w * N_w2^beta_w2 - (c))) * dt
   dC_s2 <- (q_s * N_s2^beta_s2 * E2) * dt
   dC_w2 <- (q_w * N_w2^beta_w2 * E2) * dt
   dcpue_s2 <- (C_s2 / E2) * dt
   dcpue_w2 <- (C_w2 / E2) * dt
-  dPi_s2 <- (C_s2 * A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 - C_s2 * c) * dt
-  dPi_w2 <- (C_w2 * A_w * (q_w * N_w2^beta_w2 * E2)^-f_w2 - C_w2 * c) * dt
-  dPi2 <- (C_s2 * A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 + C_w2 * A_w * (q_w * N_w2^beta_w2 * E2)^-f_w2 - ((C_s2 + C_w2) * c)) * dt
+  dPi_s2 <- (C_s2 * A_s * (q_s * N_s2^beta_s2 * E2)^(-f_s2) - C_s2 * c) * dt
+  dPi_w2 <- (C_w2 * A_w * (q_w * N_w2^beta_w2 * E2)^(-f_w2) - C_w2 * c) * dt
+  dPi2 <- (C_s2 * A_s * (q_s * N_s2^beta_s2 * E2)^(-f_s2) + C_w2 * A_w * (q_w * N_w2^beta_w2 * E2)^(-f_w2) - ((C_s2 + C_w2) * c)) * dt
   
   # calculate total variable size and store in holding vectors
   
-  N_w_simu2[i] <- N_w2 + dN_w2
-  N_s_simu2[i] <- N_s2 + dN_s2
-  E_simu2[i] <- E2 + dE2
-  C_s_simu2[i] <- C_s2 + dC_s2
-  C_w_simu2[i] <- C_w2 + dC_w2
+  N_w_simu2[i] <- N_w_simu2 + dN_w2
+  N_s_simu2[i] <- N_s_simu2 + dN_s2
+  E_simu2[i] <- E_simu2 + dE2
+  C_s_simu2[i] <- C_s_simu2 + dC_s2
+  C_w_simu2[i] <- C_w_simu2 + dC_w2
   cpue_s_simu2[i] <- cpue_s2 + dcpue_s2
   cpue_w_simu2[i] <- cpue_w2 + dcpue_w2
-  Pi_sum_simu2[i] <- pi2 + dPi2
-  Pi_s_simu2[i] <- pi_s2 + dPi_s2
-  Pi_w_simu2[i] <- pi_w2 + dPi_w2  
+  Pi_sum_simu2[i] <- Pi_sum_simu2 + dPi2
+  Pi_s_simu2[i] <- Pi_s_simu2 + dPi_s2
+  Pi_w_simu2[i] <- Pi_w_simu2 + dPi_w2  
   
 }
 
@@ -2673,6 +2712,18 @@ Pi_w_simu3 <- NaN*tset; Pi_w_simu3[1] <- 1
 ```{r, echo = FALSE}
 for(i in 2:length(tset)) {
   
+  if(N_w_simu3 >= 0){ 
+    N_w_simu3 <- N_w_simu3
+  } else {
+    N_w_simu3 <- 0
+  }
+  
+  if(N_w_simu3 >= 0) {
+    E_simu3 <- E_simu3
+  } else {
+    E_simu3 <- (alpha * E3 * (A_s * (q_s * N_s3^beta_s3 * E3)^-f_s3 * q_s * N_s3^beta_s3 - (c))) * dt
+  }
+  
   # change in time
   dt <- tset[i] - tset[i-1]
   
@@ -2689,9 +2740,10 @@ for(i in 2:length(tset)) {
   pi_w3 <- Pi_w_simu3[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s3 <- (N_s3 * r_s * (1 - (N_s3/k_s)) - q_s * N_s3^beta_s3 * E3) * dt
-  dN_w3 <- (N_w3 * r_w * (1 - (N_w3/k_w)) - q_w * N_w3^beta_w3 * E3) * dt
-  dE3 <- (alpha * E3 * (A_s * (q_s * N_s3^beta_s3 * E3)^-f_s3 * q_s * N_s3^beta_s3) + (A_w * (q_w * N_w3^beta_w3 * E3)^-f_w3 * q_w * N_w3^beta_w3) - c) * dt
+  dN_s3 <- (r_s * N_s3 * (1 - (N_s3/k_s)) - (q_s * N_s3^beta_s3 * E3)) * dt
+  dN_w3 <- (r_w * N_w3 * (1 - (N_w3/k_w)) - (q_w * N_w3^beta_w3 * E3)) * dt
+  dE3 <- (alpha * E3 * (A_s * (q_s * N_s3^beta_s3 * E3)^-f_s3 * q_s * N_s3^beta_s3 +
+                        A_w * (q_w * N_w3^beta_w3 * E3)^-f_w3 * q_w * N_w3^beta_w3 - (c))) * dt
   dC_s3 <- (q_s * N_s3^beta_s3 * E3) * dt
   dC_w3 <- (q_w * N_w3^beta_w3 * E3) * dt
   dcpue_s3 <- (C_s3 / E3) * dt
@@ -2776,9 +2828,10 @@ for(i in 2:length(tset)) {
   pi_w4 <- Pi_w_simu4[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s4 <- (N_s4 * r_s * (1 - (N_s4/k_s)) - q_s * N_s4^beta_s4 * E4) * dt
-  dN_w4 <- (N_w4 * r_w * (1 - (N_w4/k_w)) - q_w * N_w4^beta_w4 * E4) * dt
-  dE4 <- (alpha * E4 * (A_s * (q_s * N_s4^beta_s4 * E4)^-f_s4 * q_s * N_s4^beta_s4) + (A_w * (q_w * N_w4^beta_w4 * E4)^-f_w4 * q_w * N_w4^beta_w4) - c) * dt
+  dN_s4 <- (r_s * N_s4 * (1 - (N_s4/k_s)) - (q_s * N_s4^beta_s4 * E4)) * dt
+  dN_w4 <- (r_w * N_w4 * (1 - (N_w4/k_w)) - (q_w * N_w4^beta_w4 * E4)) * dt
+  dE4 <- (alpha * E4 * (A_s * (q_s * N_s4^beta_s4 * E4)^-f_s4 * q_s * N_s4^beta_s4 +
+                        A_w * (q_w * N_w4^beta_w4 * E4)^-f_w4 * q_w * N_w4^beta_w4 - (c))) * dt
   dC_s4 <- (q_s * N_s4^beta_s4 * E4) * dt
   dC_w4 <- (q_w * N_w4^beta_w4 * E4) * dt
   dcpue_s4 <- (C_s4 / E4) * dt
@@ -2863,9 +2916,10 @@ for(i in 2:length(tset)) {
   pi_w5 <- Pi_w_simu5[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s5 <- (N_s5 * r_s * (1 - (N_s5/k_s)) - q_s * N_s5^beta_s5 * E5) * dt
-  dN_w5 <- (N_w5 * r_w * (1 - (N_w5/k_w)) - q_w * N_w5^beta_w5 * E5) * dt
-  dE5 <- (alpha * E5 * (A_s * (q_s * N_s5^beta_s5 * E5)^-f_s5 * q_s * N_s5^beta_s5) + (A_w * (q_w * N_w5^beta_w5 * E5)^-f_w5 * q_w * N_w5^beta_w5) - c) * dt
+  dN_s5 <- (r_s * N_s5 * (1 - (N_s5/k_s)) - (q_s * N_s5^beta_s5 * E5)) * dt
+  dN_w5 <- (r_w * N_w5 * (1 - (N_w5/k_w)) - (q_w * N_w5^beta_w5 * E5)) * dt
+  dE5 <- (alpha * E5 * (A_s * (q_s * N_s5^beta_s5 * E5)^-f_s5 * q_s * N_s5^beta_s5 +
+                        A_w * (q_w * N_w5^beta_w5 * E5)^-f_w5 * q_w * N_w5^beta_w5 - (c))) * dt
   dC_s5 <- (q_s * N_s5^beta_s5 * E5) * dt
   dC_w5 <- (q_w * N_w5^beta_w5 * E5) * dt
   dcpue_s5 <- (C_s5 / E5) * dt
@@ -2950,9 +3004,10 @@ for(i in 2:length(tset)) {
   pi_w6 <- Pi_w_simu6[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s6 <- (N_s6 * r_s * (1 - (N_s6/k_s)) - q_s * N_s6^beta_s6 * E6) * dt
-  dN_w6 <- (N_w6 * r_w * (1 - (N_w6/k_w)) - q_w * N_w6^beta_w6 * E6) * dt
-  dE6 <- (alpha * E6 * (A_s * (q_s * N_s6^beta_s6 * E6)^-f_s6 * q_s * N_s6^beta_s6) + (A_w * (q_w * N_w6^beta_w6 * E6)^-f_w6 * q_w * N_w6^beta_w6) - c) * dt
+  dN_s6 <- (r_s * N_s6 * (1 - (N_s6/k_s)) - (q_s * N_s6^beta_s6 * E6)) * dt
+  dN_w6 <- (r_w * N_w6 * (1 - (N_w6/k_w)) - (q_w * N_w6^beta_w6 * E6)) * dt
+  dE6 <- (alpha * E6 * (A_s * (q_s * N_s6^beta_s6 * E6)^-f_s6 * q_s * N_s6^beta_s6 +
+                        A_w * (q_w * N_w6^beta_w6 * E6)^-f_w6 * q_w * N_w6^beta_w6 - (c))) * dt
   dC_s6 <- (q_s * N_s6^beta_s6 * E6) * dt
   dC_w6 <- (q_w * N_w6^beta_w6 * E6) * dt
   dcpue_s6 <- (C_s6 / E6) * dt
@@ -3037,9 +3092,10 @@ for(i in 2:length(tset)) {
   pi_w7 <- Pi_w_simu7[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s7 <- (N_s7 * r_s * (1 - (N_s7/k_s)) - q_s * N_s7^beta_s7 * E7) * dt
-  dN_w7 <- (N_w7 * r_w * (1 - (N_w7/k_w)) - q_w * N_w7^beta_w7 * E7) * dt
-  dE7 <- (alpha * E7 * (A_s * (q_s * N_s7^beta_s7 * E7)^-f_s7 * q_s * N_s7^beta_s7) + (A_w * (q_w * N_w7^beta_w7 * E7)^-f_w7 * q_w * N_w7^beta_w7) - c) * dt
+  dN_s7 <- (r_s * N_s7 * (1 - (N_s7/k_s)) - (q_s * N_s7^beta_s7 * E7)) * dt
+  dN_w7 <- (r_w * N_w7 * (1 - (N_w7/k_w)) - (q_w * N_w7^beta_w7 * E7)) * dt
+  dE7 <- (alpha * E7 * (A_s * (q_s * N_s7^beta_s7 * E7)^-f_s7 * q_s * N_s7^beta_s7 +
+                        A_w * (q_w * N_w7^beta_w7 * E7)^-f_w7 * q_w * N_w7^beta_w7 - (c))) * dt
   dC_s7 <- (q_s * N_s7^beta_s7 * E7) * dt
   dC_w7 <- (q_w * N_w7^beta_w7 * E7) * dt
   dcpue_s7 <- (C_s7 / E7) * dt
@@ -3124,9 +3180,10 @@ for(i in 2:length(tset)) {
   pi_w8 <- Pi_w_simu8[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s8 <- (N_s8 * r_s * (1 - (N_s8/k_s)) - q_s * N_s8^beta_s8 * E8) * dt
-  dN_w8 <- (N_w8 * r_w * (1 - (N_w8/k_w)) - q_w * N_w8^beta_w8 * E8) * dt
-  dE8 <- (alpha * E8 * (A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8^beta_s8) + (A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 * q_w * N_w8^beta_w8) - c) * dt
+  dN_s8 <- (r_s * N_s8 * (1 - (N_s8/k_s)) - (q_s * N_s8^beta_s8 * E8)) * dt
+  dN_w8 <- (r_w * N_w8 * (1 - (N_w8/k_w)) - (q_w * N_w8^beta_w8 * E8)) * dt
+  dE8 <- (alpha * E8 * (A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8^beta_s8 +
+                        A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 * q_w * N_w8^beta_w8 - (c))) * dt
   dC_s8 <- (q_s * N_s8^beta_s8 * E8) * dt
   dC_w8 <- (q_w * N_w8^beta_w8 * E8) * dt
   dcpue_s8 <- (C_s8 / E8) * dt
