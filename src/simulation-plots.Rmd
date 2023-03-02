@@ -14,7 +14,6 @@ library(here)
 library(patchwork)
 library(gt)
 library(paletteer)
-library(ggtext)
 
 # file path
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses/"
@@ -3428,51 +3427,28 @@ var_plot_price <- var_full_price %>%
 ```
 
 ```{r, echo = FALSE, include = FALSE}
-par_pw_ps_fcn <- data.frame(parameter = c("q_w", "q_s", "k_w", "k_s", "r_w", "r_s", "c", "f_w", "f_s", "beta_w", "beta_s", "A"),
-                     "f_ratio = 0.2\n
-                     beta_ratio = 1.25" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.1, 0.5, 0.7, 0.56, 1),
-                     "f_ratio = 0.6\n
-                     beta_ratio = 1.25" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.3, 0.5, 0.7, 0.56, 1 ),
-                     "f_ratio = 1\n
-                     beta_ratio = 1.25" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.5, 0.5, 0.7, 0.56, 1 ),
-                     "f_ratio = 1.4\n
-                     beta_ratio = 1.25" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.6, 0.5, 0.7, 0.56, 1 ),
-                     "f_ratio = 0.44\n
-                     beta_ratio = 0.35" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.22, 0.5, 0.2, 0.56, 1 ),
-                     "f_ratio = 0.44\n
-                     beta_ratio = 0.71" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.22, 0.5, 0.4, 0.56, 1 ),
-                     "f_ratio = 0.44\n
-                     beta_ratio = 1"    = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.22, 0.5, 0.56, 0.56, 1),
-                     "f_ratio = 0.44\n
-                     beta_ratio = 1.6" =  c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.22, 0.5, 0.9, 0.56, 1))
-
-par_pw_ps_fcn %>% 
-  gt() %>%
-  tab_header(title = "Parameter space for the run with both species' prices as a function of their catch") %>% 
-  cols_align(align = "center")
-```
-
-
-```{r functions for highlighting specific panels in the faceted plot, echo = FALSE}
-element_textbox_highlight <- function(..., hi.labels = NULL, hi.fill = NULL,
-                                      hi.col = NULL, hi.box.col = NULL, hi.family = NULL) {
-  structure(
-    c(element_textbox(...),
-      list(hi.labels = hi.labels, hi.fill = hi.fill, hi.col = hi.col, hi.box.col = hi.box.col, hi.family = hi.family)
-    ),
-    class = c("element_textbox_highlight", "element_textbox", "element_text", "element")
-  )
-}
-
-element_grob.element_textbox_highlight <- function(element, label = "", ...) {
-  if (label %in% element$hi.labels) {
-    element$fill <- element$hi.fill %||% element$fill
-    element$colour <- element$hi.col %||% element$colour
-    element$box.colour <- element$hi.box.col %||% element$box.colour
-    element$family <- element$hi.family %||% element$family
-  }
-  NextMethod()
-}
+# par_pw_ps_fcn <- data.frame(parameter = c("q_w", "q_s", "k_w", "k_s", "r_w", "r_s", "c", "f_w", "f_s", "beta_w", "beta_s", "A"),
+#                      "f_ratio = 0.2\n
+#                      beta_ratio = 1.25" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.1, 0.5, 0.7, 0.56, 1),
+#                      "f_ratio = 0.6\n
+#                      beta_ratio = 1.25" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.3, 0.5, 0.7, 0.56, 1 ),
+#                      "f_ratio = 1\n
+#                      beta_ratio = 1.25" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.5, 0.5, 0.7, 0.56, 1 ),
+#                      "f_ratio = 1.4\n
+#                      beta_ratio = 1.25" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.6, 0.5, 0.7, 0.56, 1 ),
+#                      "f_ratio = 0.44\n
+#                      beta_ratio = 0.35" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.22, 0.5, 0.2, 0.56, 1 ),
+#                      "f_ratio = 0.44\n
+#                      beta_ratio = 0.71" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.22, 0.5, 0.4, 0.56, 1 ),
+#                      "f_ratio = 0.44\n
+#                      beta_ratio = 1"    = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.22, 0.5, 0.56, 0.56, 1),
+#                      "f_ratio = 0.44\n
+#                      beta_ratio = 1.6" =  c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.22, 0.5, 0.9, 0.56, 1))
+# 
+# par_pw_ps_fcn %>% 
+#   gt() %>%
+#   tab_header(title = "Parameter space for the run with both species' prices as a function of their catch") %>% 
+#   cols_align(align = "center")
 ```
 
 
@@ -3498,7 +3474,7 @@ equal_scales_EWS_fcn <-
              nrow = 1) +
   scale_color_manual(values = c("#A50E82FF", "#6A9E1FFF", "#052F61FF")) +
   scale_x_continuous(expand = c(0,0)) +
-  labs(x = "",
+  labs(x = "Time (x100)",
        y = "Nw, Ns, E",
        color = "") +
   theme_bw() +
@@ -3517,7 +3493,7 @@ dif_scales_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Strong stock", "Weak stock")) %>% 
   ggplot() +
-  geom_line(aes(x = tset, y = b_v_k, color = variable_clean),
+  geom_line(aes(x = tset/100, y = b_v_k, color = variable_clean),
             size = .8,
             alpha = .8,
             show.legend = T) +
@@ -3525,7 +3501,7 @@ dif_scales_fcn <-
              nrow = 1) +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
   scale_x_continuous(expand = c(0,0)) +
-  labs(x = "",
+  labs(x = "Time (x100)",
        y = "B/K",
        color = "") +
   theme_bw() +
@@ -3571,7 +3547,7 @@ equal_scales_pi_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Profit sum", "Weak stock profits", "Strong stock profits")) %>% 
   ggplot() +
-  geom_line(aes(x = tset, y = value, color = variable_clean),
+  geom_line(aes(x = tset/100, y = value, color = variable_clean),
             size = .8,
             alpha = .8,
             show.legend = T) +
@@ -3579,7 +3555,7 @@ equal_scales_pi_fcn <-
              nrow = 1) +
   scale_color_manual(values = c("#FF7F00", "#CAB2D6", "#6A3D9A")) +
   scale_x_continuous(expand = c(0,0)) +
-  labs(x = "Time",
+  labs(x = "Time (x100)",
        y = "Profits",
        color = "") +
   theme_bw() +
@@ -3595,7 +3571,7 @@ equal_scales_pi_fcn <-
         legend.position = "bottom")
 ```
 
-```{r, fig.height=15, fig.width=10, echo = FALSE, warning=FALSE}
+```{r, fig.height=15, fig.width=12, echo = FALSE, warning=FALSE}
 equal_scales_EWS_fcn /
    dif_scales_fcn /
   equal_scales_CPE_fcn /
