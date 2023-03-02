@@ -14,7 +14,7 @@ library(here)
 library(patchwork)
 library(gt)
 library(paletteer)
-library(deSolve)
+library(ggtext)
 
 # file path
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses/"
@@ -2534,14 +2534,6 @@ for(i in 2:length(tset)) {
   pi_s1 <- Pi_s_simu1[i-1]
   pi_w1 <- Pi_w_simu1[i-1]
 
-  # set each equation's terms separately
-  s1_1 = N_s1 * (r_s * (1 - (N_s1/k_s)))
-  s1_2 = q_s * N_s1^beta_s1 * E1
-  s2_1 = N_w1 * (r_w * (1 - (N_w1/k_w)))
-  s2_2 = q_w * N_w1^beta_w1 * E1
-  s3_1 = A_s * ((s1_2)-f_s1 * q_s * N_s1^beta_s1)
-  s3_2 = A_w * ((s2_2)-f_w1 * q_w * N_w1^beta_w1)
-  
   # Calculate change in variable size at each time step
   dN_s1 <- (r_s * N_s1 * (1 - (N_s1/k_s)) - (q_s * N_s1^beta_s1 * E1)) * dt
   dN_w1 <- (r_w * N_w1 * (1 - (N_w1/k_w)) - (q_w * N_w1^beta_w1 * E1)) * dt
@@ -2551,9 +2543,9 @@ for(i in 2:length(tset)) {
   dC_w1 <- (q_w * N_w1^beta_w1 * E1) * dt
   dcpue_s1 <- (C_s1 / E1) * dt
   dcpue_w1 <- (C_w1 / E1) * dt
-  dPi_s1 <- ((C_s1 * A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1 * q_s * N_s1^beta_s1) - (C_s1 * c)) * dt
-  dPi_w1 <- ((C_w1 * A_w * (q_s * N_w1^beta_w1 * E1)^-f_w1 * q_w * N_w1^beta_w1) - (C_w1 * c)) * dt
-  dPi1 <- (C_s1 * A_s * (q_s * N_s1^beta_s1 * E1)^(-f_s1) + C_w1 * A_w * (q_w * N_w1^beta_w1 * E1)^(-f_w1) - ((C_s1 + C_w1) * c)) * dt
+  dPi_s1 <- (C_s1 * A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1 - C_s1 * c) * dt
+  dPi_w1 <- (C_w1 * A_w * (q_w * N_w1^beta_w1 * E1)^-f_w1 - C_w1 * c) * dt
+  dPi1 <- (C_s1 * A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1 + C_w1 * A_w * (q_w * N_w1^beta_w1 * E1)^-f_w1 - ((C_s1 + C_w1) * c)) * dt
   
   # calculate total variable size and store in holding vectors
   
@@ -2575,10 +2567,10 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 2, echo = FALSE}
 # set up the parameter space
-beta_w2 <- 0.56
-beta_s2 <- 1
-f_w2 <- 0.22
-f_s2 <- 0
+beta_w2 <- 1
+beta_s2 <- 0.56
+f_w2 <- 0
+f_s2 <- 0.22
 
 E <- 0.5
 ```
@@ -2623,7 +2615,7 @@ for(i in 2:length(tset)) {
   #   E_simu2 <- E_simu2
   # }
 
-  # change in time
+# change in time
   dt <- tset[i] - tset[i-1]
   
   # placeholder variables to plug into the equations
@@ -2647,24 +2639,24 @@ for(i in 2:length(tset)) {
   dC_w2 <- (q_w * N_w2^beta_w2 * E2) * dt
   dcpue_s2 <- (C_s2 / E2) * dt
   dcpue_w2 <- (C_w2 / E2) * dt
-  dPi_s2 <- (C_s2 * A_s * (q_s * N_s2^beta_s2 * E2)^(-f_s2) - C_s2 * c) * dt
-  dPi_w2 <- (C_w2 * A_w * (q_w * N_w2^beta_w2 * E2)^(-f_w2) - C_w2 * c) * dt
-  dPi2 <- (C_s2 * A_s * (q_s * N_s2^beta_s2 * E2)^(-f_s2) + C_w2 * A_w * (q_w * N_w2^beta_w2 * E2)^(-f_w2) - ((C_s2 + C_w2) * c)) * dt
+  dPi_s2 <- (C_s2 * A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 - C_s2 * c) * dt
+  dPi_w2 <- (C_w2 * A_w * (q_w * N_w2^beta_w2 * E2)^-f_w2 - C_w2 * c) * dt
+  dPi2 <- (C_s2 * A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 + C_w2 * A_w * (q_w * N_w2^beta_w2 * E2)^-f_w2 - ((C_s2 + C_w2) * c)) * dt
   
   # calculate total variable size and store in holding vectors
   
-  N_w_simu2[i] <- N_w_simu2 + dN_w2
-  N_s_simu2[i] <- N_s_simu2 + dN_s2
-  E_simu2[i] <- E_simu2 + dE2
-  C_s_simu2[i] <- C_s_simu2 + dC_s2
-  C_w_simu2[i] <- C_w_simu2 + dC_w2
+  N_w_simu2[i] <- N_w2 + dN_w2
+  N_s_simu2[i] <- N_s2 + dN_s2
+  E_simu2[i] <- E2 + dE2
+  C_s_simu2[i] <- C_s2 + dC_s2
+  C_w_simu2[i] <- C_w2 + dC_w2
   cpue_s_simu2[i] <- cpue_s2 + dcpue_s2
   cpue_w_simu2[i] <- cpue_w2 + dcpue_w2
-  Pi_sum_simu2[i] <- Pi_sum_simu2 + dPi2
-  Pi_s_simu2[i] <- Pi_s_simu2 + dPi_s2
-  Pi_w_simu2[i] <- Pi_w_simu2 + dPi_w2  
+  Pi_sum_simu2[i] <- pi2 + dPi2
+  Pi_s_simu2[i] <- pi_s2 + dPi_s2
+  Pi_w_simu2[i] <- pi_w2 + dPi_w2  
   
-}
+}  
 
 
 ```
@@ -2673,10 +2665,10 @@ for(i in 2:length(tset)) {
 # f_w > beta_w; f_s < b_beta_s
 # Weak stock should go extinct but not the strong stock
 # set up the parameter space
-beta_w3 <- 0.56
-beta_s3 <- 0.56
-f_w3 <- 0.6
-f_s3 <- 0.22
+beta_w3 <- 1
+beta_s3 <- 1
+f_w3 <- 0.22
+f_s3 <- 0
 
 # Initial values for the variables
 N_w <- k_w
@@ -2712,18 +2704,18 @@ Pi_w_simu3 <- NaN*tset; Pi_w_simu3[1] <- 1
 ```{r, echo = FALSE}
 for(i in 2:length(tset)) {
   
-  if(N_w_simu3 >= 0){ 
-    N_w_simu3 <- N_w_simu3
-  } else {
-    N_w_simu3 <- 0
-  }
-  
-  if(N_w_simu3 >= 0) {
-    E_simu3 <- E_simu3
-  } else {
-    E_simu3 <- (alpha * E3 * (A_s * (q_s * N_s3^beta_s3 * E3)^-f_s3 * q_s * N_s3^beta_s3 - (c))) * dt
-  }
-  
+  # if(N_w_simu3 >= 0){ 
+  #   N_w_simu3 <- N_w_simu3
+  # } else {
+  #   N_w_simu3 <- 0
+  # }
+  # 
+  # if(N_w_simu3 >= 0) {
+  #   E_simu3 <- E_simu3
+  # } else {
+  #   E_simu3 <- (alpha * E3 * (A_s * (q_s * N_s3^beta_s3 * E3)^-f_s3 * q_s * N_s3^beta_s3 - (c))) * dt
+  # }
+  # 
   # change in time
   dt <- tset[i] - tset[i-1]
   
@@ -2772,10 +2764,10 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 4, echo = FALSE}
 # set up the parameter space
-beta_w4 <- 0.4
-beta_s4 <- 0.56
-f_w4 <- 0.8
-f_s4 <- 0.7
+beta_w4 <- 0.99
+beta_s4 <- 1
+f_w4 <- 0
+f_s4 <- 0
 
 # Initial values for the variables
 N_w <- k_w
@@ -2860,10 +2852,10 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 5, echo = FALSE}
 # set up the parameter space
-beta_w5 <- 0.5
-beta_s5 <- 0.56
+beta_w5 <- 0.56
+beta_s5 <- 1
 f_w5 <- 0.22
-f_s5 <- 0.3
+f_s5 <- 0
 
 # Initial values for the variables
 N_w <- k_w
@@ -2948,10 +2940,10 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 6, echo = FALSE}
 # set up the parameter space
-beta_w6 <- 1
+beta_w6 <- 0.4
 beta_s6 <- 0.56
-f_w6 <- 0
-f_s6 <- 0.22
+f_w6 <- 0.8
+f_s6 <- 0.7
 
 # Initial values for the variables
 N_w <- k_w
@@ -3461,27 +3453,50 @@ par_pw_ps_fcn %>%
 ```
 
 
+```{r functions for highlighting specific panels in the faceted plot, echo = FALSE}
+element_textbox_highlight <- function(..., hi.labels = NULL, hi.fill = NULL,
+                                      hi.col = NULL, hi.box.col = NULL, hi.family = NULL) {
+  structure(
+    c(element_textbox(...),
+      list(hi.labels = hi.labels, hi.fill = hi.fill, hi.col = hi.col, hi.box.col = hi.box.col, hi.family = hi.family)
+    ),
+    class = c("element_textbox_highlight", "element_textbox", "element_text", "element")
+  )
+}
+
+element_grob.element_textbox_highlight <- function(element, label = "", ...) {
+  if (label %in% element$hi.labels) {
+    element$fill <- element$hi.fill %||% element$fill
+    element$colour <- element$hi.col %||% element$colour
+    element$box.colour <- element$hi.box.col %||% element$box.colour
+    element$family <- element$hi.family %||% element$family
+  }
+  NextMethod()
+}
+```
+
+
 ```{r, echo = FALSE}
-# f_labels <- c("f_ratio = 0.2", "f_ratio = 0.6", "f_ratio = 1", "f_ratio = 1.4", "f_ratio = 0.44", "f_ratio = 0.44", "f_ratio = 0.44", "f_ratio = 0.44")
-# names(f_labels) <- c("f_w/f_s = 0.2", "f_w/f_s = 0.6", "f_w/f_s = 1", "f_w/f_s = 1.4", "f_w/f_s = 0.44", "f_w/f_s = 0.44", "f_w/f_s = 0.44", "f_w/f_s = 0.44")
-# 
-# beta_labels <- c("beta_ratio = 1.25", "beta_ratio = 1.25", "beta_ratio = 1.25", "beta_ratio = 1.25",
-#                  "beta_ratio = 0.35", "beta_ratio = 0.71", "beta_ratio = 1", "beta_ratio = 1.6")
-# names(beta_labels) <- c("beta_w/beta_s = 1.25", "beta_w/beta_s = 1.25", "beta_w/beta_s = 1.25", "beta_w/beta_s = 1.25",
-#                         "beta_w/beta_s = 0.35", "beta_w/beta_s = 0.71", "beta_w/beta_s = 1", "beta_w/beta_s = 1.6")
+#f_labels <- c("f_ratio = 0.2", "f_ratio = 0.6", "f_ratio = 1", "f_ratio = 1.4", "f_ratio = 0.44", "f_ratio = 0.44", "f_ratio = 0.44", "f_ratio = 0.44")
+#names(f_labels) <- c("f_w/f_s = 0.2", "f_w/f_s = 0.6", "f_w/f_s = 1", "f_w/f_s = 1.4", "f_w/f_s = 0.44", "f_w/f_s = 0.44", "f_w/f_s = 0.44", "f_w/f_s = 0.44")
+#
+#beta_labels <- c("beta_ratio = 1.25", "beta_ratio = 1.25", "beta_ratio = 1.25", "beta_ratio = 1.25",
+#                "beta_ratio = 0.35", "beta_ratio = 0.71", "beta_ratio = 1", "beta_ratio = 1.6")
+#names(beta_labels) <- c("beta_w/beta_s = 1.25", "beta_w/beta_s = 1.25", "beta_w/beta_s = 1.25", "beta_w/beta_s = 1.25",
+#                       "beta_w/beta_s = 0.35", "beta_w/beta_s = 0.71", "beta_w/beta_s = 1", "beta_w/beta_s = 1.6")
 
 
 equal_scales_EWS_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Effort simulation", "Weak stock", "Strong stock")) %>% 
   ggplot() +
-  geom_line(aes(x = tset, y = value, color = variable_clean),
+  geom_line(aes(x = tset/100, y = value, color = variable_clean),
             size = .8,
             alpha = .8,
             show.legend = T) +
   facet_wrap(~ scenario_id,
              nrow = 1) +
-  scale_color_manual(values = c("#1B9E77", "#D95F02", "#7570B3")) +
+  scale_color_manual(values = c("#A50E82FF", "#6A9E1FFF", "#052F61FF")) +
   scale_x_continuous(expand = c(0,0)) +
   labs(x = "",
        y = "Nw, Ns, E",
@@ -3490,6 +3505,7 @@ equal_scales_EWS_fcn <-
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
+        panel.spacing = unit(5, "mm"),
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
         axis.title.x = element_text(color = "black", size = 12),
@@ -3507,7 +3523,7 @@ dif_scales_fcn <-
             show.legend = T) +
   facet_wrap(~ scenario_id,
              nrow = 1) +
-  scale_color_manual(values = c("#D95F02", "#7570B3")) +
+  scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
   scale_x_continuous(expand = c(0,0)) +
   labs(x = "",
        y = "B/K",
@@ -3516,6 +3532,7 @@ dif_scales_fcn <-
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
+        panel.spacing = unit(5, "mm"),
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
         axis.title.x = element_text(color = "black", size = 12, vjust = -2),
@@ -3542,6 +3559,7 @@ equal_scales_CPE_fcn <-
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
+        panel.spacing = unit(5, "mm"),
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
         axis.title.x = element_text(color = "black", size = 12),
@@ -3568,6 +3586,7 @@ equal_scales_pi_fcn <-
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
+        panel.spacing = unit(5, "mm"),
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
         axis.title.x = element_text(color = "black", size = 12),
