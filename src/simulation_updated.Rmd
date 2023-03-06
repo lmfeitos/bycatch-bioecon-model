@@ -192,8 +192,7 @@ run_model_pw_fcn <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_w, bet
 
 
 
-run_model_ps_fcn <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_s, beta_s, A_s){
-  
+run_model_msy <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
   # Weak stock equilibrium points when prices are constants
   N_w_multi <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
     (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
@@ -206,96 +205,145 @@ run_model_ps_fcn <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c, f_s, bet
   N_s_multi <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
      (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
   
-  # Single species equilibrium for the weak stock 
-  N_w_single <- c / p_w * q_w
-  
   # Single species equilibrium for the strong stock  
-  N_s_single <- c / p_s * q_s
+  N_s_single <- c / (p_s * q_s)
 
   # Single species effort equilibrium for the strong stock  
-  E_single <- (r_s / q_s * (1 - c / (p_s * q_s * k_s)))
+  E_s_single <- (r_s / q_s * (1 - c / (p_s * q_s * k_s)))
+  
+  
   
   if(N_w_multi >= 0){
     
     N_w = N_w_multi
+  
   } else { 
-    N_w = N_w_single
+  
+    N_w = 0
+  }
+  
+  if(N_w_multi >= 0){
+    
+    N_s = N_s_multi
+  
+  } else {
+    
+    N_s = N_s_single
   }
   
   if(N_s_multi >= 0){
+    
     N_s = N_s_multi
+  
   } else {
-    N_s = N_s_single
+  
+    N_s = 0
   }
+  
   if(N_w_multi >= 0){
+    
+    E = E_multi
+  
+  } else {
+  
+    E = E_s_single
+  }
+  
+  if(N_s_multi >= k_s/2){
     E = E_multi
   } else {
-    E = E_single
+    E = 0
   }
   
-  # Weak stock catch function
-  Q_s <- q_s * N_s^beta_s * E
-  
-    # Weak stock price function
-  P_s <- (A_s * Q_s)^-f_s
-  
-    # Weak stock equilibrium points when prices are constants
-  N_w_multi3 <- (k_w * (c * q_w * r_s + k_s * P_s * q_s * (- q_w * r_s + q_s * r_w))) / 
-    (k_w * p_w * q_w^2 * r_s + k_s * P_s * q_s^2 * r_w)
-  
-  # Effort equilibrium point when prices are constants
-  E_multi3 <- ((- c + k_s * P_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
-   (k_w * p_w * q_w^2 * r_s + k_s * P_s * q_s^2 * r_w) 
- 
-  # Strong stock equilibrium points when prices are constants 
-  N_s_multi3 <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
-     (k_w * p_w * q_w^2 * r_s + k_s * P_s * q_s^2 * r_w) 
-  
-    # Single species equilibrium for the weak stock 
-  N_s_single2 <- c / P_s * q_w
-
-    # Single species effort equilibrium for the strong stock  
-  E_single2 <- (r_s / q_s * (1 - c / (P_s * q_s * k_s)))
-  
-  if(N_w_multi3 >= 0){
-    
-    N_w3 = N_w_multi3
-  } else { 
-  N_w3 = N_w_single  
-  }
-  
-  if(N_s_multi3 >= 0){
-    N_s3 = N_s_multi3
-  } else {
-    N_s3 = N_s_single2
-  }
-  if(N_w_multi >= 0){
-    E3 = E_multi3
-  } else {
-    E3 = E_single2
-  }
-  
-
-  output <- data.frame(N_s = N_s, N_w = N_w, E = E, N_w3 = N_w3, N_s3 = N_s3, E3 = E3)
-
- 
+  # Build output
+  output <- data.frame(E = E, N_s = N_s, N_w = N_w)
   
   # Return
   return(output)
  
- 
+}
+
+# Include a tax to the fishery if an individual of the weak stock is caught (WORK ON THIS)
+run_model_msy_tax <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
+  # Weak stock equilibrium points when prices are constants
+  N_w_multi <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
+    (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
   
+  # Effort equilibrium point when prices are constants
+  E_multi <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
+   (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+ 
+  # Strong stock equilibrium points when prices are constants 
+  N_s_multi <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
+     (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+  
+  # Single species equilibrium for the strong stock  
+  N_s_single <- c / (p_s * q_s)
+
+  # Single species effort equilibrium for the strong stock  
+  E_s_single <- (r_s / q_s * (1 - c / (p_s * q_s * k_s)))
+  
+  
+  
+  if(N_w_multi >= 0){
+    
+    N_w = N_w_multi
+  
+  } else { 
+  
+    N_w = 0
+  }
+  
+  if(N_w_multi >= 0){
+    
+    N_s = N_s_multi
+  
+  } else {
+    
+    N_s = N_s_single
+  }
+  
+  if(N_s_multi >= 0){
+    
+    N_s = N_s_multi
+  
+  } else {
+  
+    N_s = 0
+  }
+  
+  if(N_w_multi >= 0){
+    
+    E = E_multi
+  
+  } else {
+  
+    E = E_s_single
+  }
+  
+  if(N_s_multi >= k_s/2){
+    E = E_multi
+  } else {
+    E = 0
+  }
+  
+  # Build output
+  output <- data.frame(E = E, N_s = N_s, N_w = N_w)
+  
+  # Return
+  return(output)
+ 
 }
 ```
 
 
 ```{r scenario range for 1st plot for the paper}
-################### USED THIS CODE TO BUILD THE PARAMETER SET OF FIGURE 2 ################################################
+################### USED THIS CODE TO BUILD THE PARAMETER SET OF FIGURE 1A ################################################
 
 # In this code chunk, I'll generate the dataset to simulate a scenario where the weak stock has zero value and the strong and weak stocks growth rates vary in different ratios.
 
 # Building df of price range scenarios
-scenarios_df <- expand.grid(p_s = seq(1, 10, 0.2),
+scenarios_df <- expand.grid(p_s = seq(1, 10, 0.5),
                             p_w = c(0, 1),
                             r_s = seq(0.1, 1, 0.01),
                             r_w = seq(0.1, 0.9, 0.01),
@@ -398,8 +446,12 @@ output_join_test %>%
 
 
 ```{r}
+################### USED THIS CODE TO BUILD THE PARAMETER SET OF FIGURE 1B ################################################
+
+# In this code chunk, I'll generate the dataset to simulate a scenario where the weak stock value ranges and the strong stock value is small and doubled. .
+
 scenarios_df2 <- expand.grid(p_s = seq(1, 2, 1),
-                             p_w = seq(1, 10, 0.2),
+                             p_w = seq(1, 10, 0.5),
                              r_s = seq(0.1, 1, 0.01),
                              r_w = seq(0.1, 0.9, 0.01),
                              q_s = 0.02,
@@ -479,173 +531,173 @@ output_join_test %>%
   geom_histogram(aes(x = vuln_ratio_s))
 ```
 
-```{r test with weak stock price as a function of catch}
-# Building df of scenarios
-scenarios_df_w_fcn <- 
-  expand.grid(p_s = seq(1, 5, 4), # 
-              p_w = seq(1, 5, 4), #seq(1, 10, 0.1),
-              r_s = seq(0.01, 1, 0.01),
-              r_w = seq(0.01, 0.99, 0.01),
-              q_s = 0.02,
-              q_w = 0.02,
-              k_s = 4,
-              k_w = 2,
-              f_w = seq(0.1, 0.5, 0.1),
-              beta_w = seq(0.4, 0.8, 0.1),
-              A_w = 1,
-              c = 0.05) %>% 
+```{r test weak stock biomass with strong stock management for MSY}
+################### USED THIS CODE TO BUILD THE PARAMETER SET OF FIGURE 2A ################################################
+
+# In this code chunk, I'll generate the dataset to simulate a scenario where the strong stock value ranges and the weak stock value (1) doesn't exist and (2) is very small under MSY management for the strong stock.
+
+# Building df of price range scenarios
+scenarios_df_msy1 <- expand.grid(p_s = seq(1, 10, 0.5),
+                            p_w = c(0, 1),
+                            r_s = seq(0.1, 1, 0.01),
+                            r_w = seq(0.1, 0.9, 0.01),
+                            q_s = 0.02,
+                            q_w = 0.02,
+                            k_s = 4,
+                            k_w = 2,
+                            c = 0.05) %>% 
   mutate(scenario_id = 1:nrow(.)) %>% 
   filter(r_s > r_w)
 
 # test scenario
-r_s <- scenarios_df_w_fcn$r_s[1]
-k_s <- scenarios_df_w_fcn$k_s[1]
-q_s <- scenarios_df_w_fcn$q_s[1]
-p_s <- scenarios_df_w_fcn$p_s[1]
-r_w <- scenarios_df_w_fcn$r_w[1]
-k_w <- scenarios_df_w_fcn$k_w[1]
-q_w <- scenarios_df_w_fcn$q_w[1]
-p_w <- scenarios_df_w_fcn$p_w[1]
-f_w <- scenarios_df_w_fcn$f_w[1]
-beta_w <- scenarios_df_w_fcn$beta_w[1]
-A_w <- scenarios_df_w_fcn$A_w[1]
-c <- scenarios_df_w_fcn$c[1]
+r_s <- scenarios_df_msy1$r_s[1]
+k_s <- scenarios_df_msy1$k_s[1]
+q_s <- scenarios_df_msy1$q_s[1]
+p_s <- scenarios_df_msy1$p_s[1]
+r_w <- scenarios_df_msy1$r_w[1]
+k_w <- scenarios_df_msy1$k_w[1]
+q_w <- scenarios_df_msy1$q_w[1]
+p_w <- scenarios_df_msy1$p_w[1]
+f_w <- scenarios_df_msy1$f_w[1]
+beta_w <- scenarios_df_msy1$beta_w[1]
+A_w <- scenarios_df_msy1$A_w[1]
+c <- scenarios_df_msy1$c[1]
 
 i = 1
 
 # test with purrr
 #scenarios_df %>% 
-#  pmap(~ run_model(scenarios_df$r_s, scenarios_df$r_w,
-#                   scenarios_df$k_s, scenarios_df$k_w,
-#                   scenarios_df$q_s, scenarios_df$q_w,
-#                   scenarios_df$p_s, scenarios_df$p_w,
-#                   scenarios_df$c)) %>% 
+#  pmap(~ run_model_msy(scenarios_df$r_s, scenarios_df$r_w,
+#                       scenarios_df$k_s, scenarios_df$k_w,
+#                       scenarios_df$q_s, scenarios_df$q_w,
+#                       scenarios_df$p_s, scenarios_df$p_w,
+#                       scenarios_df$c)) %>% 
 #    mutate(sc_id = sc_id)
 
-for(i in 1:nrow(scenarios_df_w_fcn)){
+for(i in 1:nrow(scenarios_df_msy1)){
  
   # Extract params
-  r_s <- scenarios_df_w_fcn$r_s[i]
-  k_s <- scenarios_df_w_fcn$k_s[i]
-  q_s <- scenarios_df_w_fcn$q_s[i]
-  p_s <- scenarios_df_w_fcn$p_s[i]
-  r_w <- scenarios_df_w_fcn$r_w[i]
-  k_w <- scenarios_df_w_fcn$k_w[i]
-  q_w <- scenarios_df_w_fcn$q_w[i]
-  p_w <- scenarios_df_w_fcn$p_w[i]
-  f_w <- scenarios_df_w_fcn$f_w[i]
-  beta_w <- scenarios_df_w_fcn$beta_w[i]
-  A_w <- scenarios_df_w_fcn$A_w[i]
-  c <- scenarios_df_w_fcn$c[i]
-  sc_id <- scenarios_df_w_fcn$scenario_id[i]
+  r_s <- scenarios_df_msy1$r_s[i]
+  k_s <- scenarios_df_msy1$k_s[i]
+  q_s <- scenarios_df_msy1$q_s[i]
+  p_s <- scenarios_df_msy1$p_s[i]
+  r_w <- scenarios_df_msy1$r_w[i]
+  k_w <- scenarios_df_msy1$k_w[i]
+  q_w <- scenarios_df_msy1$q_w[i]
+  p_w <- scenarios_df_msy1$p_w[i]
+  f_w <- scenarios_df_msy1$f_w[i]
+  beta_w <- scenarios_df_msy1$beta_w[i]
+  A_w <- scenarios_df_msy1$A_w[i]
+  c <- scenarios_df_msy1$c[i]
+  sc_id <- scenarios_df_msy1$scenario_id[i]
  
   # Run model
-  output_w_fcn <- run_model_pw_fcn(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
-                        q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w,
-                        f_w = f_w, beta_w = beta_w, A_w = A_w, c = c) %>% 
+  output_s_msy <- run_model_msy(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                                q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, c = c) %>% 
     mutate(sc_id = sc_id)
   
   if(i == 1){
-    output_w <- output_w_fcn
+    output_s <- output_s_msy
   }
   else{
-    output_w <- rbind(output_w, output_w_fcn)
+    output_s <- rbind(output_s, output_s_msy)
   }
 
 }
 
-output_join_test_w <- output_w %>% 
+output_join_test_msy1 <- output_s %>% 
   rename(scenario_id = sc_id) %>% 
-  left_join(scenarios_df_w_fcn, by = "scenario_id") %>% 
+  left_join(scenarios_df_msy1, by = "scenario_id") %>% 
   relocate(scenario_id, .before = E) %>% 
   mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
   mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w))
 
-#write_csv(output_join_test_w, file = file.path(outdir, "output_w_fcn2.csv"), col_names = T)
+#write_csv(output_join_test_msy1, file = file.path(outdir, "output_msy1.csv"), col_names = T)
 ```
 
-```{r test with strong stock price as a function of catch}
-# Building df of scenarios
-scenarios_df_s_fcn <- 
-  expand.grid(p_s = 1,
-              p_w = 1, #seq(1, 10, 0.1),
-              r_s = seq(0.01, 1, 0.01),
-              r_w = seq(0.01, 0.999, 0.01),
-              q_s = 0.01,
-              q_w = 0.01,
-              k_s = 4,
-              k_w = 2,
-              f_s = seq(0.1, 0.5, 0.1),
-              beta_s = seq(0.4, 0.8, 0.1),
-              A_s = 1,
-              c = 0.05) %>% 
-  mutate(scenario_id = 1:nrow(.)) 
+```{r test weak stock biomass with strong stock management for MSY}
+################### USED THIS CODE TO BUILD THE PARAMETER SET OF FIGURE 2B ################################################
+
+# In this code chunk, I'll generate the dataset to simulate a scenario where the weak stock value ranges and the strong stock value is small and doubled under MSY management for the strong stock.
+
+# Building df of price range scenarios
+scenarios_df_msy2 <- expand.grid(p_s = seq(1, 2, 1),
+                                 p_w = seq(1, 10, 0.5),
+                                 r_s = seq(0.1, 1, 0.01),
+                                 r_w = seq(0.1, 0.9, 0.01),
+                                 q_s = 0.02,
+                                 q_w = 0.02,
+                                 k_s = 4, 
+                                 k_w = 2,
+                                 c = 0.05) %>% 
+  mutate(scenario_id = 1:nrow(.)) %>% 
+  filter(r_s > r_w)
 
 # test scenario
-r_s <- scenarios_df_s_fcn$r_s[1]
-k_s <- scenarios_df_s_fcn$k_s[1]
-q_s <- scenarios_df_s_fcn$q_s[1]
-p_s <- scenarios_df_s_fcn$p_s[1]
-r_w <- scenarios_df_s_fcn$r_w[1]
-k_w <- scenarios_df_s_fcn$k_w[1]
-q_w <- scenarios_df_s_fcn$q_w[1]
-p_w <- scenarios_df_s_fcn$p_w[1]
-f_s <- scenarios_df_s_fcn$f_s[1]
-beta_s <- scenarios_df_s_fcn$beta_s[1]
-A_s <- scenarios_df_s_fcn$A_s[1]
-c <- scenarios_df_s_fcn$c[1]
+r_s <- scenarios_df_msy2$r_s[1]
+k_s <- scenarios_df_msy2$k_s[1]
+q_s <- scenarios_df_msy2$q_s[1]
+p_s <- scenarios_df_msy2$p_s[1]
+r_w <- scenarios_df_msy2$r_w[1]
+k_w <- scenarios_df_msy2$k_w[1]
+q_w <- scenarios_df_msy2$q_w[1]
+p_w <- scenarios_df_msy2$p_w[1]
+f_w <- scenarios_df_msy2$f_w[1]
+beta_w <- scenarios_df_msy2$beta_w[1]
+A_w <- scenarios_df_msy2$A_w[1]
+c <- scenarios_df_msy2$c[1]
 
 i = 1
 
 # test with purrr
 #scenarios_df %>% 
-#  pmap(~ run_model(scenarios_df$r_s, scenarios_df$r_w,
-#                   scenarios_df$k_s, scenarios_df$k_w,
-#                   scenarios_df$q_s, scenarios_df$q_w,
-#                   scenarios_df$p_s, scenarios_df$p_w,
-#                   scenarios_df$c)) %>% 
+#  pmap(~ run_model_msy(scenarios_df$r_s, scenarios_df$r_w,
+#                       scenarios_df$k_s, scenarios_df$k_w,
+#                       scenarios_df$q_s, scenarios_df$q_w,
+#                       scenarios_df$p_s, scenarios_df$p_w,
+#                       scenarios_df$c)) %>% 
 #    mutate(sc_id = sc_id)
 
-for(i in 1:nrow(scenarios_df_s_fcn)){
+for(i in 1:nrow(scenarios_df_msy2)){
  
   # Extract params
-  r_s <- scenarios_df_s_fcn$r_s[i]
-  k_s <- scenarios_df_s_fcn$k_s[i]
-  q_s <- scenarios_df_s_fcn$q_s[i]
-  p_s <- scenarios_df_s_fcn$p_s[i]
-  r_w <- scenarios_df_s_fcn$r_w[i]
-  k_w <- scenarios_df_s_fcn$k_w[i]
-  q_w <- scenarios_df_s_fcn$q_w[i]
-  p_w <- scenarios_df_s_fcn$p_w[i]
-  f_s <- scenarios_df_s_fcn$f_s[i]
-  beta_s <- scenarios_df_s_fcn$beta_s[i]
-  A_s <- scenarios_df_s_fcn$A_s[i]
-  c <- scenarios_df_s_fcn$c[i]
-  sc_id <- scenarios_df_s_fcn$scenario_id[i]
+  r_s <- scenarios_df_msy2$r_s[i]
+  k_s <- scenarios_df_msy2$k_s[i]
+  q_s <- scenarios_df_msy2$q_s[i]
+  p_s <- scenarios_df_msy2$p_s[i]
+  r_w <- scenarios_df_msy2$r_w[i]
+  k_w <- scenarios_df_msy2$k_w[i]
+  q_w <- scenarios_df_msy2$q_w[i]
+  p_w <- scenarios_df_msy2$p_w[i]
+  f_w <- scenarios_df_msy2$f_w[i]
+  beta_w <- scenarios_df_msy2$beta_w[i]
+  A_w <- scenarios_df_msy2$A_w[i]
+  c <- scenarios_df_msy2$c[i]
+  sc_id <- scenarios_df_msy2$scenario_id[i]
  
   # Run model
-  output_s_fcn <- run_model_3(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
-                        q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w,
-                        f_s = f_s, beta_s = beta_s, A_s = A_s, c = c) %>% 
+  output_w_msy <- run_model_msy(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                                q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w,
+                                c = c) %>% 
     mutate(sc_id = sc_id)
   
   if(i == 1){
-    output_s <- output_s_fcn
+    output_w <- output_w_msy
   }
   else{
-    output_s <- rbind(output_s, output_s_fcn)
+    output_w <- rbind(output_w, output_w_msy)
   }
 
 }
 
-output_join_test_s <- output_s %>% 
+output_join_msy_w <- output_w %>% 
   rename(scenario_id = sc_id) %>% 
-  left_join(scenarios_df_s_fcn, by = "scenario_id") %>% 
+  left_join(scenarios_df_msy2, by = "scenario_id") %>% 
   relocate(scenario_id, .before = E) %>% 
   mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
   mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w))
 
-#write_csv(output_join_test_w, file = file.path(outdir, "output_s_fcn.csv"), col_names = T)
+#write_csv(output_join_msy_w, file = file.path(outdir, "output_msy2.csv"), col_names = T)
 ```
 
 ```{r}
@@ -662,29 +714,28 @@ output_join_test_w %>%
 
 ```{r output wrangling}
 # Building df of scenarios
-scenarios_df <- expand.grid(r_s = seq(0.1, 1, 0.1),
-                            r_w = seq(0.1, 1, 0.1),
-                            k_s = seq(1, 5, .5),
-                            k_w = seq(1, 5, .5),
-                            q_s = seq(0.1, 1, 0.1),
-                            q_w = seq(0.1, 1, 0.1),
-                            p_s = seq(0, 10, 1),
-                            p_w = seq(0, 10, 1),
-                            f_w = seq(0.1, 0.5, 0.1),
-                            beta_w = seq(0.4, 0.8, 0.1)
-                            c = 0.05) %>% 
-  mutate(scenario_id = 1:nrow(.)) 
+scenarios_df_subs1 <- expand.grid(p_s = seq(1, 10, 0.5),
+                                 p_w = c(0, 1),
+                                 r_s = seq(0.1, 1, 0.01),
+                                 r_w = seq(0.1, 0.9, 0.01),
+                                 q_s = 0.02,
+                                 q_w = 0.02,
+                                 k_s = 4,
+                                 k_w = 2,
+                                 c = seq(0.05, 0.5, 0.05)) %>% 
+  mutate(scenario_id = 1:nrow(.)) %>% 
+  filter(r_s > r_w)
 
 # test scenario
-r_s <- scenarios_df$r_s[1]
-k_s <- scenarios_df$k_s[1]
-q_s <- scenarios_df$q_s[1]
-p_s <- scenarios_df$p_s[1]
-r_w <- scenarios_df$r_w[1]
-k_w <- scenarios_df$k_w[1]
-q_w <- scenarios_df$q_w[1]
-p_w <- scenarios_df$p_w[1]
-c <- scenarios_df$c[1]
+r_s <- scenarios_df_subs1$r_s[1]
+k_s <- scenarios_df_subs1$k_s[1]
+q_s <- scenarios_df_subs1$q_s[1]
+p_s <- scenarios_df_subs1$p_s[1]
+r_w <- scenarios_df_subs1$r_w[1]
+k_w <- scenarios_df_subs1$k_w[1]
+q_w <- scenarios_df_subs1$q_w[1]
+p_w <- scenarios_df_subs1$p_w[1]
+c <- scenarios_df_subs1$c[1]
 
 i = 1
 
@@ -697,79 +748,39 @@ i = 1
 #                   scenarios_df$c)) %>% 
 #    mutate(sc_id = sc_id)
 
-for(i in 1:nrow(scenarios_df)){
+for(i in 1:nrow(scenarios_df_subs1)){
  
   # Extract params
-  r_s <- scenarios_df$r_s[i]
-  r_w <- scenarios_df$r_w[i]
-  k_s <- scenarios_df$k_s[i]
-  k_w <- scenarios_df$k_w[i]
-  q_s <- scenarios_df$q_s[i]
-  q_w <- scenarios_df$q_w[i]
-  p_s <- scenarios_df$p_s[i]
-  p_w <- scenarios_df$p_w[i]
-  c <- scenarios_df$c[i]
-  sc_id <- scenarios_df$scenario_id[i]
+  r_s <- scenarios_df_subs1$r_s[i]
+  r_w <- scenarios_df_subs1$r_w[i]
+  k_s <- scenarios_df_subs1$k_s[i]
+  k_w <- scenarios_df_subs1$k_w[i]
+  q_s <- scenarios_df_subs1$q_s[i]
+  q_w <- scenarios_df_subs1$q_w[i]
+  p_s <- scenarios_df_subs1$p_s[i]
+  p_w <- scenarios_df_subs1$p_w[i]
+  c <- scenarios_df_subs1$c[i]
+  sc_id <- scenarios_df_subs1$scenario_id[i]
  
   # Run model
-  output <- run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+  output_subs1 <- run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
                       q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, c = c) %>% 
     mutate(sc_id = sc_id)
   
   if(i == 1){
-    output_1 <- output
+    output_sub <- output_subs1
   }
   else{
-    output_1 <- rbind(output_1, output)
+    output_sub <- rbind(output_sub, output_subs1)
   }
 
 }
 
-output_join <- output_1 %>% 
+output_join <- output_sub %>% 
   rename(scenario_id = sc_id) %>% 
-  left_join(scenarios_df, by = "scenario_id") %>% 
-  relocate(scenario_id, .before = e)
+  left_join(scenarios_df_subs1, by = "scenario_id") %>% 
+  relocate(scenario_id, .before = E)
 
-output_tidy <- output_join %>% 
-  mutate(price_ratio = p_s / p_w) %>% 
-  mutate(prod_ratio = q_s / r_s / q_w / r_w) %>% 
-  mutate(k_ratio = k_s / k_w) %>% 
-  mutate(q_ratio = q_s / q_w) %>% 
-  pivot_longer(cols = e:N_w,
-               names_to = "variables",
-               values_to = "values") %>% 
-  pivot_longer(cols = c(p_s, p_w),
-               names_to = "stock_prices",
-               values_to = "prices") %>% 
-  pivot_longer(cols = c(r_s, r_w),
-               names_to = "stock_growth_r",
-               values_to = "r") %>% 
-  pivot_longer(cols = c(q_s, q_w),
-               names_to = "stock_q",
-               values_to = "q") %>% 
-  pivot_longer(cols = c(k_w, k_s),
-               names_to = "stock_k",
-               values_to = "k") 
-
-output_price <- output_tidy %>% 
-  select(scenario_id, variables, values, stock_prices, prices, price_ratio) %>% 
-  distinct_all()
-
-output_growth <- output_tidy %>% 
-  select(scenario_id, variables, values, stock_growth_r, r, prod_ratio) %>% 
-  distinct_all()
-
-output_k <- output_tidy %>% 
-  select(scenario_id, variables, values, stock_k, k, k_ratio) %>% 
-  distinct_all()
-
-output_q <- output_tidy %>% 
-  select(scenario_id, variables, values, stock_q, q, q_ratio) %>% 
-  distinct_all()
-
-#write_csv(output_price, file = file.path(outdir, "price_ranges.csv"), col_names = T)
-#write_csv(output_growth, file = file.path(outdir, "growth_ranges.csv"), col_names = T)
-#write_csv(output_k, file = file.path(outdir, "k_ranges.csv"), col_names = T)
 #write_csv(output_q, file = file.path(outdir, "q_ranges.csv"), col_names = T)
 
 ```
@@ -777,88 +788,74 @@ output_q <- output_tidy %>%
 
 ```{r}
 # Building df of price range scenarios
-p_scenarios_df <- expand.grid(p_s = seq(0.1, 10, 0.2),
-                            p_w = seq(0.1, 10, 0.2),
-                            r_s = 1,
-                            r_w = 1,
-                            q_s = 0.1,
-                            q_w = 0.1,
-                            k_s = 1,
-                            k_w = 1,
-                            c = 0.05) %>% 
-  mutate(scenario_id = 1:nrow(.)) 
+scenarios_df_subs2 <- expand.grid(p_s = seq(1, 2, 1),
+                                 p_w = seq(1, 10, 0.5),
+                                 r_s = seq(0.1, 1, 0.01),
+                                 r_w = seq(0.1, 0.9, 0.01),
+                                 q_s = 0.02,
+                                 q_w = 0.02,
+                                 k_s = 4, 
+                                 k_w = 2,
+                                 c = seq(0.05, 0.5, 0.05)) %>% 
+  mutate(scenario_id = 1:nrow(.)) %>% 
+  filter(r_s > r_w)
 
 # test scenario
-r_s <- p_scenarios_df$r_s[1]
-k_s <- p_scenarios_df$k_s[1]
-q_s <- p_scenarios_df$q_s[1]
-p_s <- p_scenarios_df$p_s[1]
-r_w <- p_scenarios_df$r_w[1]
-k_w <- p_scenarios_df$k_w[1]
-q_w <- p_scenarios_df$q_w[1]
-p_w <- p_scenarios_df$p_w[1]
-c <- p_scenarios_df$c[1]
-
+r_s <- scenarios_df_subs2$r_s[1]
+k_s <- scenarios_df_subs2$k_s[1]
+q_s <- scenarios_df_subs2$q_s[1]
+p_s <- scenarios_df_subs2$p_s[1]
+r_w <- scenarios_df_subs2$r_w[1]
+k_w <- scenarios_df_subs2$k_w[1]
+q_w <- scenarios_df_subs2$q_w[1]
+p_w <- scenarios_df_subs2$p_w[1]
+c <- scenarios_df_subs2$c[1]
 
 i = 1
 
 # test with purrr
-# p_scenarios_df_out <- p_scenarios_df %>% 
-#   pmap(~ run_model(p_scenarios_df$r_s, p_scenarios_df$r_w,
-#                    p_scenarios_df$k_s, p_scenarios_df$k_w,
-#                    p_scenarios_df$q_s, p_scenarios_df$q_w,
-#                    p_scenarios_df$p_s, p_scenarios_df$p_w,
-#                    p_scenarios_df$c)) %>% 
-#   unlist() %>% 
-#   as.data.frame()
+#scenarios_df %>% 
+#  pmap(~ run_model(scenarios_df$r_s, scenarios_df$r_w,
+#                   scenarios_df$k_s, scenarios_df$k_w,
+#                   scenarios_df$q_s, scenarios_df$q_w,
+#                   scenarios_df$p_s, scenarios_df$p_w,
+#                   scenarios_df$c)) %>% 
+#    mutate(sc_id = sc_id)
 
-for(i in 1:nrow(p_scenarios_df)){
+for(i in 1:nrow(scenarios_df_subs2)){
  
   # Extract params
-  r_s <- p_scenarios_df$r_s[i]
-  r_w <- p_scenarios_df$r_w[i]
-  k_s <- p_scenarios_df$k_s[i]
-  k_w <- p_scenarios_df$k_w[i]
-  q_s <- p_scenarios_df$q_s[i]
-  q_w <- p_scenarios_df$q_w[i]
-  p_s <- p_scenarios_df$p_s[i]
-  p_w <- p_scenarios_df$p_w[i]
-  c <- p_scenarios_df$c[i]
-  sc_id <- p_scenarios_df$scenario_id[i]
+  r_s <- scenarios_df_subs2$r_s[i]
+  r_w <- scenarios_df_subs2$r_w[i]
+  k_s <- scenarios_df_subs2$k_s[i]
+  k_w <- scenarios_df_subs2$k_w[i]
+  q_s <- scenarios_df_subs2$q_s[i]
+  q_w <- scenarios_df_subs2$q_w[i]
+  p_s <- scenarios_df_subs2$p_s[i]
+  p_w <- scenarios_df_subs2$p_w[i]
+  c <- scenarios_df_subs2$c[i]
+  sc_id <- scenarios_df_subs2$scenario_id[i]
  
   # Run model
-  output <- run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+  output_subs2 <- run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
                       q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, c = c) %>% 
     mutate(sc_id = sc_id)
   
   if(i == 1){
-    output_1 <- output
+    output_sub <- output_subs2
   }
   else{
-    output_1 <- rbind(output_1, output)
+    output_sub <- rbind(output_sub, output_subs2)
   }
 
 }
 
-output_join <- output_1 %>% 
+output_join <- output_sub %>% 
   rename(scenario_id = sc_id) %>% 
-  left_join(p_scenarios_df, by = "scenario_id") %>% 
-  relocate(scenario_id, .before = e)
+  left_join(scenarios_df_subs2, by = "scenario_id") %>% 
+  relocate(scenario_id, .before = E)
 
-output_p_tidy <- output_join %>% 
-  mutate(price_ratio = p_s / p_w) %>% 
-  pivot_longer(cols = e:N_w,
-               names_to = "variables",
-               values_to = "values") %>% 
-  pivot_longer(cols = c(p_s, p_w),
-               names_to = "stock_prices",
-               values_to = "prices") 
-  
-output_price_range <- output_p_tidy %>% 
-  select(scenario_id, variables, values, stock_prices, prices, price_ratio) %>% 
-  distinct(variables, values, stock_prices, prices, price_ratio, .keep_all = TRUE)
-
-#write_csv(output_price_range, file = file.path(outdir, "output_price_ranges.csv"), col_names = T)
+#write_csv(output_q, file = file.path(outdir, "q_ranges.csv"), col_names = T)
 ```
 
 ```{r}
