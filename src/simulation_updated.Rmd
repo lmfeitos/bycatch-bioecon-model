@@ -252,7 +252,7 @@ run_model_msy <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
   if(N_s_multi >= k_s/2){
     E = E_multi
   } else {
-    E = 0
+    E = E_s_single
   }
   
   # Build output
@@ -260,6 +260,80 @@ run_model_msy <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
   
   # Return
   return(output)
+ 
+}
+
+# Scenario where the fishery has cost reducing a subsidy
+run_model_sub <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
+  # Weak stock equilibrium points when prices are constants
+  N_w_multi <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
+    (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
+  
+  # Effort equilibrium point when prices are constants
+  E_multi <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
+   (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+ 
+  # Strong stock equilibrium points when prices are constants 
+  N_s_multi <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
+     (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+  
+  # Single species equilibrium for the strong stock  
+  N_s_single <- c / (p_s * q_s)
+
+  # Single species effort equilibrium for the strong stock  
+  E_s_single <- (r_s / q_s * (1 - c / (p_s * q_s * k_s)))
+  
+  
+  
+  if(N_w_multi >= 0){
+    
+    N_w = N_w_multi
+  
+  } else { 
+  
+    N_w = 0
+  }
+  
+  if(N_w_multi >= 0){
+    
+    N_s = N_s_multi
+  
+  } else {
+    
+    N_s = N_s_single
+  }
+  
+  if(N_s_multi >= 0){
+    
+    N_s = N_s_multi
+  
+  } else {
+  
+    N_s = 0
+  }
+  
+  if(N_w_multi >= 0){
+    
+    E = E_multi
+  
+  } else {
+  
+    E = E_s_single
+  }
+  
+  if(E_multi <= 0){
+    E = 0
+  }
+  
+  if(E_s_single <= 0){ 
+    E = 0
+  }
+  # Build output
+  output <- data.frame(E = E, N_s = N_s, N_w = N_w)
+  
+  # Return
+  return(output)
+ 
  
 }
 
@@ -409,9 +483,7 @@ for(i in 1:nrow(scenarios_df)){
 output_join_test  <- output_1 %>% 
   rename(scenario_id = sc_id) %>% 
   left_join(scenarios_df, by = "scenario_id") %>% 
-  relocate(scenario_id, .before = E) %>% 
-  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
-  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w))
+  relocate(scenario_id, .before = E) 
 
 # output_p_tidy <- output_join_test %>% 
 #   mutate(price_ratio = p_s / p_w) %>% 
@@ -516,9 +588,7 @@ for(i in 1:nrow(scenarios_df2)){
 output_join_test2 <- output_2 %>% 
   rename(scenario_id = sc_id) %>% 
   left_join(scenarios_df2, by = "scenario_id") %>% 
-  relocate(scenario_id, .before = E) %>% 
-  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
-  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w))
+  relocate(scenario_id, .before = E)
 
 write_csv(output_join_test2, file = file.path(outdir, "output_w_ranges_s_one.csv"), col_names = T)
 
@@ -718,14 +788,14 @@ output_join_test_w %>%
 # In this code chunk, I'll generate the dataset to simulate a scenario where a fishery subsidy decreases costs in several levels.
 
 scenarios_df_subs1 <- expand.grid(p_s = seq(1, 10, 0.5),
-                                 p_w = c(0, 1),
-                                 r_s = seq(0.1, 1, 0.01),
-                                 r_w = seq(0.1, 0.9, 0.01),
-                                 q_s = 0.02,
-                                 q_w = 0.02,
-                                 k_s = 4,
-                                 k_w = 2,
-                                 c = seq(0.05, 0.5, 0.05)) %>% 
+                                  p_w = c(0, 1),
+                                  r_s = seq(0.1, 1, 0.01),
+                                  r_w = seq(0.1, 0.9, 0.01),
+                                  q_s = 0.02,
+                                  q_w = 0.02,
+                                  k_s = 4,
+                                  k_w = 2,
+                                  c = seq(0.005, 0.05, 0.01)) %>% 
   mutate(scenario_id = 1:nrow(.)) %>% 
   filter(r_s > r_w)
 
@@ -767,24 +837,24 @@ for(i in 1:nrow(scenarios_df_subs1)){
  
   # Run model
   output_subs1 <- run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
-                      q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, c = c) %>% 
+                            q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, c = c) %>% 
     mutate(sc_id = sc_id)
   
   if(i == 1){
-    output_sub <- output_subs1
+    output_sub1 <- output_subs1
   }
   else{
-    output_sub <- rbind(output_sub, output_subs1)
+    output_sub1 <- rbind(output_sub1, output_subs1)
   }
 
 }
 
-output_join <- output_sub %>% 
+output_join <- output_sub1 %>% 
   rename(scenario_id = sc_id) %>% 
   left_join(scenarios_df_subs1, by = "scenario_id") %>% 
   relocate(scenario_id, .before = E)
 
-#write_csv(output_join, file = file.path(outdir, "output_sub1.csv"), col_names = T)
+write_csv(output_join, file = file.path(outdir, "output_sub1.csv"), col_names = T)
 
 ```
 
@@ -798,11 +868,11 @@ scenarios_df_subs2 <- expand.grid(p_s = seq(1, 2, 1),
                                   p_w = seq(1, 10, 0.5),
                                   r_s = seq(0.1, 1, 0.01),
                                   r_w = seq(0.1, 0.9, 0.01),
-                                  q_s = seq(0.02, 0.1, 0.02),
+                                  q_s = 0.02,
                                   q_w = 0.02,
                                   k_s = 4, 
                                   k_w = 2,
-                                  c = 0.05) %>% 
+                                  c = seq(0.005, 0.05, 0.01)) %>% 
   mutate(scenario_id = 1:nrow(.)) %>% 
   filter(r_s > r_w) 
 
@@ -848,20 +918,20 @@ for(i in 1:nrow(scenarios_df_subs2)){
     mutate(sc_id = sc_id)
   
   if(i == 1){
-    output_sub <- output_subs2
+    output_sub2 <- output_subs2
   }
   else{
-    output_sub <- rbind(output_sub, output_subs2)
+    output_sub2 <- rbind(output_sub2, output_subs2)
   }
 
 }
 
-output_join <- output_sub %>% 
+output_join <- output_sub2 %>% 
   rename(scenario_id = sc_id) %>% 
   left_join(scenarios_df_subs2, by = "scenario_id") %>% 
   relocate(scenario_id, .before = E)
 
-#write_csv(output_q, file = file.path(outdir, "q_ranges.csv"), col_names = T)
+#write_csv(output_join, file = file.path(outdir, "output_sub2.csv"), col_names = T)
 ```
 
 ```{r}
