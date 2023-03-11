@@ -14,6 +14,7 @@ library(here)
 library(patchwork)
 library(gt)
 library(paletteer)
+library(gridExtra)
 
 # file path
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses/"
@@ -34,6 +35,8 @@ output_msy1 <- read_csv(file.path(outdir, "output_msy1.csv"))
 output_msy2 <- read_csv(file.path(outdir, "output_msy2.csv"))
 
 output_subs1 <- read_csv(file.path(outdir, "output_sub1.csv"))
+
+output_subs2 <- read_csv(file.path(outdir, "output_sub2.csv"))
 #output_full <- read_csv(file.path(outdir, "output_full.csv"))
 ```
 
@@ -72,7 +75,8 @@ s_w_range_proc <- output_s_ranges_w_one %>%
          vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
   mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
-  mutate(log_bvkw = log1p(b_v_k_w))
+  mutate(log_bvkw = log1p(b_v_k_w)) %>% 
+  mutate(c = as.factor(c))
 
 
 # wrangling dataset with outputs from the test with strong stock price as a function of catch
@@ -119,7 +123,24 @@ output_subs1_proc <- output_subs1 %>%
   mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
          vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
-  mutate(w_stock_rev = (p_w * q_w * k_w) / c)
+  mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
+  mutate(log_b_v_k_w = log1p(b_v_k_w)) %>% 
+  mutate(log_b_v_k_w = round(log_b_v_k_w, 3)) %>% 
+  mutate(c = as.factor(c))
+
+# wrangling dataset with outputs from the test with prices constant (strong stock price varying) and cost varying (subsidies)
+output_subs2_proc <- output_subs2 %>%  
+   mutate(b_v_k_s = N_s / k_s,
+         b_v_k_w = N_w / k_w) %>%  
+  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
+  mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
+         vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
+  mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
+  mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
+  mutate(log_b_v_k_w = log1p(b_v_k_w)) %>% 
+  mutate(log_b_v_k_w = round(log_b_v_k_w, 3)) %>% 
+  mutate(c = as.factor(c))
 ```
 
 
@@ -491,6 +512,7 @@ $$
 
 
 ```{r, echo = FALSE}
+
 s_w_range_proc_plot <-
   ggplot(data = s_w_range_proc %>% 
            filter(p_w < 1)) +
@@ -723,202 +745,14 @@ plot_1
 ### Tests for management at MSY for the strong stock
 
 ```{r, echo = FALSE}
-msy1_s_proc_plot <-
-  ggplot(data = output_msy1_proc %>% 
-           filter(p_w < 1)) +
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.5, 0.1)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Strong stock revenue stream",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-
-msy1_s_proc_plot2 <-
-  ggplot(data = output_msy1_proc %>% 
-           filter(p_w == 1)) +
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.35, 0.1)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Strong stock revenue stream",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-
-msy2_w_proc_plot1 <-
-  ggplot(data = output_msy2_proc %>%
-           filter(p_s == 1)) + 
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Weak stock revenue stream",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-  
-msy2_w_proc_plot2 <- 
-  ggplot(data = output_msy2_proc %>% 
-           filter(p_s == 2)) + 
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.25, 0.05)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Weak stock revenue stream",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-```
-
-
-```{r, echo = FALSE, fig.height=8, fig.width=8}
-msy_plot_1 <- 
-  (msy1_s_proc_plot +
-  msy1_s_proc_plot2)  
-
-msy_plot_2 <-
-  (msy2_w_proc_plot1 +
-  msy2_w_proc_plot2) 
-
-msy_gather <-
-  msy_plot_1 / 
-  msy_plot_2 +
-  plot_annotation(tag_levels = "A")
-
-msy_gather
-```
-
-
-```{r, echo = FALSE}
-### Tests for management at MSY for the strong stock
-subs1_s_proc_plot <-
-  ggplot(data = output_subs1_proc %>% 
-           filter(p_w < 1)) +
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.5, 0.1)) +
-  facet_wrap(~ factor(c)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Strong stock revenue stream",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-
-subs1_s_proc_plot2 <-
-  ggplot(data = output_subs1_proc %>% 
-           filter(p_w == 1)) +
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.35, 0.1)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Strong stock revenue stream",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-
-msy2_w_proc_plot1 <-
-  ggplot(data = output_msy2_proc %>%
-           filter(p_s == 1)) + 
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Weak stock revenue stream",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-  
-msy2_w_proc_plot2 <- 
-  ggplot(data = output_msy2_proc %>% 
-           filter(p_s == 2)) + 
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.25, 0.05)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Weak stock revenue stream",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-```
-
-```{r, include = FALSE}
-# ggplot(data = output_subs1_proc %>% 
+# msy1_s_proc_plot <-
+#   ggplot(data = output_msy1_proc %>% 
 #            filter(p_w < 1)) +
-#   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) 
+#   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
 #   scale_fill_paletteer_c("viridis::viridis",
 #                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
 #                          breaks = seq(0, 0.5, 0.1)) +
-#   facet_wrap(~ factor(c)) +
+#   facet_wrap(~ c,)
 #   scale_x_continuous(expand = c(0,0)) +
 #   scale_y_continuous(expand = c(0,0)) +
 #   labs(x = "Vw/Vs",
@@ -931,31 +765,1605 @@ msy2_w_proc_plot2 <-
 #         axis.text = element_text(size = 10, color = "black"),
 #         strip.background = element_rect(fill = "transparent"),
 #         panel.spacing = unit(3, "mm"))
+# 
+# 
+# msy1_s_proc_plot2 <-
+#   ggplot(data = output_msy1_proc %>% 
+#            filter(p_w == 1)) +
+#   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+#   scale_fill_paletteer_c("viridis::viridis",
+#                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+#                          breaks = seq(0, 0.35, 0.1)) +
+#   scale_x_continuous(expand = c(0,0)) +
+#   scale_y_continuous(expand = c(0,0)) +
+#   labs(x = "Vw/Vs",
+#        y = "Strong stock revenue stream",
+#        fill = "log(B/K)") +
+#   theme_bw() +
+#   theme(panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         axis.title = element_text(size = 12, color = "black"),
+#         axis.text = element_text(size = 10, color = "black"),
+#         strip.background = element_rect(fill = "transparent"),
+#         panel.spacing = unit(3, "mm"))
+# 
+# 
+# msy2_w_proc_plot1 <-
+#   ggplot(data = output_msy2_proc %>%
+#            filter(p_s == 1)) + 
+#   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+#   scale_fill_paletteer_c("viridis::viridis",
+#                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+#                          breaks = seq(0, 0.4, 0.1)) +
+#   scale_x_continuous(expand = c(0,0)) +
+#   scale_y_continuous(expand = c(0,0)) +
+#   labs(x = "Vw/Vs",
+#        y = "Weak stock revenue stream",
+#        fill = "log(B/K)") +
+#   theme_bw() +
+#   theme(panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         axis.title = element_text(size = 12, color = "black"),
+#         axis.text = element_text(size = 10, color = "black"),
+#         strip.background = element_rect(fill = "transparent"),
+#         panel.spacing = unit(3, "mm"))
+#   
+# msy2_w_proc_plot2 <- 
+#   ggplot(data = output_msy2_proc %>% 
+#            filter(p_s == 2)) + 
+#   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+#   scale_fill_paletteer_c("viridis::viridis",
+#                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+#                          breaks = seq(0, 0.25, 0.05)) +
+#   scale_x_continuous(expand = c(0,0)) +
+#   scale_y_continuous(expand = c(0,0)) +
+#   labs(x = "Vw/Vs",
+#        y = "Weak stock revenue stream",
+#        fill = "log(B/K)") +
+#   theme_bw() +
+#   theme(panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         axis.title = element_text(size = 12, color = "black"),
+#         axis.text = element_text(size = 10, color = "black"),
+#         strip.background = element_rect(fill = "transparent"),
+#         panel.spacing = unit(3, "mm"))
 ```
 
-```{r}
-ggplot(data = output_subs1_proc) +
-  geom_histogram(aes(x = E))
-```
 
 ```{r, echo = FALSE, fig.height=8, fig.width=8}
-subs1_plot_1 <- 
-  (msy1_s_proc_plot +
-  msy1_s_proc_plot2)  
-
-msy_plot_2 <-
-  (msy2_w_proc_plot1 +
-  msy2_w_proc_plot2) 
-
-msy_gather <-
-  msy_plot_1 / 
-  msy_plot_2 +
-  plot_annotation(tag_levels = "A")
-
-msy_gather
+# msy_plot_1 <- 
+#   (msy1_s_proc_plot +
+#   msy1_s_proc_plot2)  
+# 
+# msy_plot_2 <-
+#   (msy2_w_proc_plot1 +
+#   msy2_w_proc_plot2) 
+# 
+# msy_gather <-
+#   msy_plot_1 / 
+#   msy_plot_2 +
+#   plot_annotation(tag_levels = "A")
+# 
+# msy_gather
 ```
 
+
+## Fisheries subsidy analyses
+
+```{r plot first scenario of fishery subsidies where the strong stock price increases and weak stock price remains constabt, echo = FALSE}
+# Create facet labels
+sub1_label1 <- c("10%")
+names(sub1_label1) <- c("0.045")
+
+sub1_label2 <- c("30%")
+names(sub1_label2) <- c("0.035")
+
+sub1_label3 <- c("50%")
+names(sub1_label3) <- c("0.025")
+
+sub1_label4 <- c("70%")
+names(sub1_label4) <- c("0.015")
+
+sub1_label5 <- c("90%")
+names(sub1_label5) <- c("0.005")
+
+
+no_sub <- c("0%")
+names(no_sub) <- c("0.05")
+
+# Create series of plots for pw = 0.1
+subs1_s_proc_plot0 <-
+  ggplot(data = s_w_range_proc %>% 
+           filter(p_w == 1)) +
+  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.35, 0.1)) +
+  facet_wrap(~ c,
+             labeller = labeller(c = no_sub)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 16, 4),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_s_proc_plot1 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w == 1 & c == 0.045)) +
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.4, 0.1)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label1)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 16, 4),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+subs1_s_proc_plot2 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w == 1 & c == 0.035 & st_stock_rev <= 20)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.3, 0.1)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label2)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_s_proc_plot3 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w == 1 & c == 0.025 & st_stock_rev <= 20)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.2, 0.05)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label3)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_s_proc_plot4 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w == 1 & c == 0.015 & st_stock_rev <= 20)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 2.7, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.15, 0.03)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label4)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_s_proc_plot5 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w == 1 & c == 0.005 & st_stock_rev <= 20)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 8, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.05, 0.01)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label5)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+# Create plots for a smaller range of Vw/Vs
+subs1_s_proc_plot0.1 <-
+  ggplot(data = s_w_range_proc %>% 
+           filter(p_w == 1 & vuln_ratio_w <= 4 & st_stock_rev <= 12)) +
+  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.35, 0.1)) +
+  facet_wrap(~ c,
+             labeller = labeller(c = no_sub)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 12, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_s_proc_plot1.1 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w == 1 & c == 0.045 & vuln_ratio_w <= 4 & st_stock_rev <= 12)) +
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.4, 0.1)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label1)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 12, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+subs1_s_proc_plot2.1 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w == 1 & c == 0.035 & st_stock_rev <= 12 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.3, 0.1)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label2)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 12, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_s_proc_plot3.1 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w == 1 & c == 0.025 & st_stock_rev <= 12 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.2, 0.05)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label3)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 12, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_s_proc_plot4.1 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w == 1 & c == 0.015 & st_stock_rev <= 12 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 2.7, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.15, 0.03)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label4)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 12, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_s_proc_plot5.1 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w == 1 & c == 0.005 & st_stock_rev <= 20 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 8, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.05, 0.01)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label5)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
 ```
+
+- 0.045 = 10% subsidy
+- 0.035 = 30% subsidy
+- 0.025 = 50% subsidy
+- 0.015 = 70% subsidy
+- 0.005 = 90% subsidy
+
+```{r, echo = FALSE, fig.height=7, fig.width=8}
+# Gather all plots for pw = 1 
+sub1 <- grid.arrange(patchworkGrob(subs1_s_proc_plot0 /
+                                     subs1_s_proc_plot1 / 
+                                     subs1_s_proc_plot2 /
+                                     subs1_s_proc_plot3 /
+                                     subs1_s_proc_plot4 /
+                                     subs1_s_proc_plot5 +
+  plot_layout(ncol = 2)),
+  left = "Strong stock revenue stream",
+  bottom = "Vw/Vs")  
+
+
+sub1.1 <- grid.arrange(patchworkGrob(subs1_s_proc_plot0.1 /
+                                     subs1_s_proc_plot1.1 / 
+                                     subs1_s_proc_plot2.1 /
+                                     subs1_s_proc_plot3.1 /
+                                     subs1_s_proc_plot4.1 /
+                                     subs1_s_proc_plot5.1 +
+  plot_layout(ncol = 2)),
+  left = "Strong stock revenue stream",
+  bottom = "Vw/Vs")  
+
+# ggsave(file.path(outdir, "subsidy_ps1.1.png"), plot =  sub1.1,
+#      width = 6, height = 7, bg = "white", dpi = 300)
+```
+
+```{r, echo = FALSE}
+# Create series of plots for pw = 0.1 with full range of vulnerabilities
+subs2_s_proc_plot0 <-
+  ggplot(data = s_w_range_proc %>% 
+           filter(p_w < 1)) +
+  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.5, 0.1)) +
+  facet_wrap(~ c,
+             labeller = labeller(c = no_sub)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+subs2_s_proc_plot1 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w < 1 & c == 0.045)) +
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.4, 0.1)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label1)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+subs2_s_proc_plot2 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w < 1 & c == 0.035 & st_stock_rev <= 20)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.3, 0.1)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label2)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs2_s_proc_plot3 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w < 1 & c == 0.025 & st_stock_rev <= 20)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.3, 0.1)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label3)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs2_s_proc_plot4 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w < 1 & c == 0.015 & st_stock_rev <= 20)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 2.7, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.15, 0.05)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label4)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs2_s_proc_plot5 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w < 1 & c == 0.005 & st_stock_rev <= 20)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 8, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.05, 0.025)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label5)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+# Create series of plots for pw = 0.1 with vulnerabilities ranging from 1 to 4
+subs2_s_proc_plot0.1 <-
+  ggplot(data = s_w_range_proc %>% 
+           filter(p_w < 1 & vuln_ratio_w <= 4 & st_stock_rev <= 12)) +
+  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.5, 0.1)) +
+  facet_wrap(~ c,
+             labeller = labeller(c = no_sub)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 12, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+subs2_s_proc_plot1.1 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w < 1 & c == 0.045 & vuln_ratio_w <= 4 & st_stock_rev <= 12)) +
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.4, 0.1)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label1)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 12, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+subs2_s_proc_plot2.1 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w < 1 & c == 0.035 & vuln_ratio_w <= 4 & st_stock_rev <= 12)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.3, 0.1)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label2)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 12, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs2_s_proc_plot3.1 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w < 1 & c == 0.025 & st_stock_rev <= 12 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.3, 0.1)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label3)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 12, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs2_s_proc_plot4.1 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w < 1 & c == 0.015 & st_stock_rev <= 12 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 2.7, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.15, 0.05)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label4)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 12, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs2_s_proc_plot5.1 <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w < 1 & c == 0.005 & st_stock_rev <= 20 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 8, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.05, 0.025)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label5)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+```
+
+```{r, echo = FALSE, fig.height=7, fig.width=7}
+# Gather all plots for pw = 0.1 
+sub2 <- grid.arrange(patchworkGrob(subs2_s_proc_plot0 / 
+                                     subs2_s_proc_plot1 / 
+                                     subs2_s_proc_plot2 /
+                                     subs2_s_proc_plot3 /
+                                     subs2_s_proc_plot4 /
+                                     subs2_s_proc_plot5 +
+  plot_layout(ncol = 2)),
+  left = "Strong stock revenue stream",
+  bottom = "Vw/Vs")  
+
+# Gather all plots for pw = 0.1 with vulnerabiliy range subset
+sub2.1 <- grid.arrange(patchworkGrob(subs2_s_proc_plot0.1 / 
+                                     subs2_s_proc_plot1.1 / 
+                                     subs2_s_proc_plot2.1 /
+                                     subs2_s_proc_plot3.1 /
+                                     subs2_s_proc_plot4.1 /
+                                     subs2_s_proc_plot5.1 +
+  plot_layout(ncol = 2)),
+  left = "Strong stock revenue stream",
+  bottom = "Vw/Vs")  
+
+
+# ggsave(file.path(outdir, "subsidy_ps2.1.png"), plot =  sub2.1,
+#        width = 6, height = 7, bg = "white", dpi = 300)
+```
+
+
+```{r plot second scenario of fishery subsidies where the weak stock price increases and strong stock price remains constabt, echo = FALSE}
+# Create facet labels
+sub1_label1 <- c("10%")
+names(sub1_label1) <- c("0.045")
+
+sub1_label2 <- c("30%")
+names(sub1_label2) <- c("0.035")
+
+sub1_label3 <- c("50%")
+names(sub1_label3) <- c("0.025")
+
+sub1_label4 <- c("70%")
+names(sub1_label4) <- c("0.015")
+
+sub1_label5 <- c("90%")
+names(sub1_label5) <- c("0.005")
+
+
+no_sub <- c("0%")
+names(no_sub) <- c("0.05")
+
+# Create series of plots for pw = 0.1
+subs1_w_proc_plot0 <-
+  ggplot(data = w_s_range_proc %>% 
+           filter(p_s == 1)) +
+  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.35, 0.1)) +
+  facet_wrap(~ c,
+             labeller = labeller(c = no_sub)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 8, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_w_proc_plot1 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 1 & c == 0.045)) +
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.4, 0.1)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label1)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 8, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+subs1_w_proc_plot2 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 1 & c == 0.035)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.3, 0.1)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label2)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 12, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_w_proc_plot3 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 1 & c == 0.025)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.2, 0.05)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label3)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 16, 4),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_w_proc_plot4 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 1 & c == 0.015)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 2.7, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.15, 0.03)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label4)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 30, 6),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_w_proc_plot5 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 1 & c == 0.005)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 8, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.05, 0.01)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label5)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+# Create plots for a smaller range of Vw/Vs
+subs1_w_proc_plot0.1 <-
+  ggplot(data = w_s_range_proc %>% 
+           filter(p_s == 1 & vuln_ratio_w <= 4)) +
+  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.35, 0.1)) +
+  facet_wrap(~ c,
+             labeller = labeller(c = no_sub)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 8, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_w_proc_plot1.1 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 1 & c == 0.045 & vuln_ratio_w <= 4)) +
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.4, 0.1)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label1)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 8, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+subs1_w_proc_plot2.1 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 1 & c == 0.035  & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.3, 0.1)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label2)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 12, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_w_proc_plot3.1 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 1 & c == 0.025  & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.2, 0.05)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label3)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 16, 4),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_w_proc_plot4.1 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 1 & c == 0.015 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 2.7, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.15, 0.03)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label4)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 30, 6),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs1_w_proc_plot5.1 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 1 & c == 0.005 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 8, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.05, 0.01)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label5)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+```
+
+- 0.045 = 10% subsidy
+- 0.035 = 30% subsidy
+- 0.025 = 50% subsidy
+- 0.015 = 70% subsidy
+- 0.005 = 90% subsidy
+
+```{r, echo = FALSE, fig.height=7, fig.width=8}
+# Gather all plots for pw = 1 
+sub_w1 <- grid.arrange(patchworkGrob(subs1_w_proc_plot0 /
+                                     subs1_w_proc_plot1 / 
+                                     subs1_w_proc_plot2 /
+                                     subs1_w_proc_plot3 /
+                                     subs1_w_proc_plot4 /
+                                     subs1_w_proc_plot5 +
+  plot_layout(ncol = 2)),
+  left = "Weak stock revenue stream",
+  bottom = "Vw/Vs")  
+
+sub_w1.1 <- grid.arrange(patchworkGrob(subs1_w_proc_plot0.1 /
+                                          subs1_w_proc_plot1.1 / 
+                                          subs1_w_proc_plot2.1 /
+                                          subs1_w_proc_plot3.1 /
+                                          subs1_w_proc_plot4.1 /
+                                          subs1_w_proc_plot5.1 +
+  plot_layout(ncol = 2)),
+  left = "Weak stock revenue stream",
+  bottom = "Vw/Vs")  
+
+# ggsave(file.path(outdir, "subsidy_pw1.1.png"), plot = sub_w1.1,
+#     width = 6, height = 7, bg = "white", dpi = 300)
+```
+
+
+```{r, echo = FALSE}
+# Create series of plots for pw = 0.1 with full range of vulnerabilities
+subs2_w_proc_plot0 <-
+  ggplot(data = w_s_range_proc %>% 
+           filter(p_s == 2)) +
+  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.2, 0.05)) +
+  facet_wrap(~ c,
+             labeller = labeller(c = no_sub)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 8, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+subs2_w_proc_plot1 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 2 & c == 0.045)) +
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.2, 0.05)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label1)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 8, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+subs2_w_proc_plot2 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 2 & c == 0.035)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.2, 0.05)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label2)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 12, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs2_w_proc_plot3 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 2 & c == 0.025)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.1, 0.025)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label3)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 16, 4),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs2_w_proc_plot4 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 2 & c == 0.015)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 2.7, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.1, 0.02)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label4)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 30, 6),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs2_w_proc_plot5 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 2 & c == 0.005)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 8, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.1, 0.01)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label5)) +
+  scale_x_continuous(breaks = seq(1, 10, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+# Create series of plots for pw = 0.1 with vulnerabilities ranging from 1 to 4
+subs2_w_proc_plot0.1 <-
+  ggplot(data = w_s_range_proc %>% 
+           filter(p_s == 2 & vuln_ratio_w <= 4)) +
+  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.4, 0.1)) +
+  facet_wrap(~ c,
+             labeller = labeller(c = no_sub)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 8, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+subs2_w_proc_plot1.1 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 2 & c == 0.045 & vuln_ratio_w <= 4)) +
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.2, 0.05)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label1)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 8, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+
+subs2_w_proc_plot2.1 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 2 & c == 0.035 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.2, 0.05)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label2)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 12, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs2_w_proc_plot3.1 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 2 & c == 0.025 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.1, 0.025)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label3)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 16, 2),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs2_w_proc_plot4.1 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 2 & c == 0.015 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 2.7, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.1, 0.02)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label4)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 30, 6),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
+subs2_w_proc_plot5.1 <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 2 & c == 0.005 & vuln_ratio_w <= 4)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 8, width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.1, 0.01)) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label5)) +
+  scale_x_continuous(breaks = seq(1, 4, 1),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "",
+       y = "",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text.x = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+```
+
+```{r, echo = FALSE, fig.height=7, fig.width=7}
+# Gather all plots for pw = 0.1 
+sub_w2 <- grid.arrange(patchworkGrob(subs2_w_proc_plot0 / 
+                                     subs2_w_proc_plot1 / 
+                                     subs2_w_proc_plot2 /
+                                     subs2_w_proc_plot3 /
+                                     subs2_w_proc_plot4 /
+                                     subs2_w_proc_plot5 +
+  plot_layout(ncol = 2)),
+  left = "Strong stock revenue stream",
+  bottom = "Vw/Vs")  
+
+# Gather all plots for pw = 0.1 with vulnerabiliy range subset
+sub_w2.1 <- grid.arrange(patchworkGrob(subs2_w_proc_plot0.1 / 
+                                       subs2_w_proc_plot1.1 / 
+                                       subs2_w_proc_plot2.1 /
+                                       subs2_w_proc_plot3.1 /
+                                       subs2_w_proc_plot4.1 /
+                                       subs2_w_proc_plot5.1 +
+  plot_layout(ncol = 2)),
+  left = "Strong stock revenue stream",
+  bottom = "Vw/Vs")  
+
+ # ggsave(file.path(outdir, "subsidy_pw2.1.png"), plot =  sub_w2.1,
+ #        width = 6, height = 7, bg = "white", dpi = 300)
+```
+
+```{r, include = FALSE}
+msy2_w_proc_plot1 <-
+  ggplot(data = output_msy2_proc %>%
+           filter(p_s == 1)) + 
+  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.4, 0.1)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "Vw/Vs",
+       y = "Weak stock revenue stream",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+  
+msy2_w_proc_plot2 <- 
+  ggplot(data = output_msy2_proc %>% 
+           filter(p_s == 2)) + 
+  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.25, 0.05)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "Vw/Vs",
+       y = "Weak stock revenue stream",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+```
+
 
 
 ```{r, echo = FALSE}

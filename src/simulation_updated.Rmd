@@ -931,7 +931,7 @@ output_join <- output_sub2 %>%
   left_join(scenarios_df_subs2, by = "scenario_id") %>% 
   relocate(scenario_id, .before = E)
 
-#write_csv(output_join, file = file.path(outdir, "output_sub2.csv"), col_names = T)
+write_csv(output_join, file = file.path(outdir, "output_sub2.csv"), col_names = T)
 ```
 
 ```{r}
