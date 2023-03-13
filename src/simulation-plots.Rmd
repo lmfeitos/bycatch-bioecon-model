@@ -515,13 +515,15 @@ $$
 
 s_w_range_proc_plot <-
   ggplot(data = s_w_range_proc %>% 
-           filter(p_w < 1)) +
+           filter(p_w < 1 & st_stock_rev <= 5 & vuln_ratio_w <= 4)) +
   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
   scale_fill_paletteer_c("viridis::viridis",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.5, 0.1)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
+  scale_x_continuous(breaks = seq(1, 4, 0.5),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(1, 5, 0.5),
+                     expand = c(0,0)) +
   labs(x = "Vw/Vs",
        y = "Strong stock revenue stream",
        fill = "log(B/K)") +
@@ -536,13 +538,15 @@ s_w_range_proc_plot <-
 
 s_w_range_proc_plot2 <-
   ggplot(data = s_w_range_proc %>% 
-           filter(p_w == 1)) +
+           filter(p_w == 1 & st_stock_rev <= 5 & vuln_ratio_w <= 4)) +
   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
   scale_fill_paletteer_c("viridis::viridis",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.35, 0.1)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
+  scale_x_continuous(breaks = seq(1, 4, 0.5),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(1, 5, 0.5),
+                     expand = c(0,0)) +
   labs(x = "Vw/Vs",
        y = "Strong stock revenue stream",
        fill = "log(B/K)") +
@@ -557,13 +561,15 @@ s_w_range_proc_plot2 <-
 
 w_s_range_proc_plot1 <-
   ggplot(data = w_s_range_proc %>%
-           filter(p_s == 1)) + 
+           filter(p_s == 1 & vuln_ratio_w <= 4)) + 
   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
   scale_fill_paletteer_c("viridis::viridis",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.4, 0.1)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
+  scale_x_continuous(breaks = seq(0, 4, 0.5),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 8, 1),
+                     expand = c(0,0)) +
   labs(x = "Vw/Vs",
        y = "Weak stock revenue stream",
        fill = "log(B/K)") +
@@ -577,13 +583,15 @@ w_s_range_proc_plot1 <-
   
 w_s_range_proc_plot2 <- 
   ggplot(data = w_s_range_proc %>% 
-           filter(p_s == 2)) + 
+           filter(p_s == 2 & vuln_ratio_w <= 4)) + 
   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
   scale_fill_paletteer_c("viridis::viridis",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.25, 0.05)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
+  scale_x_continuous(breaks = seq(0, 4, 0.5),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 8, 1),
+                     expand = c(0,0)) +
   labs(x = "Vw/Vs",
        y = "Weak stock revenue stream",
        fill = "log(B/K)") +
@@ -738,8 +746,8 @@ plot_1 <-
 
 plot_1
 
- ggsave(file.path(outdir, "plot_1.png"),
-        width = 12, height = 8, bg = "white", dpi = 300)
+# ggsave(file.path(outdir, "plot_1.png"),
+#        width = 12, height = 8, bg = "white", dpi = 300)
 ```
 
 ### Tests for management at MSY for the strong stock
@@ -1566,6 +1574,10 @@ sub2 <- grid.arrange(patchworkGrob(subs2_s_proc_plot0 /
   left = "Strong stock revenue stream",
   bottom = "Vw/Vs")  
 
+# ggsave(file.path(outdir, "subsidy_ps2.1.png"), plot =  sub2.1,
+#        width = 6, height = 7, bg = "white", dpi = 300)
+```
+```{r, echo = FALSE}
 # Gather all plots for pw = 0.1 with vulnerabiliy range subset
 sub2.1 <- grid.arrange(patchworkGrob(subs2_s_proc_plot0.1 / 
                                      subs2_s_proc_plot1.1 / 
@@ -1577,9 +1589,6 @@ sub2.1 <- grid.arrange(patchworkGrob(subs2_s_proc_plot0.1 /
   left = "Strong stock revenue stream",
   bottom = "Vw/Vs")  
 
-
-# ggsave(file.path(outdir, "subsidy_ps2.1.png"), plot =  sub2.1,
-#        width = 6, height = 7, bg = "white", dpi = 300)
 ```
 
 
@@ -1950,6 +1959,11 @@ sub_w1 <- grid.arrange(patchworkGrob(subs1_w_proc_plot0 /
   left = "Weak stock revenue stream",
   bottom = "Vw/Vs")  
 
+ # ggsave(file.path(outdir, "subsidy_pw1.png"), plot = sub_w1,
+ #     width = 6, height = 7, bg = "white", dpi = 300)
+```
+
+```{r, echo = FALSE}
 sub_w1.1 <- grid.arrange(patchworkGrob(subs1_w_proc_plot0.1 /
                                           subs1_w_proc_plot1.1 / 
                                           subs1_w_proc_plot2.1 /
@@ -1961,9 +1975,9 @@ sub_w1.1 <- grid.arrange(patchworkGrob(subs1_w_proc_plot0.1 /
   bottom = "Vw/Vs")  
 
 # ggsave(file.path(outdir, "subsidy_pw1.1.png"), plot = sub_w1.1,
-#     width = 6, height = 7, bg = "white", dpi = 300)
-```
+#      width = 6, height = 7, bg = "white", dpi = 300)
 
+```
 
 ```{r, echo = FALSE}
 # Create series of plots for pw = 0.1 with full range of vulnerabilities
@@ -2304,9 +2318,14 @@ sub_w2 <- grid.arrange(patchworkGrob(subs2_w_proc_plot0 /
                                      subs2_w_proc_plot4 /
                                      subs2_w_proc_plot5 +
   plot_layout(ncol = 2)),
-  left = "Strong stock revenue stream",
+  left = "Weak stock revenue stream",
   bottom = "Vw/Vs")  
 
+ # ggsave(file.path(outdir, "subsidy_pw2.png"), plot =  sub_w2,
+ #        width = 6, height = 7, bg = "white", dpi = 300)
+```
+
+```{r, echo = FALSE}
 # Gather all plots for pw = 0.1 with vulnerabiliy range subset
 sub_w2.1 <- grid.arrange(patchworkGrob(subs2_w_proc_plot0.1 / 
                                        subs2_w_proc_plot1.1 / 
@@ -2315,14 +2334,68 @@ sub_w2.1 <- grid.arrange(patchworkGrob(subs2_w_proc_plot0.1 /
                                        subs2_w_proc_plot4.1 /
                                        subs2_w_proc_plot5.1 +
   plot_layout(ncol = 2)),
-  left = "Strong stock revenue stream",
+  left = "Weak stock revenue stream",
   bottom = "Vw/Vs")  
 
- # ggsave(file.path(outdir, "subsidy_pw2.1.png"), plot =  sub_w2.1,
- #        width = 6, height = 7, bg = "white", dpi = 300)
+# ggsave(file.path(outdir, "subsidy_pw2.1.png"), plot =  sub_w2.1,
+#         width = 6, height = 7, bg = "white", dpi = 300)
 ```
 
-```{r, include = FALSE}
+
+```{r, echo = FALSE}
+ggplot(data = output_msy1_proc) +
+  geom_histogram(aes(x = E), 
+                 fill = "black",
+                 alpha= 0.5) +
+  geom_histogram(aes(x = N_s),
+                 fill = "darkgreen",
+                 alpha = 0.5) +
+  geom_histogram(aes(x = N_w),
+                 fill = "darkred",
+                 alpha = 0.5)
+```
+
+
+```{r, echo = FALSE}
+#msy1_w_proc_plot1 <-
+  ggplot(data = output_msy1_proc %>%
+           filter(p_w < 1)) + 
+  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.4, 0.1)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "Vw/Vs",
+       y = "Strong stock revenue stream",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+  
+msy1_w_proc_plot2 <- 
+  ggplot(data = output_msy1_proc %>% 
+           filter(p_w == 1)) + 
+  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+  scale_fill_paletteer_c("viridis::viridis",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = "Vw/Vs",
+       y = "Strong stock revenue stream",
+       fill = "log(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        panel.spacing = unit(3, "mm"))
+
 msy2_w_proc_plot1 <-
   ggplot(data = output_msy2_proc %>%
            filter(p_s == 1)) + 
