@@ -1179,8 +1179,8 @@ sub1 <- grid.arrange(patchworkGrob(subs1_s_proc_plot0 /
   left = "Strong stock revenue stream",
   bottom = "Vw/Vs")  
 
-ggsave(file.path(outdir, "subsidy_ps1.png"), plot = sub1,
-    width = 6, height = 7, bg = "white", dpi = 300)
+# ggsave(file.path(outdir, "subsidy_ps1.png"), plot = sub1,
+#     width = 6, height = 7, bg = "white", dpi = 300)
 ```
 
 ```{r}
@@ -1192,8 +1192,8 @@ sub1.1 <- grid.arrange(patchworkGrob(subs1_s_proc_plot0.1 /
   left = "Strong stock revenue stream",
   bottom = "Vw/Vs")  
 
-ggsave(file.path(outdir, "subsidy_ps1.1.png"), plot = sub1.1,
-    width = 6, height = 7, bg = "white", dpi = 300)
+# ggsave(file.path(outdir, "subsidy_ps1.1.png"), plot = sub1.1,
+#     width = 6, height = 7, bg = "white", dpi = 300)
 ```
 
 
@@ -1431,8 +1431,8 @@ sub2 <- grid.arrange(patchworkGrob(subs2_s_proc_plot0 /
   left = "Strong stock revenue stream",
   bottom = "Vw/Vs")  
 
- ggsave(file.path(outdir, "subsidy_ps2.png"), plot =  sub2,
-        width = 6, height = 7, bg = "white", dpi = 300)
+#ggsave(file.path(outdir, "subsidy_ps2.png"), plot =  sub2,
+#       width = 6, height = 7, bg = "white", dpi = 300)
 ```
 
 ```{r, echo = FALSE}
@@ -1445,8 +1445,9 @@ sub2.1 <- grid.arrange(patchworkGrob(subs2_s_proc_plot0.1 /
   left = "Strong stock revenue stream",
   bottom = "Vw/Vs")  
 
-ggsave(file.path(outdir, "subsidy_ps2.1.png"), plot = sub2.1,
-    width = 6, height = 7, bg = "white", dpi = 300)
+# ggsave(file.path(outdir, "subsidy_ps2.1.png"), plot = sub2.1,
+#     width = 6, height = 7, bg = "white", dpi = 300)
+
 ```
 
 
@@ -1705,8 +1706,8 @@ sub_w1 <- grid.arrange(patchworkGrob(subs1_w_proc_plot0 /
   left = "Weak stock revenue stream",
   bottom = "Vw/Vs")  
 
-ggsave(file.path(outdir, "subsidy_pw1.png"), plot = sub_w1,
-    width = 6, height = 7, bg = "white", dpi = 300)
+# ggsave(file.path(outdir, "subsidy_pw1.png"), plot = sub_w1,
+#     width = 6, height = 7, bg = "white", dpi = 300)
 ```
 
 ```{r, echo = FALSE}
@@ -1718,8 +1719,9 @@ sub_w1.1 <- grid.arrange(patchworkGrob(subs1_w_proc_plot0.1 /
   left = "Weak stock revenue stream",
   bottom = "Vw/Vs")  
 
-ggsave(file.path(outdir, "subsidy_pw1.1.png"), plot = sub_w1.1,
-    width = 6, height = 7, bg = "white", dpi = 300)
+# ggsave(file.path(outdir, "subsidy_pw1.1.png"), plot = sub_w1.1,
+#     width = 6, height = 7, bg = "white", dpi = 300)
+
 
 ```
 
@@ -1963,8 +1965,8 @@ sub_w2 <- grid.arrange(patchworkGrob(subs2_w_proc_plot0 /
   left = "Weak stock revenue stream",
   bottom = "Vw/Vs")  
 
-ggsave(file.path(outdir, "subsidy_pw2.png"), plot =  sub_w2,
-      width = 6, height = 7, bg = "white", dpi = 300)
+# ggsave(file.path(outdir, "subsidy_pw2.png"), plot =  sub_w2,
+#       width = 6, height = 7, bg = "white", dpi = 300)
 ```
 
 ```{r, echo = FALSE}
@@ -1977,15 +1979,45 @@ sub_w2.1 <- grid.arrange(patchworkGrob(subs2_w_proc_plot0.1 /
   left = "Weak stock revenue stream",
   bottom = "Vw/Vs")  
 
-ggsave(file.path(outdir, "subsidy_pw2.1.png"), plot =  sub_w2.1,
-       width = 6, height = 7, bg = "white", dpi = 300)
+# ggsave(file.path(outdir, "subsidy_pw2.1.png"), plot =  sub_w2.1,
+#        width = 6, height = 7, bg = "white", dpi = 300)
+
+
 ```
 
-```{r, echo = FALSE}
-sub1.1 /
-  sub2.1 +
-  sub_w1.1 /
-  sub_w2.1
+```{r, echo = FALSE, fig.height=10, fig.width=7}
+subs_1_2 <- grid.arrange(patchworkGrob(subs2_s_proc_plot0.1 / 
+                                       subs2_s_proc_plot1.1 / 
+                                       subs2_s_proc_plot2.1 /
+                                       subs2_s_proc_plot3.1 /
+                                       subs1_s_proc_plot0.1 /
+                                       subs1_s_proc_plot1.1 / 
+                                       subs1_s_proc_plot2.1 /
+                                       subs1_s_proc_plot3.1 +
+                             
+  plot_layout(ncol = 2) +
+  plot_annotation(tag_levels = "A")),
+  left = "Strong stock revenue stream",
+  bottom = "Vw/Vs")
+
+# ggsave(file.path(outdir, "sub_vs_st_stock.png"), plot =  subs_1_2,
+#         width = 7, height = 10, bg = "white", dpi = 300)
+
+subw_1_2 <- grid.arrange(patchworkGrob(subs1_w_proc_plot0.1 /
+                                       subs1_w_proc_plot1.1 / 
+                                       subs1_w_proc_plot2.1 /
+                                       subs1_w_proc_plot3.1 /
+                                       subs2_w_proc_plot0.1 / 
+                                       subs2_w_proc_plot1.1 / 
+                                       subs2_w_proc_plot2.1 /
+                                       subs2_w_proc_plot3.1 +
+  plot_layout(ncol = 2) +
+  plot_annotation(tag_levels = "A")),
+  left = "Weak stock revenue stream",
+  bottom = "Vw/Vs")
+
+# ggsave(file.path(outdir, "sub_vs_w_stock.png"), plot =  subw_1_2,
+#         width = 7, height = 10, bg = "white", dpi = 300)
 ```
 
 
@@ -3807,10 +3839,12 @@ N_w <- k_w
 N_s <- k_s
 
 E <- 0.5
+
+# time steps
+tset <- seq(from = 0, to = 200, length.out = 10000)
 ```
 
 ```{r, echo = FALSE}
-tset <- seq(from = 0, to = 200, length.out = 10000)
 
 N_w_simu1 <- NaN*tset; N_w_simu1[1] <- N_w
 
@@ -4461,10 +4495,10 @@ for(i in 2:length(tset)) {
 
 ```{r scenario 8, echo = FALSE}
 # set up the parameter space
-beta_w8 <- 0.8
-beta_s8 <- 0.56
-f_w8 <- 0.21
-f_s8 <- 0.22
+beta_w8 <- 0.56
+beta_s8 <- 0.2
+f_w8 <- 0.1
+f_s8 <- 0.815
 
 # Initial values for the variables
 N_w <- k_w
@@ -4543,14 +4577,27 @@ for(i in 2:length(tset)) {
   Pi_w_simu8[i] <- pi_w8 + dPi_w8  
   
 }
+```
 
-
+```{r, include = FALSE}
+plot(x = tset, y = N_s_simu8,
+     col = "purple", las = 1,
+     type = "l",
+     lwd = 2,
+     xlab = "Time",
+     ylab = "Biomass",
+     ylim = c(0, 30))
+lines(x = tset, y = E_simu8,
+     col = "black", type = "l",
+     lwd = 2)
+lines(x = tset, y = N_w_simu8,
+      col = "red", type = "l",
+      lwd = 2)
 ```
 
 
-
 ```{r, echo = FALSE}
-effort_df <- cbind(E_simu1, E_simu2, E_simu3, E_simu4, E_simu5, E_simu6, E_simu7, E_simu8, tset) %>% 
+effort_df <- cbind(E_simu1, E_simu2,E_simu5, E_simu7, E_simu8, tset) %>% #E_simu3, E_simu4, E_simu6
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("E_"),
                names_to = "variable",
@@ -4558,14 +4605,14 @@ effort_df <- cbind(E_simu1, E_simu2, E_simu3, E_simu4, E_simu5, E_simu6, E_simu7
   mutate(scenario_id = case_when(
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
-    str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "7",
-    str_detect(variable, "8") ~ "8"))
+    # str_detect(variable, "3") ~ "3",
+    # str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "3",
+    # str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "4",
+    str_detect(variable, "8") ~ "5"))
 
-nw_df <- cbind(N_w_simu1, N_w_simu2, N_w_simu3, N_w_simu4,N_w_simu5, N_w_simu6, N_w_simu7, N_w_simu8, tset) %>% 
+nw_df <- cbind(N_w_simu1, N_w_simu2, N_w_simu5, N_w_simu7, N_w_simu8, tset) %>% # N_w_simu3, N_w_simu4, N_w_simu6,
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("N_w_simu"),
                names_to = "variable",
@@ -4573,15 +4620,15 @@ nw_df <- cbind(N_w_simu1, N_w_simu2, N_w_simu3, N_w_simu4,N_w_simu5, N_w_simu6, 
   mutate(scenario_id = case_when(
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
-    str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "7",
-    str_detect(variable, "8") ~ "8")) %>% 
+    # str_detect(variable, "3") ~ "3",
+    # str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "3",
+    # str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "4",
+    str_detect(variable, "8") ~ "5")) %>% 
   mutate(b_v_k = value/k_w)
 
-ns_df <- cbind(N_s_simu1,N_s_simu2, N_s_simu3, N_s_simu4, N_s_simu5, N_s_simu6, N_s_simu7, N_s_simu8, tset) %>% 
+ns_df <- cbind(N_s_simu1,N_s_simu2, N_s_simu5, N_s_simu7, N_s_simu8, tset) %>% # N_s_simu3, N_s_simu4, N_s_simu6,
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("N_s_simu"),
                names_to = "variable",
@@ -4589,17 +4636,17 @@ ns_df <- cbind(N_s_simu1,N_s_simu2, N_s_simu3, N_s_simu4, N_s_simu5, N_s_simu6, 
   mutate(scenario_id = case_when(
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
-    str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "7",
-    str_detect(variable, "8") ~ "8")) %>% 
+    # str_detect(variable, "3") ~ "3",
+    # str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "3",
+    # str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "4",
+    str_detect(variable, "8") ~ "5")) %>% 
   mutate(b_v_k = value/k_s)
  
 
 
-catch_s_df <- cbind(C_s_simu1,C_s_simu2, C_s_simu3, C_s_simu4, C_s_simu5, C_s_simu6, C_s_simu7, C_s_simu8, tset) %>% 
+catch_s_df <- cbind(C_s_simu1,C_s_simu2, C_s_simu5, C_s_simu7, C_s_simu8, tset) %>% #C_s_simu3, C_s_simu4, C_s_simu6,
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("C_s_"),
                names_to = "variable",
@@ -4607,15 +4654,15 @@ catch_s_df <- cbind(C_s_simu1,C_s_simu2, C_s_simu3, C_s_simu4, C_s_simu5, C_s_si
   mutate(scenario_id = case_when(
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
-    str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "7",
-    str_detect(variable, "8") ~ "8"))
+    # str_detect(variable, "3") ~ "3",
+    # str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "3",
+    # str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "4",
+    str_detect(variable, "8") ~ "5"))
 
 
-catch_w_df <- cbind(C_w_simu1,C_w_simu2, C_w_simu3, C_w_simu4, C_w_simu5, C_w_simu6, C_w_simu7, C_w_simu8, tset) %>% 
+catch_w_df <- cbind(C_w_simu1,C_w_simu2, C_w_simu5, C_w_simu7, C_w_simu8, tset) %>% #C_w_simu3, C_w_simu4,  C_w_simu6,
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("C_w_"),
                names_to = "variable",
@@ -4623,15 +4670,15 @@ catch_w_df <- cbind(C_w_simu1,C_w_simu2, C_w_simu3, C_w_simu4, C_w_simu5, C_w_si
   mutate(scenario_id = case_when(
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
-    str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "7",
-    str_detect(variable, "8") ~ "8"))
+    # str_detect(variable, "3") ~ "3",
+    # str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "3",
+    # str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "4",
+    str_detect(variable, "8") ~ "5"))
 
 
-cpue_s_df <- cbind(cpue_s_simu1, cpue_s_simu2, cpue_s_simu3, cpue_s_simu4,  cpue_s_simu5, cpue_s_simu6, cpue_s_simu7, cpue_s_simu8,tset) %>% 
+cpue_s_df <- cbind(cpue_s_simu1, cpue_s_simu2, cpue_s_simu5, cpue_s_simu7, cpue_s_simu8,tset) %>% #cpue_s_simu3, cpue_s_simu4,cpue_s_simu6,
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("cpue_s_"),
                names_to = "variable",
@@ -4639,16 +4686,16 @@ cpue_s_df <- cbind(cpue_s_simu1, cpue_s_simu2, cpue_s_simu3, cpue_s_simu4,  cpue
   mutate(scenario_id = case_when(
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
-    str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "7",
-    str_detect(variable, "8") ~ "8"))
+    # str_detect(variable, "3") ~ "3",
+    # str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "3",
+    # str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "4",
+    str_detect(variable, "8") ~ "5"))
 
 
 
-cpue_w_df <- cbind(cpue_w_simu1, cpue_w_simu2, cpue_w_simu3, cpue_w_simu4,cpue_w_simu5, cpue_w_simu6, cpue_w_simu7, cpue_w_simu8, tset) %>% 
+cpue_w_df <- cbind(cpue_w_simu1, cpue_w_simu2, cpue_w_simu5, cpue_w_simu7, cpue_w_simu8, tset) %>% #cpue_w_simu3, cpue_w_simu4, cpue_w_simu6, 
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("cpue_w_"),
                names_to = "variable",
@@ -4656,14 +4703,14 @@ cpue_w_df <- cbind(cpue_w_simu1, cpue_w_simu2, cpue_w_simu3, cpue_w_simu4,cpue_w
   mutate(scenario_id = case_when(
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
-    str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "7",
-    str_detect(variable, "8") ~ "8"))
+    # str_detect(variable, "3") ~ "3",
+    # str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "3",
+    # str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "4",
+    str_detect(variable, "8") ~ "5"))
 
-profits_df <- cbind(Pi_sum_simu1, Pi_sum_simu2, Pi_sum_simu3, Pi_sum_simu4, Pi_sum_simu5, Pi_sum_simu6, Pi_sum_simu7, Pi_sum_simu8, tset) %>% 
+profits_df <- cbind(Pi_sum_simu1, Pi_sum_simu2, Pi_sum_simu5, Pi_sum_simu7, Pi_sum_simu8, tset) %>% #Pi_sum_simu3, Pi_sum_simu4, Pi_sum_simu6,
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("Pi_sum"),
                names_to = "variable",
@@ -4671,15 +4718,15 @@ profits_df <- cbind(Pi_sum_simu1, Pi_sum_simu2, Pi_sum_simu3, Pi_sum_simu4, Pi_s
   mutate(scenario_id = case_when(
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
-    str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "7",
-    str_detect(variable, "8") ~ "8"))
+    # str_detect(variable, "3") ~ "3",
+    # str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "3",
+    # str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "4",
+    str_detect(variable, "8") ~ "5"))
 
 
-profits_s_df <- cbind(Pi_s_simu1, Pi_s_simu2, Pi_s_simu3, Pi_s_simu4, Pi_s_simu5, Pi_s_simu6, Pi_s_simu7, Pi_s_simu8, tset) %>% 
+profits_s_df <- cbind(Pi_s_simu1, Pi_s_simu2, Pi_s_simu5, Pi_s_simu7, Pi_s_simu8, tset) %>% # Pi_s_simu3, Pi_s_simu4,  Pi_s_simu6,
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("Pi_s_"),
                names_to = "variable",
@@ -4687,15 +4734,15 @@ profits_s_df <- cbind(Pi_s_simu1, Pi_s_simu2, Pi_s_simu3, Pi_s_simu4, Pi_s_simu5
   mutate(scenario_id = case_when(
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
-    str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "7",
-    str_detect(variable, "8") ~ "8"))
+    # str_detect(variable, "3") ~ "3",
+    # str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "3",
+    # str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "4",
+    str_detect(variable, "8") ~ "5"))
 
 
-profits_w_df <- cbind(Pi_w_simu1, Pi_w_simu2, Pi_w_simu3, Pi_w_simu4, Pi_w_simu5, Pi_w_simu6, Pi_w_simu7, Pi_w_simu8, tset) %>% 
+profits_w_df <- cbind(Pi_w_simu1, Pi_w_simu2,  Pi_w_simu5, Pi_w_simu7, Pi_w_simu8, tset) %>% # Pi_w_simu3, Pi_w_simu4,Pi_w_simu6,
   as.data.frame() %>% 
   pivot_longer(cols = starts_with("Pi_w_"),
                names_to = "variable",
@@ -4703,12 +4750,12 @@ profits_w_df <- cbind(Pi_w_simu1, Pi_w_simu2, Pi_w_simu3, Pi_w_simu4, Pi_w_simu5
   mutate(scenario_id = case_when(
     str_detect(variable, "1") ~ "1",
     str_detect(variable, "2") ~ "2",
-    str_detect(variable, "3") ~ "3",
-    str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "5",
-    str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "7",
-    str_detect(variable, "8") ~ "8"))
+    # str_detect(variable, "3") ~ "3",
+    # str_detect(variable, "4") ~ "4",
+    str_detect(variable, "5") ~ "3",
+    # str_detect(variable, "6") ~ "6",
+    str_detect(variable, "7") ~ "4",
+    str_detect(variable, "8") ~ "5"))
 
 # Gathered the results from each model scenario run into a single df
 
@@ -4719,43 +4766,43 @@ var_full_price <- bind_rows(effort_df, nw_df, ns_df, catch_s_df, catch_w_df, cpu
 var_plot_price <- var_full_price %>%
    mutate(f_w = case_when(
      str_detect(scenario_id, "1") ~ 0,
-     str_detect(scenario_id, "2") ~ 0.22,
-     str_detect(scenario_id, "3") ~ 0.6,
-     str_detect(scenario_id, "4") ~ 0.8,
-     str_detect(scenario_id, "5") ~ 0.22,
-     str_detect(scenario_id, "6") ~ 0,
-     str_detect(scenario_id, "7") ~ 0.22,
-     str_detect(scenario_id, "8") ~ 0.57
+     str_detect(scenario_id, "2") ~ 0,
+     str_detect(scenario_id, "3") ~ 0.22,
+     str_detect(scenario_id, "4") ~ 0.22,
+     str_detect(scenario_id, "5") ~ 0.1,
+     # str_detect(scenario_id, "6") ~ 0,
+     # str_detect(scenario_id, "7") ~ 0.22,
+     # str_detect(scenario_id, "8") ~ 0.57
    )) %>% 
   mutate(f_s = case_when(
      str_detect(scenario_id, "1") ~ 0,
-     str_detect(scenario_id, "2") ~ 0,
-     str_detect(scenario_id, "3") ~ 0.22,
-     str_detect(scenario_id, "4") ~ 0.7,
-     str_detect(scenario_id, "5") ~ 0.3,
-     str_detect(scenario_id, "6") ~ 0.22,
-     str_detect(scenario_id, "7") ~ 0.22,
-     str_detect(scenario_id, "8") ~ 0.57
+     str_detect(scenario_id, "2") ~ 0.22,
+     str_detect(scenario_id, "3") ~ 0,
+     str_detect(scenario_id, "4") ~ 0.22,
+     str_detect(scenario_id, "5") ~ 0.815,
+     # str_detect(scenario_id, "6") ~ 0.22,
+     # str_detect(scenario_id, "7") ~ 0.22,
+     # str_detect(scenario_id, "8") ~ 0.57
    )) %>% 
    mutate(beta_w = case_when(
-     str_detect(scenario_id, "1") ~ 1,
-     str_detect(scenario_id, "2") ~ 0.56,
-     str_detect(scenario_id, "3") ~ 0.56,
-     str_detect(scenario_id, "4") ~ 0.4,
-     str_detect(scenario_id, "5") ~ 0.5,
-     str_detect(scenario_id, "6") ~ 1,
-     str_detect(scenario_id, "7") ~ 0.56,
-     str_detect(scenario_id, "8") ~ 0.56
-   )) %>% 
-   mutate(beta_s = case_when(
      str_detect(scenario_id, "1") ~ 1,
      str_detect(scenario_id, "2") ~ 1,
      str_detect(scenario_id, "3") ~ 0.56,
      str_detect(scenario_id, "4") ~ 0.56,
      str_detect(scenario_id, "5") ~ 0.56,
-     str_detect(scenario_id, "6") ~ 0.56,
-     str_detect(scenario_id, "7") ~ 0.56,
-     str_detect(scenario_id, "8") ~ 0.56
+     # str_detect(scenario_id, "6") ~ 1,
+     # str_detect(scenario_id, "7") ~ 0.56,
+     # str_detect(scenario_id, "8") ~ 0.56
+   )) %>% 
+   mutate(beta_s = case_when(
+     str_detect(scenario_id, "1") ~ 1,
+     str_detect(scenario_id, "2") ~ 0.56,
+     str_detect(scenario_id, "3") ~ 1,
+     str_detect(scenario_id, "4") ~ 0.56,
+     str_detect(scenario_id, "5") ~ 0.2,
+     # str_detect(scenario_id, "6") ~ 0.56,
+     # str_detect(scenario_id, "7") ~ 0.56,
+     # str_detect(scenario_id, "8") ~ 0.56
    )) %>% 
   mutate(variable_clean = case_when(
     str_detect(variable, "N_w") ~ "Weak stock",
@@ -4812,15 +4859,17 @@ equal_scales_EWS_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Effort simulation", "Weak stock", "Strong stock")) %>% 
   ggplot() +
-  geom_line(aes(x = tset/100, y = value, color = variable_clean),
+  geom_line(aes(x = tset, y = value, color = variable_clean),
             size = .8,
             alpha = .8,
             show.legend = T) +
   facet_wrap(~ scenario_id,
              nrow = 1) +
   scale_color_manual(values = c("#A50E82FF", "#6A9E1FFF", "#052F61FF")) +
-  scale_x_continuous(expand = c(0,0)) +
-  labs(x = "Time (x100)",
+  scale_x_continuous(breaks = seq(0, 200, 100),
+                     expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0.5)) +
+  labs(x = "",
        y = "Nw, Ns, E",
        color = "") +
   theme_bw() +
@@ -4839,15 +4888,16 @@ dif_scales_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Strong stock", "Weak stock")) %>% 
   ggplot() +
-  geom_line(aes(x = tset/100, y = b_v_k, color = variable_clean),
+  geom_line(aes(x = tset, y = b_v_k, color = variable_clean),
             size = .8,
             alpha = .8,
             show.legend = T) +
   facet_wrap(~ scenario_id,
              nrow = 1) +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
-  scale_x_continuous(expand = c(0,0)) +
-  labs(x = "Time (x100)",
+  scale_x_continuous(breaks = seq(0, 200, 100),
+                     expand = c(0,0)) +
+  labs(x = "",
        y = "B/K",
        color = "") +
   theme_bw() +
@@ -4873,7 +4923,8 @@ equal_scales_CPE_fcn <-
   facet_wrap(~ scenario_id,
              nrow = 1) +
   scale_color_manual(values = c("#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F")) +
-  scale_x_continuous(expand = c(0,0)) +
+  scale_x_continuous(breaks = seq(0, 200, 100),
+                     expand = c(0,0)) +
   labs(x = "",
        y = "CPUE, Catch",
        color = "") +
@@ -4900,8 +4951,9 @@ equal_scales_pi_fcn <-
   facet_wrap(~ scenario_id,
              nrow = 1) +
   scale_color_manual(values = c("#FF7F00", "#CAB2D6", "#6A3D9A")) +
-  scale_x_continuous(expand = c(0,0)) +
-  labs(x = "Time (x100)",
+  scale_x_continuous(breaks = seq(0, 200, 100),
+                     expand = c(0,0)) +
+  labs(x = "Time",
        y = "Profits",
        color = "") +
   theme_bw() +
@@ -4917,13 +4969,16 @@ equal_scales_pi_fcn <-
         legend.position = "bottom")
 ```
 
-```{r, fig.height=15, fig.width=12, echo = FALSE, warning=FALSE}
-equal_scales_EWS_fcn /
+```{r, fig.height=10, fig.width=8, echo = FALSE, warning=FALSE}
+fcn_plot <-
+  equal_scales_EWS_fcn /
    dif_scales_fcn /
-  equal_scales_CPE_fcn /
      equal_scales_pi_fcn +
   plot_annotation(tag_levels = "A") &
   theme(panel.grid.major = element_blank())
+
+# ggsave(file.path(outdir, "p_fcn.png"), plot = fcn_plot,
+#        height = 10, width = 8, bg = "white", dpi = 300)
 ```
 
 ### Weak stock price as a function of catch vs strong stock price constant
