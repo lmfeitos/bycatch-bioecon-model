@@ -517,9 +517,10 @@ s_w_range_proc_plot <-
   ggplot(data = s_w_range_proc %>% 
            filter(p_w < 1 & st_stock_rev <= 5 & vuln_ratio_w <= 4)) +
   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.5, 0.1)) +
+                         breaks = seq(0, 0.5, 0.1),
+                         direction = -1) +
   scale_x_continuous(breaks = seq(1, 4, 0.5),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(1, 5, 0.5),
@@ -540,9 +541,10 @@ s_w_range_proc_plot2 <-
   ggplot(data = s_w_range_proc %>% 
            filter(p_w == 1 & st_stock_rev <= 5 & vuln_ratio_w <= 4)) +
   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.35, 0.1)) +
+                         breaks = seq(0, 0.35, 0.1),
+                         direction = -1) +
   scale_x_continuous(breaks = seq(1, 4, 0.5),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(1, 5, 0.5),
@@ -563,9 +565,10 @@ w_s_range_proc_plot1 <-
   ggplot(data = w_s_range_proc %>%
            filter(p_s == 1 & vuln_ratio_w <= 4)) + 
   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1)) +
+                         breaks = seq(0, 0.4, 0.1),
+                         direction = -1) +
   scale_x_continuous(breaks = seq(0, 4, 0.5),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 8, 1),
@@ -585,9 +588,10 @@ w_s_range_proc_plot2 <-
   ggplot(data = w_s_range_proc %>% 
            filter(p_s == 2 & vuln_ratio_w <= 4)) + 
   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.25, 0.05)) +
+                         breaks = seq(0, 0.25, 0.05),
+                         direction = -1) +
   scale_x_continuous(breaks = seq(0, 4, 0.5),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 8, 1),
@@ -624,8 +628,8 @@ plot_1 <-
 
 plot_1
 
-# ggsave(file.path(outdir, "plot_1.png"),
-#        width = 12, height = 8, bg = "white", dpi = 300)
+#ggsave(file.path(outdir, "plot_1.png"),
+#      width = 12, height = 8, bg = "white", dpi = 300)
 ```
 
 ```{r, echo = FALSE}
@@ -749,6 +753,33 @@ plot_1
 # ggsave(file.path(outdir, "plot_1.png"),
 #        width = 12, height = 8, bg = "white", dpi = 300)
 ```
+
+```{r, echo = FALSE}
+s_w_range_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_w == 1) %>% 
+  group_by(extinct) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(prop = n * 100/ sum(n)) %>% 
+  mutate(sum = sum(prop))
+
+w_s_range_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_s == 2) %>% 
+  group_by(extinct) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(prop = n * 100/ sum(n)) %>% 
+  mutate(sum = sum(prop))
+```
+
 
 ### Tests for management at MSY for the strong stock
 
@@ -877,9 +908,10 @@ subs1_s_proc_plot0 <-
   ggplot(data = s_w_range_proc %>% 
            filter(p_w == 1)) +
   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.35, 0.1)) +
+                         breaks = seq(0, 0.35, 0.1),
+                         direction = -1) +
   facet_wrap(~ c,
              labeller = labeller(c = no_sub)) +
   scale_x_continuous(expand = c(0,0)) +
@@ -902,9 +934,10 @@ subs1_s_proc_plot1 <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w == 1 & c == 0.045)) +
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1)) +
+                         breaks = seq(0, 0.4, 0.1),
+                         direction = -1) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -930,9 +963,10 @@ subs1_s_proc_plot2 <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w == 1 & c == 0.0375 & st_stock_rev <= 20)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.3, 0.1)) +
+                         breaks = seq(0, 0.3, 0.1),
+                         direction = -1) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -957,9 +991,10 @@ subs1_s_proc_plot3 <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w == 1 & c == 0.025 & st_stock_rev <= 20)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.2, 0.05)) +
+                         breaks = seq(0, 0.2, 0.05),
+                         direction = -1) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -986,9 +1021,10 @@ subs1_s_proc_plot0.1 <-
   ggplot(data = s_w_range_proc %>% 
            filter(p_w == 1 & vuln_ratio_w <= 4 & st_stock_rev <= 12)) +
   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.35, 0.1)) +
+                         breaks = seq(0, 0.35, 0.1),
+                         direction = -1) +
   facet_wrap(~ c,
              labeller = labeller(c = no_sub)) +
   scale_x_continuous(breaks = seq(1, 4, 1),
@@ -1002,9 +1038,7 @@ subs1_s_proc_plot0.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
@@ -1012,9 +1046,10 @@ subs1_s_proc_plot1.1 <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w == 1 & c == 0.045 & vuln_ratio_w <= 4 & st_stock_rev <= 12)) +
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1)) +
+                         breaks = seq(0, 0.4, 0.1),
+                         direction = -1) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1030,9 +1065,7 @@ subs1_s_proc_plot1.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
@@ -1041,9 +1074,10 @@ subs1_s_proc_plot2.1 <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w == 1 & c == 0.0375 & st_stock_rev <= 12 & vuln_ratio_w <= 4)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.3, 0.1)) +
+                         breaks = seq(0, 0.3, 0.1),
+                         direction = -1) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1059,9 +1093,7 @@ subs1_s_proc_plot2.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
@@ -1069,9 +1101,10 @@ subs1_s_proc_plot3.1 <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w == 1 & c == 0.025 & st_stock_rev <= 12 & vuln_ratio_w <= 4)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.2, 0.05)) +
+                         breaks = seq(0, 0.2, 0.05),
+                         direction = -1) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1087,19 +1120,54 @@ subs1_s_proc_plot3.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
 ```
 
 - 0.045 = 10% subsidy
-- 0.035 = 30% subsidy
+- 0.0375 = 25% subsidy
 - 0.025 = 50% subsidy
-- 0.015 = 70% subsidy
-- 0.005 = 90% subsidy
+
+```{r, echo = FALSE}
+output_subs1_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_w == 1 & c == 0.025) %>% 
+  group_by(extinct) %>% 
+  count() %>% 
+  ungroup() %>%  
+  mutate(prop = prop.table(n)) %>% 
+  mutate(sum = sum(prop))
+
+output_subs1_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_w == 1 & c == 0.0375) %>% 
+  group_by(extinct) %>% 
+  count() %>% 
+  ungroup() %>%  
+  mutate(prop = prop.table(n)) %>% 
+  mutate(sum = sum(prop))
+
+output_subs1_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_w == 1 & c == 0.045) %>% 
+  group_by(extinct) %>% 
+  count() %>% 
+  ungroup() %>%  
+  mutate(prop = prop.table(n)) %>% 
+  mutate(sum = sum(prop))
+```
+
 
 ```{r, echo = FALSE, fig.height=7, fig.width=8}
 # Gather all plots for pw = 1 
@@ -1135,9 +1203,10 @@ subs2_s_proc_plot0 <-
   ggplot(data = s_w_range_proc %>% 
            filter(p_w < 1)) +
   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.5, 0.1)) +
+                         #breaks = seq(0, 0.35, 0.1),
+                         direction = -1) +
   facet_wrap(~ c,
              labeller = labeller(c = no_sub)) +
   scale_x_continuous(expand = c(0,0)) +
@@ -1160,9 +1229,10 @@ subs2_s_proc_plot1 <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w < 1 & c == 0.045)) +
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1)) +
+                         breaks = seq(0, 0.4, 0.1),
+                         direction = -1) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1188,9 +1258,10 @@ subs2_s_proc_plot2 <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w < 1 & c == 0.0375 & st_stock_rev <= 20)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.3, 0.1)) +
+                         breaks = seq(0, 0.3, 0.1),
+                         direction = -1) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1215,9 +1286,10 @@ subs2_s_proc_plot3 <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w < 1 & c == 0.025 & st_stock_rev <= 20)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.3, 0.1)) +
+                         breaks = seq(0, 0.2, 0.05),
+                         direction = -1) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1243,9 +1315,10 @@ subs2_s_proc_plot0.1 <-
   ggplot(data = s_w_range_proc %>% 
            filter(p_w < 1 & vuln_ratio_w <= 4 & st_stock_rev <= 12)) +
   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.5, 0.1)) +
+                         #breaks = seq(0, 0.35, 0.1),
+                         direction = -1) +
   facet_wrap(~ c,
              labeller = labeller(c = no_sub)) +
   scale_x_continuous(breaks = seq(1, 4, 1),
@@ -1259,9 +1332,7 @@ subs2_s_proc_plot0.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
@@ -1270,9 +1341,10 @@ subs2_s_proc_plot1.1 <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w < 1 & c == 0.045 & vuln_ratio_w <= 4 & st_stock_rev <= 12)) +
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1)) +
+                         #breaks = seq(0, 0.4, 0.1),
+                         direction = -1) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1288,9 +1360,7 @@ subs2_s_proc_plot1.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
@@ -1299,9 +1369,10 @@ subs2_s_proc_plot2.1 <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w < 1 & c == 0.0375 & vuln_ratio_w <= 4 & st_stock_rev <= 12)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.3, 0.1)) +
+                         #breaks = seq(0, 0.3, 0.1),
+                         direction = -1) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1317,9 +1388,7 @@ subs2_s_proc_plot2.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
@@ -1327,9 +1396,10 @@ subs2_s_proc_plot3.1 <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w < 1 & c == 0.025 & st_stock_rev <= 12 & vuln_ratio_w <= 4)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.3, 0.1)) +
+                         breaks = seq(0, 0.25, 0.1),
+                         direction = -1) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1345,9 +1415,7 @@ subs2_s_proc_plot3.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
@@ -1366,6 +1434,7 @@ sub2 <- grid.arrange(patchworkGrob(subs2_s_proc_plot0 /
  ggsave(file.path(outdir, "subsidy_ps2.png"), plot =  sub2,
         width = 6, height = 7, bg = "white", dpi = 300)
 ```
+
 ```{r, echo = FALSE}
 # Gather all plots for pw = 0.1 with vulnerabiliy range subset
 sub2.1 <- grid.arrange(patchworkGrob(subs2_s_proc_plot0.1 / 
@@ -1400,7 +1469,8 @@ subs1_w_proc_plot0 <-
   ggplot(data = w_s_range_proc %>% 
            filter(p_s == 1)) +
   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.35, 0.1)) +
   facet_wrap(~ c,
@@ -1425,8 +1495,9 @@ subs1_w_proc_plot1 <-
   ggplot(data = output_subs2_proc %>% 
            filter(p_s == 1 & c == 0.045)) +
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.4, 0.1)) +
   facet_wrap(~ c,
              nrow = 1,
@@ -1453,8 +1524,9 @@ subs1_w_proc_plot2 <-
   ggplot(data = output_subs2_proc %>% 
            filter(p_s == 1 & c == 0.0375)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.3, 0.1)) +
   facet_wrap(~ c,
              nrow = 1,
@@ -1481,8 +1553,9 @@ subs1_w_proc_plot3 <-
   ggplot(data = output_subs2_proc %>% 
            filter(p_s == 1 & c == 0.025)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.2, 0.05)) +
   facet_wrap(~ c,
              nrow = 1,
@@ -1512,8 +1585,9 @@ subs1_w_proc_plot0.1 <-
   ggplot(data = w_s_range_proc %>% 
            filter(p_s == 1 & vuln_ratio_w <= 4)) +
   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.35, 0.1)) +
   facet_wrap(~ c,
              labeller = labeller(c = no_sub)) +
@@ -1528,9 +1602,7 @@ subs1_w_proc_plot0.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
@@ -1538,8 +1610,9 @@ subs1_w_proc_plot1.1 <-
   ggplot(data = output_subs2_proc %>% 
            filter(p_s == 1 & c == 0.045 & vuln_ratio_w <= 4)) +
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.4, 0.1)) +
   facet_wrap(~ c,
              nrow = 1,
@@ -1556,9 +1629,7 @@ subs1_w_proc_plot1.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
@@ -1567,8 +1638,9 @@ subs1_w_proc_plot2.1 <-
   ggplot(data = output_subs2_proc %>% 
            filter(p_s == 1 & c == 0.0375  & vuln_ratio_w <= 4)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.3, 0.1)) +
   facet_wrap(~ c,
              nrow = 1,
@@ -1585,18 +1657,17 @@ subs1_w_proc_plot2.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
 subs1_w_proc_plot3.1 <-
   ggplot(data = output_subs2_proc %>% 
-           filter(p_s == 1 & c == 0.025  & vuln_ratio_w <= 4)) + 
+           filter(p_s == 1 & c == 0.025  & vuln_ratio_w <= 4 & w_stock_rev <= 10)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.2, 0.05)) +
   facet_wrap(~ c,
              nrow = 1,
@@ -1604,7 +1675,7 @@ subs1_w_proc_plot3.1 <-
              labeller = labeller(c = sub1_label3)) +
   scale_x_continuous(breaks = seq(1, 4, 1),
                      expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 16, 4),
+  scale_y_continuous(breaks = seq(0, 10, 2),
                      expand = c(0,0)) +
   labs(x = "",
        y = "",
@@ -1613,9 +1684,7 @@ subs1_w_proc_plot3.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
@@ -1623,10 +1692,8 @@ subs1_w_proc_plot3.1 <-
 ```
 
 - 0.045 = 10% subsidy
-- 0.035 = 30% subsidy
+- 0.0375 = 25% subsidy
 - 0.025 = 50% subsidy
-- 0.015 = 70% subsidy
-- 0.005 = 90% subsidy
 
 ```{r, echo = FALSE, fig.height=7, fig.width=8}
 # Gather all plots for pw = 1 
@@ -1662,8 +1729,9 @@ subs2_w_proc_plot0 <-
   ggplot(data = w_s_range_proc %>% 
            filter(p_s == 2)) +
   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.2, 0.05)) +
   facet_wrap(~ c,
              labeller = labeller(c = no_sub)) +
@@ -1688,8 +1756,9 @@ subs2_w_proc_plot1 <-
   ggplot(data = output_subs2_proc %>% 
            filter(p_s == 2 & c == 0.045)) +
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.2, 0.05)) +
   facet_wrap(~ c,
              nrow = 1,
@@ -1717,8 +1786,9 @@ subs2_w_proc_plot2 <-
   ggplot(data = output_subs2_proc %>% 
            filter(p_s == 2 & c == 0.0375)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.2, 0.05)) +
   facet_wrap(~ c,
              nrow = 1,
@@ -1745,8 +1815,9 @@ subs2_w_proc_plot3 <-
   ggplot(data = output_subs2_proc %>% 
            filter(p_s == 2 & c == 0.025)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.1, 0.025)) +
   facet_wrap(~ c,
              nrow = 1,
@@ -1775,8 +1846,9 @@ subs2_w_proc_plot0.1 <-
   ggplot(data = w_s_range_proc %>% 
            filter(p_s == 2 & vuln_ratio_w <= 4)) +
   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.4, 0.1)) +
   facet_wrap(~ c,
              labeller = labeller(c = no_sub)) +
@@ -1791,9 +1863,7 @@ subs2_w_proc_plot0.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
@@ -1802,8 +1872,9 @@ subs2_w_proc_plot1.1 <-
   ggplot(data = output_subs2_proc %>% 
            filter(p_s == 2 & c == 0.045 & vuln_ratio_w <= 4)) +
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.2, 0.05)) +
   facet_wrap(~ c,
              nrow = 1,
@@ -1820,9 +1891,7 @@ subs2_w_proc_plot1.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
@@ -1831,8 +1900,9 @@ subs2_w_proc_plot2.1 <-
   ggplot(data = output_subs2_proc %>% 
            filter(p_s == 2 & c == 0.0375 & vuln_ratio_w <= 4)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.2, 0.05)) +
   facet_wrap(~ c,
              nrow = 1,
@@ -1849,18 +1919,17 @@ subs2_w_proc_plot2.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
 subs2_w_proc_plot3.1 <-
   ggplot(data = output_subs2_proc %>% 
-           filter(p_s == 2 & c == 0.025 & vuln_ratio_w <= 4)) + 
+           filter(p_s == 2 & c == 0.025 & vuln_ratio_w <= 4 & w_stock_rev <= 10)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                         direction = -1,
+                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.1, 0.025)) +
   facet_wrap(~ c,
              nrow = 1,
@@ -1877,9 +1946,7 @@ subs2_w_proc_plot3.1 <-
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
@@ -1914,6 +1981,51 @@ ggsave(file.path(outdir, "subsidy_pw2.1.png"), plot =  sub_w2.1,
        width = 6, height = 7, bg = "white", dpi = 300)
 ```
 
+```{r, echo = FALSE}
+sub1.1 /
+  sub2.1 +
+  sub_w1.1 /
+  sub_w2.1
+```
+
+
+```{r, echo = FALSE}
+output_subs2_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_s == 2 & c == 0.025) %>% 
+  group_by(extinct) %>% 
+  count() %>% 
+  ungroup() %>%  
+  mutate(prop = prop.table(n)) %>% 
+  mutate(sum = sum(prop))
+
+output_subs2_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_s == 2 & c == 0.0375) %>% 
+  group_by(extinct) %>% 
+  count() %>% 
+  ungroup() %>%  
+  mutate(prop = prop.table(n)) %>% 
+  mutate(sum = sum(prop))
+
+output_subs2_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_s == 2 & c == 0.045) %>% 
+  group_by(extinct) %>% 
+  count() %>% 
+  ungroup() %>%  
+  mutate(prop = prop.table(n)) %>% 
+  mutate(sum = sum(prop))
+```
 
 ```{r, echo = FALSE}
 ggplot(data = output_msy1_proc) +
