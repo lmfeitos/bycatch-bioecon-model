@@ -515,17 +515,17 @@ $$
 
 s_w_range_proc_plot <-
   ggplot(data = s_w_range_proc %>% 
-           filter(p_w < 1 & st_stock_rev <= 5 & vuln_ratio_w <= 4)) +
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+           filter(p_w < 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4)) +
+  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .04)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.5, 0.1),
                          direction = -1) +
   scale_x_continuous(breaks = seq(1, 4, 0.5),
                      expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(1, 5, 0.5),
+  scale_y_continuous(breaks = seq(1, 8, 1),
                      expand = c(0,0)) +
-  labs(x = "Vw/Vs",
+  labs(x = "",
        y = "Strong stock revenue stream",
        fill = "log(B/K)") +
   theme_bw() +
@@ -539,18 +539,18 @@ s_w_range_proc_plot <-
 
 s_w_range_proc_plot2 <-
   ggplot(data = s_w_range_proc %>% 
-           filter(p_w == 1 & st_stock_rev <= 5 & vuln_ratio_w <= 4)) +
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+           filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4)) +
+  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .04)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.35, 0.1),
                          direction = -1) +
   scale_x_continuous(breaks = seq(1, 4, 0.5),
                      expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(1, 5, 0.5),
+  scale_y_continuous(breaks = seq(1, 8, 1),
                      expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Strong stock revenue stream",
+  labs(x = "",
+       y = "",
        fill = "log(B/K)") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
@@ -564,7 +564,7 @@ s_w_range_proc_plot2 <-
 w_s_range_proc_plot1 <-
   ggplot(data = w_s_range_proc %>%
            filter(p_s == 1 & vuln_ratio_w <= 4)) + 
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .04)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.4, 0.1),
@@ -573,7 +573,7 @@ w_s_range_proc_plot1 <-
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 8, 1),
                      expand = c(0,0)) +
-  labs(x = "Vw/Vs",
+  labs(x = "",
        y = "Weak stock revenue stream",
        fill = "log(B/K)") +
   theme_bw() +
@@ -587,7 +587,7 @@ w_s_range_proc_plot1 <-
 w_s_range_proc_plot2 <- 
   ggplot(data = w_s_range_proc %>% 
            filter(p_s == 2 & vuln_ratio_w <= 4)) + 
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
+  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .04)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.25, 0.05),
@@ -596,8 +596,8 @@ w_s_range_proc_plot2 <-
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 8, 1),
                      expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Weak stock revenue stream",
+  labs(x = "",
+       y = "",
        fill = "log(B/K)") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
@@ -621,15 +621,13 @@ range_plot_2 <-
   (w_s_range_proc_plot1 +
   w_s_range_proc_plot2) 
 
-plot_1 <-
-  range_plot_1 / 
-  range_plot_2 +
-  plot_annotation(tag_levels = "A")
-
-plot_1
-
-#ggsave(file.path(outdir, "plot_1.png"),
-#      width = 12, height = 8, bg = "white", dpi = 300)
+plot_1 <- grid.arrange(patchworkGrob(range_plot_1 /
+                                       range_plot_2 +
+  plot_annotation(tag_levels = "A")),
+  bottom = "Vw/Vs")
+  
+# ggsave(file.path(outdir, "plot_1.png"), plot = plot_1,
+#       width = 12, height = 8, bg = "white", dpi = 300)
 ```
 
 ```{r, echo = FALSE}
@@ -4944,7 +4942,7 @@ equal_scales_pi_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Profit sum", "Weak stock profits", "Strong stock profits")) %>% 
   ggplot() +
-  geom_line(aes(x = tset/100, y = value, color = variable_clean),
+  geom_line(aes(x = tset, y = value, color = variable_clean),
             size = .8,
             alpha = .8,
             show.legend = T) +
