@@ -15,6 +15,8 @@ library(patchwork)
 library(gt)
 library(paletteer)
 library(gridExtra)
+library(janitor)
+library(plotly)
 
 # file path
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses/"
@@ -510,24 +512,36 @@ $$
 #   filter(p_w %in% c("1", "5", "11", "15"))
 ```
 
+```{r}
+s_w_range_proc_test <-
+  s_w_range_proc %>% 
+           filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4) %>% 
+  distinct_all()
+```
 
 ```{r, echo = FALSE}
+col_limit <- c(0, 0.55)
+
+
 
 s_w_range_proc_plot <-
   ggplot(data = s_w_range_proc %>% 
-           filter(p_w < 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4)) +
+           filter(p_w < 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4) %>% 
+           distinct_all()) +
   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .04)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.5, 0.1),
-                         direction = -1) +
-  scale_x_continuous(breaks = seq(1, 4, 0.5),
+                         breaks = seq(0, 0.55, 0.1),
+                         direction = -1,
+                         limits = col_limit) +
+   scale_x_continuous(breaks = seq(1, 4, 0.5),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(1, 8, 1),
                      expand = c(0,0)) +
   labs(x = "",
        y = "Strong stock revenue stream",
        fill = "log(B/K)") +
+#  coord_equal() +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -536,15 +550,16 @@ s_w_range_proc_plot <-
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
 
-
 s_w_range_proc_plot2 <-
   ggplot(data = s_w_range_proc %>% 
-           filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4)) +
+           filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4) %>% 
+           distinct_all()) +
   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .04)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.35, 0.1),
-                         direction = -1) +
+                         breaks = seq(0, 0.55, 0.1),
+                         direction = -1,
+                         limits = col_limit) +
   scale_x_continuous(breaks = seq(1, 4, 0.5),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(1, 8, 1),
@@ -552,6 +567,7 @@ s_w_range_proc_plot2 <-
   labs(x = "",
        y = "",
        fill = "log(B/K)") +
+  #coord_equal() +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -567,8 +583,9 @@ w_s_range_proc_plot1 <-
   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .04)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1),
-                         direction = -1) +
+                         breaks = seq(0, 0.55, 0.1),
+                         direction = -1,
+                         limits = col_limit) +
   scale_x_continuous(breaks = seq(0, 4, 0.5),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 8, 1),
@@ -576,6 +593,7 @@ w_s_range_proc_plot1 <-
   labs(x = "",
        y = "Weak stock revenue stream",
        fill = "log(B/K)") +
+#  coord_equal() +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -590,8 +608,9 @@ w_s_range_proc_plot2 <-
   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .04)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.25, 0.05),
-                         direction = -1) +
+                         breaks = seq(0, 0.55, 0.1),
+                         direction = -1,
+                         limits = col_limit) +
   scale_x_continuous(breaks = seq(0, 4, 0.5),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 8, 1),
@@ -606,6 +625,7 @@ w_s_range_proc_plot2 <-
         axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         panel.spacing = unit(3, "mm"))
+
 ```
 
 ### Vulnerability ratios vs revenue stream with prices as constants
@@ -623,7 +643,8 @@ range_plot_2 <-
 
 plot_1 <- grid.arrange(patchworkGrob(range_plot_1 /
                                        range_plot_2 +
-  plot_annotation(tag_levels = "A")),
+  plot_annotation(tag_levels = "A") +
+    plot_layout(guides = "collect")),
   bottom = "Vw/Vs")
   
 # ggsave(file.path(outdir, "plot_1.png"), plot = plot_1,
@@ -889,17 +910,18 @@ w_s_range_proc %>%
 
 ```{r plot first scenario of fishery subsidies where the strong stock price increases and weak stock price remains constabt, echo = FALSE}
 # Create facet labels
-sub1_label1 <- c("10%")
+sub1_label1 <- c("-10%")
 names(sub1_label1) <- c("0.045")
 
-sub1_label2 <- c("25%")
+sub1_label2 <- c("-25%")
 names(sub1_label2) <- c("0.0375")
 
-sub1_label3 <- c("50%")
+sub1_label3 <- c("-50%")
 names(sub1_label3) <- c("0.025")
 
 no_sub <- c("0%")
 names(no_sub) <- c("0.05")
+
 
 # Create series of plots for pw = 0.1
 subs1_s_proc_plot0 <-
@@ -989,10 +1011,12 @@ subs1_s_proc_plot3 <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w == 1 & c == 0.025 & st_stock_rev <= 20)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.2, 0.05),
-                         direction = -1) +
+  scale_fill_gradient2(breaks = seq(0, 0.2, 0.05),
+                         low = "#2A5783FF", 
+                         mid = "#FCFEFBFF",
+                         high = "#408749FF",
+                         midpoint = 0.1,
+                         limits = col_limit) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1021,8 +1045,9 @@ subs1_s_proc_plot0.1 <-
   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.35, 0.1),
-                         direction = -1) +
+                         breaks = seq(0, 0.55, 0.1),
+                         direction = -1,
+                         limits = col_limit) +
   facet_wrap(~ c,
              labeller = labeller(c = no_sub)) +
   scale_x_continuous(breaks = seq(1, 4, 1),
@@ -1046,8 +1071,9 @@ subs1_s_proc_plot1.1 <-
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1),
-                         direction = -1) +
+                         breaks = seq(0, 0.55, 0.1),
+                         direction = -1,
+                         limits = col_limit) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1074,8 +1100,9 @@ subs1_s_proc_plot2.1 <-
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.3, 0.1),
-                         direction = -1) +
+                         breaks = seq(0, 0.55, 0.1),
+                         direction = -1,
+                         limits = col_limit) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1101,8 +1128,9 @@ subs1_s_proc_plot3.1 <-
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.2, 0.05),
-                         direction = -1) +
+                         breaks = seq(0, 0.55, 0.1),
+                         direction = -1,
+                         limits = col_limit) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1183,10 +1211,11 @@ sub1 <- grid.arrange(patchworkGrob(subs1_s_proc_plot0 /
 
 ```{r}
 sub1.1 <- grid.arrange(patchworkGrob(subs1_s_proc_plot0.1 /
-                                     subs1_s_proc_plot1.1 / 
+                                     subs1_s_proc_plot1.1 /
                                      subs1_s_proc_plot2.1 /
                                      subs1_s_proc_plot3.1 +
-  plot_layout(ncol = 2)),
+  plot_layout(guides = "collect",
+                ncol = 2)),
   left = "Strong stock revenue stream",
   bottom = "Vw/Vs")  
 
@@ -1315,8 +1344,9 @@ subs2_s_proc_plot0.1 <-
   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         #breaks = seq(0, 0.35, 0.1),
-                         direction = -1) +
+                         breaks = seq(0, 0.55, 0.1),
+                         direction = -1,
+                         limits = col_limit) +
   facet_wrap(~ c,
              labeller = labeller(c = no_sub)) +
   scale_x_continuous(breaks = seq(1, 4, 1),
@@ -1341,8 +1371,9 @@ subs2_s_proc_plot1.1 <-
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         #breaks = seq(0, 0.4, 0.1),
-                         direction = -1) +
+                         breaks = seq(0, 0.55, 0.1),
+                         direction = -1,
+                         limits = col_limit) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1369,8 +1400,9 @@ subs2_s_proc_plot2.1 <-
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         #breaks = seq(0, 0.3, 0.1),
-                         direction = -1) +
+                         breaks = seq(0, 0.55, 0.1),
+                         direction = -1,
+                         limits = col_limit) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1396,8 +1428,9 @@ subs2_s_proc_plot3.1 <-
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.25, 0.1),
-                         direction = -1) +
+                         breaks = seq(0, 0.55, 0.1),
+                         direction = -1,
+                         limits = col_limit) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1439,25 +1472,26 @@ sub2.1 <- grid.arrange(patchworkGrob(subs2_s_proc_plot0.1 /
                                      subs2_s_proc_plot1.1 / 
                                      subs2_s_proc_plot2.1 /
                                      subs2_s_proc_plot3.1 +
-  plot_layout(ncol = 2)),
+  plot_layout(ncol = 2,
+              guides = "collect")),
   left = "Strong stock revenue stream",
   bottom = "Vw/Vs")  
 
-# ggsave(file.path(outdir, "subsidy_ps2.1.png"), plot = sub2.1,
-#     width = 6, height = 7, bg = "white", dpi = 300)
+ # ggsave(file.path(outdir, "subsidy_ps2.1.png"), plot = sub2.1,
+ #     width = 6, height = 7, bg = "white", dpi = 300)
 
 ```
 
 
 ```{r plot second scenario of fishery subsidies where the weak stock price increases and strong stock price remains constabt, echo = FALSE}
 # Create facet labels
-sub1_label1 <- c("10%")
+sub1_label1 <- c("-10%")
 names(sub1_label1) <- c("0.045")
 
-sub1_label2 <- c("25%")
+sub1_label2 <- c("-25%")
 names(sub1_label2) <- c("0.0375")
 
-sub1_label3 <- c("50%")
+sub1_label3 <- c("-50%")
 names(sub1_label3) <- c("0.025")
 
 no_sub <- c("0%")
@@ -1585,9 +1619,10 @@ subs1_w_proc_plot0.1 <-
            filter(p_s == 1 & vuln_ratio_w <= 4)) +
   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.55, 0.1),
                          direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.35, 0.1)) +
+                         limits = col_limit) +
   facet_wrap(~ c,
              labeller = labeller(c = no_sub)) +
   scale_x_continuous(breaks = seq(1, 4, 1),
@@ -1610,9 +1645,10 @@ subs1_w_proc_plot1.1 <-
            filter(p_s == 1 & c == 0.045 & vuln_ratio_w <= 4)) +
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.55, 0.1),
                          direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1)) +
+                         limits = col_limit) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1638,9 +1674,10 @@ subs1_w_proc_plot2.1 <-
            filter(p_s == 1 & c == 0.0375  & vuln_ratio_w <= 4)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.55, 0.1),
                          direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.3, 0.1)) +
+                         limits = col_limit) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1665,9 +1702,10 @@ subs1_w_proc_plot3.1 <-
            filter(p_s == 1 & c == 0.025  & vuln_ratio_w <= 4 & w_stock_rev <= 10)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.55, 0.1),
                          direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.2, 0.05)) +
+                         limits = col_limit) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1713,7 +1751,8 @@ sub_w1.1 <- grid.arrange(patchworkGrob(subs1_w_proc_plot0.1 /
                                           subs1_w_proc_plot1.1 / 
                                           subs1_w_proc_plot2.1 /
                                           subs1_w_proc_plot3.1 +
-  plot_layout(ncol = 2)),
+  plot_layout(ncol = 2,
+              guides = "collect")),
   left = "Weak stock revenue stream",
   bottom = "Vw/Vs")  
 
@@ -1847,9 +1886,10 @@ subs2_w_proc_plot0.1 <-
            filter(p_s == 2 & vuln_ratio_w <= 4)) +
   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.55, 0.1),
                          direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1)) +
+                         limits = col_limit) +
   facet_wrap(~ c,
              labeller = labeller(c = no_sub)) +
   scale_x_continuous(breaks = seq(1, 4, 1),
@@ -1873,9 +1913,10 @@ subs2_w_proc_plot1.1 <-
            filter(p_s == 2 & c == 0.045 & vuln_ratio_w <= 4)) +
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.55, 0.1),
                          direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.2, 0.05)) +
+                         limits = col_limit) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1901,9 +1942,10 @@ subs2_w_proc_plot2.1 <-
            filter(p_s == 2 & c == 0.0375 & vuln_ratio_w <= 4)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.55, 0.1),
                          direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.2, 0.05)) +
+                         limits = col_limit) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1928,9 +1970,10 @@ subs2_w_proc_plot3.1 <-
            filter(p_s == 2 & c == 0.025 & vuln_ratio_w <= 4 & w_stock_rev <= 10)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
   scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
+                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.55, 0.1),
                          direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.1, 0.025)) +
+                         limits = col_limit) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1973,12 +2016,13 @@ sub_w2.1 <- grid.arrange(patchworkGrob(subs2_w_proc_plot0.1 /
                                        subs2_w_proc_plot1.1 / 
                                        subs2_w_proc_plot2.1 /
                                        subs2_w_proc_plot3.1 +
-  plot_layout(ncol = 2)),
+  plot_layout(ncol = 2,
+              guides = "collect")),
   left = "Weak stock revenue stream",
   bottom = "Vw/Vs")  
 
-# ggsave(file.path(outdir, "subsidy_pw2.1.png"), plot =  sub_w2.1,
-#        width = 6, height = 7, bg = "white", dpi = 300)
+ ggsave(file.path(outdir, "subsidy_pw2.1.png"), plot =  sub_w2.1,
+        width = 6, height = 7, bg = "white", dpi = 300)
 
 
 ```
@@ -3869,34 +3913,7 @@ Pi_w_simu1 <- NaN*tset; Pi_w_simu1[1] <- 1
 ```{r, echo = FALSE}
 for(i in 2:length(tset)) {
   
-  # if the time before N_w goes negative, run N_w as usual. Else, continue populating the vector with zeros.
- #   if(N_w_simu1 >= 0){
- #       N_w_simu1 <- N_w_simu1
- # } else {
- #       N_w_simu1 <- 0
- #       
- # }
- #  
- #  if(tset[i] < 40.43404){
- #       E_simu1 <- E_simu1
- # } else {
- #       E_simu1 <- ((alpha * E1 * (A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1 * q_s * N_s1^beta_s1 + A_w * (q_w * N_w1^beta_w1 * E1)^-f_w1 * q_w * N_w1^beta_w1) - c) * dt)
- #       
- # }
-  # if(N_w_simu1 >= 9.155209e-09){
-  #   
-  #   N_w_simu1 = N_w_simu1
-  # 
-  # } else { 
-  # 
-  #   N_w_simu1 = 0
-  # }
-
-    #if(tset[i] < 40.43404){ N_s_simu1 <- N_s_simu1} else {N_s_simu1 <- (N_s1 * r_s * (1 - (N_s1/k_s)) - q_s * N_s1^beta_s1 * E) * dt}
-    #if(tset[i] < 40.43404){ E_simu1 <- E_simu1} else {E_simu1 <- (alpha * E * (A_s * (q_s * N_s1^beta_s1 * E)^-f_s1 * q_s * N_s1^beta_s1) - c) * dt}
-    #if(tset[i] < 40.43404){ Pi_sum_simu1 <- Pi_sum_simu1} else {Pi_sum_simu1 <- Pi_s_simu1}
-  
-  # change in time
+    # change in time
   dt <- tset[i] - tset[i-1]
   
   # placeholder variables to plug into the equations
@@ -3914,6 +3931,20 @@ for(i in 2:length(tset)) {
   # Calculate change in variable size at each time step
   dN_s1 <- (r_s * N_s1 * (1 - (N_s1/k_s)) - (q_s * N_s1^beta_s1 * E1)) * dt
   dN_w1 <- (r_w * N_w1 * (1 - (N_w1/k_w)) - (q_w * N_w1^beta_w1 * E1)) * dt
+  
+  if(dN_s1 < -N_s1) {
+  dN_s1 <- -N_s1
+  N_s1 <- 0
+  } else {
+  N_s1 <- N_s1 + dN_s1
+ }
+
+  if(dN_w1 < -N_w1) {
+  dN_w1 <- -N_w1
+  N_w1 <- 0
+  } else {
+  N_w1 <- N_w1 + dN_w1
+ }
   dE1 <- (alpha * E1 * (A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1 * q_s * N_s1^beta_s1 +
                         A_w * (q_w * N_w1^beta_w1 * E1)^-f_w1 * q_w * N_w1^beta_w1 - (c))) * dt
   dC_s1 <- (q_s * N_s1^beta_s1 * E1) * dt
@@ -3980,18 +4011,6 @@ t_Nw_0 <- 66.81668
 ```{r, echo = FALSE}
 for(i in 2:length(tset)) {
   
-  # if(N_w_simu2 >= 0){ 
-  #   N_w_simu2 <- N_w_simu2
-  # } else { 
-  #   N_w_simu2 <- 0
-  # }
-  # 
-  # if(N_w_simu2 <= 0){
-  #   E_simu2 <- (alpha * E2 * (A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 * q_s * N_s2^beta_s2 - (c))) * dt
-  # } else {
-  #   E_simu2 <- E_simu2
-  # }
-
 # change in time
   dt <- tset[i] - tset[i-1]
   
@@ -4010,6 +4029,19 @@ for(i in 2:length(tset)) {
   # Calculate change in variable size at each time step
   dN_s2 <- (r_s * N_s2 * (1 - (N_s2/k_s)) - (q_s * N_s2^beta_s2 * E2)) * dt
   dN_w2 <- (r_w * N_w2 * (1 - (N_w2/k_w)) - (q_w * N_w2^beta_w2 * E2)) * dt
+  if(dN_s2 < -N_s2) {
+  dN_s2 <- -N_s2
+  N_s2 <- 0
+  } else {
+  N_s2 <- N_s2 + dN_s2
+ }
+
+  if(dN_w2 < -N_w2) {
+  dN_w2 <- -N_w2
+  N_w2 <- 0
+  } else {
+  N_w2 <- N_w2 + dN_w2
+ }
   dE2 <- (alpha * E2 * (A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 * q_s * N_s2^beta_s2 +
                         A_w * (q_w * N_w2^beta_w2 * E2)^-f_w2 * q_w * N_w2^beta_w2 - (c))) * dt
   dC_s2 <- (q_s * N_s2^beta_s2 * E2) * dt
@@ -4527,6 +4559,18 @@ Pi_sum_simu8 <- NaN*tset; Pi_sum_simu8[1] <- 2
 Pi_s_simu8 <- NaN*tset; Pi_s_simu8[1] <- 1
 
 Pi_w_simu8 <- NaN*tset; Pi_w_simu8[1] <- 1
+
+cost_ns_simu8 <- NaN*tset; cost_ns_simu8[1] <- 0.05
+
+cost_nw_simu8 <- NaN*tset; cost_nw_simu8[1] <- 0.05
+
+cost_sum_simu8 <- NaN*tset; cost_sum_simu8[1] <- 0.1
+
+rev_ns_simu8 <- NaN*tset; rev_ns_simu8[1] <- 0
+
+rev_nw_simu8 <- NaN*tset; rev_nw_simu8[1] <- 0
+
+rev_sum_simu8 <- NaN*tset; rev_sum_simu8[1] <- 0
 ```
 
 
@@ -4547,6 +4591,12 @@ for(i in 2:length(tset)) {
   pi8 <- Pi_sum_simu8[i-1]
   pi_s8 <- Pi_s_simu8[i-1]
   pi_w8 <- Pi_w_simu8[i-1]
+  cost_ns8 <- cost_ns_simu8[i-1]
+  cost_nw8 <- cost_nw_simu8[i-1]
+  cost_sum8 <- cost_sum_simu8[i-1]
+  rev_ns8 <- rev_ns_simu8[i-1]
+  rev_nw8 <- rev_nw_simu8[i-1]
+  rev_sum8 <- rev_sum_simu8[i-1]
 
   # Calculate change in variable size at each time step
   dN_s8 <- (r_s * N_s8 * (1 - (N_s8/k_s)) - (q_s * N_s8^beta_s8 * E8)) * dt
@@ -4560,11 +4610,18 @@ for(i in 2:length(tset)) {
   dPi_s8 <- (C_s8 * A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 - C_s8 * c) * dt
   dPi_w8 <- (C_w8 * A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 - C_w8 * c) * dt
   dPi8 <- (C_s8 * A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 + C_w8 * A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 - ((C_s8 + C_w8) * c)) * dt
+  dcost_ns <- (cost_ns8 * E8/C_s8) * dt
+  dcost_nw <- (cost_nw8 * E8/C_w8) * dt
+  dcost_sum <- (E8 * (cost_nw8 + cost_ns8)/(C_s8 + C_w8)) * dt
+  drev_ns8 <- (A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8 * E8/C_s8) * dt
+  drev_nw8 <- (A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 * q_s * N_w8 * E8/C_w8) * dt
+  drev_sum8 <- ((A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8 * E8 + 
+                  A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 * q_w * N_w8 * E8/(C_s8 + C_w8))) * dt
   
   # calculate total variable size and store in holding vectors
   
   N_w_simu8[i] <- N_w8 + dN_w8
-  N_s_simu8[i] <- N_s8 + dN_s8
+  N_s_simu8[i] <- N_s8 + dN_s8 
   E_simu8[i] <- E8 + dE8
   C_s_simu8[i] <- C_s8 + dC_s8
   C_w_simu8[i] <- C_w8 + dC_w8
@@ -4572,25 +4629,36 @@ for(i in 2:length(tset)) {
   cpue_w_simu8[i] <- cpue_w8 + dcpue_w8
   Pi_sum_simu8[i] <- pi8 + dPi8
   Pi_s_simu8[i] <- pi_s8 + dPi_s8
-  Pi_w_simu8[i] <- pi_w8 + dPi_w8  
+  Pi_w_simu8[i] <- pi_w8 + dPi_w8
+  cost_ns_simu8[i] <- cost_ns8 + dcost_ns
+  cost_nw_simu8[i] <- cost_nw8 + dcost_nw
+  cost_sum_simu8[i] <- cost_sum8 + dcost_sum
+  rev_ns_simu8[i] <- rev_ns8 + drev_ns8
+  rev_nw_simu8[i] <- rev_nw8 + drev_nw8
+  rev_sum_simu8[i] <- rev_sum8 + drev_sum8
   
 }
 ```
 
+- Plot cost per catch and price per catch as a function of abundance for the strong stock. Revenue/catch and cost/catch.
+- Types of fishing profitabilities and subsidies in fisheries.
+- FAD scenario
+
+
 ```{r, include = FALSE}
-plot(x = tset, y = N_s_simu8,
+plot(x = N_s_simu8, y = cost_ns_simu8,
      col = "purple", las = 1,
      type = "l",
      lwd = 2,
-     xlab = "Time",
-     ylab = "Biomass",
-     ylim = c(0, 30))
-lines(x = tset, y = E_simu8,
+     xlab = "Strong stock abundance",
+     ylab = "Strong stock price, cost")
+lines(x = N_s_simu8, y = rev_sum_simu8,
      col = "black", type = "l",
      lwd = 2)
-lines(x = tset, y = N_w_simu8,
-      col = "red", type = "l",
-      lwd = 2)
+legend(x = 3.5, y = 1.5e+74,
+       legend = c("Revenue", "Cost"),
+       col = c("purple", "black"),
+       lwd = 2)
 ```
 
 
@@ -4755,9 +4823,53 @@ profits_w_df <- cbind(Pi_w_simu1, Pi_w_simu2,  Pi_w_simu5, Pi_w_simu7, Pi_w_simu
     str_detect(variable, "7") ~ "4",
     str_detect(variable, "8") ~ "5"))
 
+cost_ns_df <- cbind(cost_ns_simu8, tset) %>% 
+  as.data.frame() %>%
+  pivot_longer(cost_ns_simu8,
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = "5") 
+
+cost_nw_df <- cbind(cost_nw_simu8, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cost_nw_simu8,
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = "5") 
+
+cost_sum_df <- cbind(cost_sum_simu8, tset) %>% 
+  as.data.frame() %>% 
+  pivot_longer(cost_sum_simu8,
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = "5") 
+
+
+rev_ns_df <- cbind(rev_ns_simu8, tset) %>%  
+  as.data.frame() %>% 
+  pivot_longer(rev_ns_simu8,
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = "5") 
+
+rev_nw_df <- cbind(rev_nw_simu8, tset) %>%  
+  as.data.frame() %>%
+  pivot_longer(rev_nw_simu8,
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id ="5") 
+
+rev_sum_df <- cbind(rev_sum_simu8, tset) %>%  
+  as.data.frame() %>% 
+  pivot_longer(rev_sum_simu8,
+               names_to = "variable",
+               values_to = "value") %>% 
+  mutate(scenario_id = "5") 
+
 # Gathered the results from each model scenario run into a single df
 
-var_full_price <- bind_rows(effort_df, nw_df, ns_df, catch_s_df, catch_w_df, cpue_s_df, cpue_w_df, profits_df, profits_w_df, profits_s_df)
+var_full_price <- bind_rows(effort_df, nw_df, ns_df, catch_s_df, catch_w_df, cpue_s_df, cpue_w_df, profits_df,
+                            profits_w_df, profits_s_df, cost_ns_df, cost_nw_df, cost_sum_df, rev_ns_df, rev_nw_df, rev_sum_df)
 
 # Tidy dataset for plotting
 
@@ -4812,47 +4924,212 @@ var_plot_price <- var_full_price %>%
     str_detect(variable, "cpue_w") ~ "Weak stock CPUE",
     str_detect(variable, "cpue_s") ~ "Strong stock CPUE",
     str_detect(variable, "C_w") ~ "Weak stock catch",
-    str_detect(variable, "C_s") ~ "Strong stock catch"
+    str_detect(variable, "C_s") ~ "Strong stock catch",
+    str_detect(variable, "cost_ns") ~ "Strong stock cost/catch",
+    str_detect(variable, "cost_nw") ~ "Weak stock cost/catch",
+    str_detect(variable, "cost_sum") ~ "Total cost/catch",
+    str_detect(variable, "rev_ns") ~ "Strong stock revenue/catch",
+    str_detect(variable, "rev_nw") ~ "Weak stock revenue/catch",
+    str_detect(variable, "rev_sum") ~ "Revenue sum/catch",
   )) 
 
 ```
 
-```{r, echo = FALSE, include = FALSE}
-# par_pw_ps_fcn <- data.frame(parameter = c("q_w", "q_s", "k_w", "k_s", "r_w", "r_s", "c", "f_w", "f_s", "beta_w", "beta_s", "A"),
-#                      "f_ratio = 0.2\n
-#                      beta_ratio = 1.25" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.1, 0.5, 0.7, 0.56, 1),
-#                      "f_ratio = 0.6\n
-#                      beta_ratio = 1.25" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.3, 0.5, 0.7, 0.56, 1 ),
-#                      "f_ratio = 1\n
-#                      beta_ratio = 1.25" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.5, 0.5, 0.7, 0.56, 1 ),
-#                      "f_ratio = 1.4\n
-#                      beta_ratio = 1.25" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.6, 0.5, 0.7, 0.56, 1 ),
-#                      "f_ratio = 0.44\n
-#                      beta_ratio = 0.35" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.22, 0.5, 0.2, 0.56, 1 ),
-#                      "f_ratio = 0.44\n
-#                      beta_ratio = 0.71" = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.22, 0.5, 0.4, 0.56, 1 ),
-#                      "f_ratio = 0.44\n
-#                      beta_ratio = 1"    = c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.22, 0.5, 0.56, 0.56, 1),
-#                      "f_ratio = 0.44\n
-#                      beta_ratio = 1.6" =  c(0.02, 0.02, 4, 2, 1, 0.5, 0.05, 0.22, 0.5, 0.9, 0.56, 1))
-# 
-# par_pw_ps_fcn %>% 
-#   gt() %>%
-#   tab_header(title = "Parameter space for the run with both species' prices as a function of their catch") %>% 
-#   cols_align(align = "center")
+```{r, echo = FALSE, fig.height=6, fig.width=8}
+library(janitor)
+#test <- 
+st_stock <- var_plot_price %>% 
+  filter(scenario_id == "5" &
+           variable_clean %in% c("Strong stock")) %>% 
+  pivot_wider(names_from = variable_clean,
+              values_from = value) %>% 
+  clean_names()
+  
+st_stock_cost <- var_plot_price %>% 
+  filter(scenario_id == "5" &
+           variable_clean %in% c("Strong stock cost/catch")) %>% 
+  pivot_wider(names_from = variable_clean,
+              values_from = value) %>% 
+  clean_names()
+
+st_stock_rev <- var_plot_price %>% 
+  filter(scenario_id == "5" &
+           variable_clean %in% c("Strong stock revenue/catch")) %>% 
+  pivot_wider(names_from = variable_clean,
+              values_from = value) %>% 
+  clean_names()
+
+st_join <- st_stock %>% 
+  left_join(st_stock_cost, by = "tset") %>% 
+  select(!ends_with(".x")) %>% 
+  left_join(st_stock_rev, by = "tset") %>% 
+  select(-c(variable, scenario_id.y, b_v_k, f_w, f_s, beta_s, beta_w)) %>% 
+  mutate(strong_stock_cost_catch = log(strong_stock_cost_catch)) %>% 
+  pivot_longer(cols = ends_with("_catch"),
+               names_to = "econ_var_catch",
+               values_to = "catch_rev_val") %>% 
+  mutate(econ_var_catch = case_when(
+    str_detect(econ_var_catch, "cost") ~ "Cost",
+    str_detect(econ_var_catch, "revenue") ~ "Revenue"
+  ))
+
+test <- var_plot_price %>% 
+  filter(scenario_id == "5" &
+           variable_clean %in% c("Strong stock")) %>% 
+  pivot_wider(names_from = variable_clean,
+              values_from = value) %>% 
+  clean_names()
+
+#check <- 
+strong_st_1 <-
+  st_join %>%   
+  ggplot() +
+  geom_point(aes(x = log(strong_stock), y = catch_rev_val, color = econ_var_catch),
+            size = .5) +
+  scale_x_continuous(breaks = seq(1.1, 1.4, .05)) +
+  labs(x = "Log(Strong stock abundance (Ns))",
+       y = "Strong stock revenue/catch, Log(Strong stock cost/catch)",
+       color = "",
+       title = "Strong st revenue/catch and strong stock cost/catch as a function of strong st abundance") +
+  theme_bw() +
+  guides(color = guide_legend(override.aes = list(size = 5)))
+
+
 ```
 
+```{r, echo = FALSE, fig.width=8}
+w_stock <- var_plot_price %>% 
+  filter(scenario_id == "5" &
+           variable_clean %in% c("Weak stock")) %>% 
+  pivot_wider(names_from = variable_clean,
+              values_from = value) %>% 
+  clean_names()
+  
+w_stock_cost <- var_plot_price %>% 
+  filter(scenario_id == "5" &
+           variable_clean %in% c("Weak stock cost/catch")) %>% 
+  pivot_wider(names_from = variable_clean,
+              values_from = value) %>% 
+  clean_names()
+
+w_stock_rev <- var_plot_price %>% 
+  filter(scenario_id == "5" &
+           variable_clean %in% c("Weak stock revenue/catch")) %>% 
+  pivot_wider(names_from = variable_clean,
+              values_from = value) %>% 
+  clean_names()
+
+w_join <- w_stock %>% 
+  left_join(w_stock_cost, by = "tset") %>% 
+  select(!ends_with(".x")) %>% 
+  left_join(w_stock_rev, by = "tset") %>% 
+  select(-c(variable, scenario_id.y, b_v_k, f_w, f_s, beta_s, beta_w)) %>% 
+  mutate(weak_stock_cost_catch = log(weak_stock_cost_catch)) %>% 
+  pivot_longer(cols = ends_with("_catch"),
+               names_to = "econ_var_catch",
+               values_to = "catch_rev_val") %>% 
+  mutate(econ_var_catch = case_when(
+    str_detect(econ_var_catch, "cost") ~ "Cost",
+    str_detect(econ_var_catch, "revenue") ~ "Revenue"
+  ))
+
+test <- var_plot_price %>% 
+  filter(scenario_id == "5" &
+           variable_clean %in% c("Weak stock")) %>% 
+  pivot_wider(names_from = variable_clean,
+              values_from = value) %>% 
+  clean_names()
+
+#check <- 
+weak_st_1 <-
+  w_join %>%   
+  ggplot() +
+  geom_point(aes(x = log1p(weak_stock), y = catch_rev_val, color = econ_var_catch),
+            size = .5) +
+  labs(x = "Log(Weak stock abundance (Nw))",
+       y = "Weak stock revenue/catch, Log(Weak stock cost/catch)",
+       color = "",
+       title = "Weak st revenue/catch and weak st cost/catch as a function of weak st abundance") +
+  theme_bw() +
+  guides(color = guide_legend(override.aes = list(size = 5)))
+```
 
 ```{r, echo = FALSE}
-#f_labels <- c("f_ratio = 0.2", "f_ratio = 0.6", "f_ratio = 1", "f_ratio = 1.4", "f_ratio = 0.44", "f_ratio = 0.44", "f_ratio = 0.44", "f_ratio = 0.44")
-#names(f_labels) <- c("f_w/f_s = 0.2", "f_w/f_s = 0.6", "f_w/f_s = 1", "f_w/f_s = 1.4", "f_w/f_s = 0.44", "f_w/f_s = 0.44", "f_w/f_s = 0.44", "f_w/f_s = 0.44")
-#
-#beta_labels <- c("beta_ratio = 1.25", "beta_ratio = 1.25", "beta_ratio = 1.25", "beta_ratio = 1.25",
-#                "beta_ratio = 0.35", "beta_ratio = 0.71", "beta_ratio = 1", "beta_ratio = 1.6")
-#names(beta_labels) <- c("beta_w/beta_s = 1.25", "beta_w/beta_s = 1.25", "beta_w/beta_s = 1.25", "beta_w/beta_s = 1.25",
-#                       "beta_w/beta_s = 0.35", "beta_w/beta_s = 0.71", "beta_w/beta_s = 1", "beta_w/beta_s = 1.6")
+stocks <- var_plot_price %>% 
+  filter(scenario_id == "5" &
+           variable_clean %in% c("Weak stock", "Strong stock")) %>% 
+  pivot_wider(names_from = variable_clean,
+              values_from = value) %>% 
+  clean_names()
+  
+stock_cost_sum <- var_plot_price %>% 
+  filter(scenario_id == "5" &
+           variable_clean %in% c("Total cost/catch")) %>% 
+  pivot_wider(names_from = variable_clean,
+              values_from = value) %>% 
+  clean_names()
+
+stock_rev_sum <- var_plot_price %>% 
+  filter(scenario_id == "5" &
+           variable_clean %in% c("Revenue sum/catch")) %>% 
+  pivot_wider(names_from = variable_clean,
+              values_from = value) %>% 
+  clean_names()
+
+all_join <- stocks %>% 
+  left_join(stock_cost_sum, by = "tset") %>% 
+  select(!ends_with(".x")) %>% 
+  left_join(stock_rev_sum, by = "tset") %>% 
+  select(-c(variable, scenario_id.y, b_v_k, f_w, f_s, beta_s, beta_w)) %>% 
+  #mutate(total_cost_catch = log(total_cost_catch)) %>% 
+  pivot_longer(cols = ends_with("_catch"),
+               names_to = "econ_var_catch",
+               values_to = "catch_rev_val") %>% 
+  mutate(econ_var_catch = case_when(
+    str_detect(econ_var_catch, "cost") ~ "Cost",
+    str_detect(econ_var_catch, "revenue") ~ "Revenue"
+  ))
 
 
+#check <- 
+strong_st2 <-
+  all_join %>%
+  ggplot() +
+  geom_point(aes(x = log(strong_stock), y = log(catch_rev_val), color = econ_var_catch),
+            size = .5) +
+  labs(x = "Log(Strong stock abundance (Ns))",
+       y = "",
+       color = "",
+       title = "Total revenue/catch and total cost/catch as a function of strong stock abundance") +
+  theme_bw() +
+  guides(color = guide_legend(override.aes = list(size = 5)))
+
+weak_st2 <- 
+  all_join %>%
+  ggplot() +
+  geom_point(aes(x = log1p(weak_stock), y = log(catch_rev_val), color = econ_var_catch),
+            size = .5) +
+  labs(x = "Log(Weak stock abundance (Nw) + 1)",
+       y = "",
+       color = "",
+       title = "Total revenue/catch and total cost/catch as a function of weak stock abundance") +
+  theme_bw() +
+  guides(color = guide_legend(override.aes = list(size = 5)))
+```
+
+```{r, fig.height=10, fig.width=8}
+total_plots <-
+  grid.arrange(patchworkGrob(strong_st2 /
+  weak_st2),
+  left = "Total revenue/catch, Log(Total cost/catch)")
+
+
+(strong_st_1 /
+    weak_st_1)
+
+```
+
+```{r, echo = FALSE}
 equal_scales_EWS_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Effort simulation", "Weak stock", "Strong stock")) %>% 
