@@ -520,7 +520,7 @@ s_w_range_proc_test <-
 ```
 
 ```{r, echo = FALSE}
-col_limit <- c(0, 0.55)
+col_limit <- c(0, 0.63)
 
 
 
@@ -528,10 +528,10 @@ s_w_range_proc_plot <-
   ggplot(data = s_w_range_proc %>% 
            filter(p_w < 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4) %>% 
            distinct_all()) +
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .04)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.55, 0.1),
+  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_v_k_w, width = .04)) +
+  scale_fill_paletteer_c("grDevices::Blues 3",
+                          #rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.6, 0.1),
                          direction = -1,
                          limits = col_limit) +
    scale_x_continuous(breaks = seq(1, 4, 0.5),
@@ -539,8 +539,9 @@ s_w_range_proc_plot <-
   scale_y_continuous(breaks = seq(1, 8, 1),
                      expand = c(0,0)) +
   labs(x = "",
-       y = "Strong stock revenue stream",
-       fill = "log(B/K)") +
+       y = "Strong stock economic potential",
+       fill = "Weak stock depletion (B/K)",
+       title = "Weak stock price = 0") +
 #  coord_equal() +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
@@ -554,10 +555,10 @@ s_w_range_proc_plot2 <-
   ggplot(data = s_w_range_proc %>% 
            filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4) %>% 
            distinct_all()) +
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .04)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.55, 0.1),
+  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_v_k_w, width = .04)) +
+  scale_fill_paletteer_c("grDevices::Blues 3",
+                         # rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.6, 0.1),
                          direction = -1,
                          limits = col_limit) +
   scale_x_continuous(breaks = seq(1, 4, 0.5),
@@ -566,7 +567,8 @@ s_w_range_proc_plot2 <-
                      expand = c(0,0)) +
   labs(x = "",
        y = "",
-       fill = "log(B/K)") +
+       fill = "Weak stock depletion (B/K)",
+       title = "Weak stock price = 1") +
   #coord_equal() +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
@@ -579,11 +581,12 @@ s_w_range_proc_plot2 <-
 
 w_s_range_proc_plot1 <-
   ggplot(data = w_s_range_proc %>%
-           filter(p_s == 1 & vuln_ratio_w <= 4)) + 
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .04)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.55, 0.1),
+           filter(p_s == 1 & vuln_ratio_w <= 4) %>% 
+           distinct_all()) + 
+  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = b_v_k_w, width = .04)) +
+  scale_fill_paletteer_c("grDevices::Blues 3",
+                         # rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.6, 0.1),
                          direction = -1,
                          limits = col_limit) +
   scale_x_continuous(breaks = seq(0, 4, 0.5),
@@ -591,8 +594,9 @@ w_s_range_proc_plot1 <-
   scale_y_continuous(breaks = seq(0, 8, 1),
                      expand = c(0,0)) +
   labs(x = "",
-       y = "Weak stock revenue stream",
-       fill = "log(B/K)") +
+       y = "Weak stock economic potential",
+       fill = "Weak stock depletion (B/K)",
+       title = "Strong stock price = 1") +
 #  coord_equal() +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
@@ -604,11 +608,12 @@ w_s_range_proc_plot1 <-
   
 w_s_range_proc_plot2 <- 
   ggplot(data = w_s_range_proc %>% 
-           filter(p_s == 2 & vuln_ratio_w <= 4)) + 
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .04)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.55, 0.1),
+           filter(p_s == 2 & vuln_ratio_w <= 4) %>% 
+           distinct_all()) + 
+  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = b_v_k_w, width = .04)) +
+  scale_fill_paletteer_c("grDevices::Blues 3",
+                         # rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
+                         breaks = seq(0, 0.6, 0.1),
                          direction = -1,
                          limits = col_limit) +
   scale_x_continuous(breaks = seq(0, 4, 0.5),
@@ -617,7 +622,8 @@ w_s_range_proc_plot2 <-
                      expand = c(0,0)) +
   labs(x = "",
        y = "",
-       fill = "log(B/K)") +
+       fill = "Weak stock depletion (B/K)",
+       title = "Strong stock price = 2") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -645,10 +651,10 @@ plot_1 <- grid.arrange(patchworkGrob(range_plot_1 /
                                        range_plot_2 +
   plot_annotation(tag_levels = "A") +
     plot_layout(guides = "collect")),
-  bottom = "Vw/Vs")
+  bottom = "Vulnerability ratios\n(Vw/Vs)")
   
-# ggsave(file.path(outdir, "plot_1.png"), plot = plot_1,
-#       width = 12, height = 8, bg = "white", dpi = 300)
+ ggsave(file.path(outdir, "plot_1.png"), plot = plot_1,
+       width = 12, height = 8, bg = "white", dpi = 300)
 ```
 
 ```{r, echo = FALSE}
@@ -4823,53 +4829,53 @@ profits_w_df <- cbind(Pi_w_simu1, Pi_w_simu2,  Pi_w_simu5, Pi_w_simu7, Pi_w_simu
     str_detect(variable, "7") ~ "4",
     str_detect(variable, "8") ~ "5"))
 
-cost_ns_df <- cbind(cost_ns_simu8, tset) %>% 
-  as.data.frame() %>%
-  pivot_longer(cost_ns_simu8,
-               names_to = "variable",
-               values_to = "value") %>% 
-  mutate(scenario_id = "5") 
-
-cost_nw_df <- cbind(cost_nw_simu8, tset) %>% 
-  as.data.frame() %>% 
-  pivot_longer(cost_nw_simu8,
-               names_to = "variable",
-               values_to = "value") %>% 
-  mutate(scenario_id = "5") 
-
-cost_sum_df <- cbind(cost_sum_simu8, tset) %>% 
-  as.data.frame() %>% 
-  pivot_longer(cost_sum_simu8,
-               names_to = "variable",
-               values_to = "value") %>% 
-  mutate(scenario_id = "5") 
-
-
-rev_ns_df <- cbind(rev_ns_simu8, tset) %>%  
-  as.data.frame() %>% 
-  pivot_longer(rev_ns_simu8,
-               names_to = "variable",
-               values_to = "value") %>% 
-  mutate(scenario_id = "5") 
-
-rev_nw_df <- cbind(rev_nw_simu8, tset) %>%  
-  as.data.frame() %>%
-  pivot_longer(rev_nw_simu8,
-               names_to = "variable",
-               values_to = "value") %>% 
-  mutate(scenario_id ="5") 
-
-rev_sum_df <- cbind(rev_sum_simu8, tset) %>%  
-  as.data.frame() %>% 
-  pivot_longer(rev_sum_simu8,
-               names_to = "variable",
-               values_to = "value") %>% 
-  mutate(scenario_id = "5") 
+# cost_ns_df <- cbind(cost_ns_simu8, tset) %>% 
+#   as.data.frame() %>%
+#   pivot_longer(cost_ns_simu8,
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id = "5") 
+# 
+# cost_nw_df <- cbind(cost_nw_simu8, tset) %>% 
+#   as.data.frame() %>% 
+#   pivot_longer(cost_nw_simu8,
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id = "5") 
+# 
+# cost_sum_df <- cbind(cost_sum_simu8, tset) %>% 
+#   as.data.frame() %>% 
+#   pivot_longer(cost_sum_simu8,
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id = "5") 
+# 
+# 
+# rev_ns_df <- cbind(rev_ns_simu8, tset) %>%  
+#   as.data.frame() %>% 
+#   pivot_longer(rev_ns_simu8,
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id = "5") 
+# 
+# rev_nw_df <- cbind(rev_nw_simu8, tset) %>%  
+#   as.data.frame() %>%
+#   pivot_longer(rev_nw_simu8,
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id ="5") 
+# 
+# rev_sum_df <- cbind(rev_sum_simu8, tset) %>%  
+#   as.data.frame() %>% 
+#   pivot_longer(rev_sum_simu8,
+#                names_to = "variable",
+#                values_to = "value") %>% 
+#   mutate(scenario_id = "5") cost_ns_df, cost_nw_df, cost_sum_df, rev_ns_df, rev_nw_df, rev_sum_df
 
 # Gathered the results from each model scenario run into a single df
 
 var_full_price <- bind_rows(effort_df, nw_df, ns_df, catch_s_df, catch_w_df, cpue_s_df, cpue_w_df, profits_df,
-                            profits_w_df, profits_s_df, cost_ns_df, cost_nw_df, cost_sum_df, rev_ns_df, rev_nw_df, rev_sum_df)
+                            profits_w_df, profits_s_df)
 
 # Tidy dataset for plotting
 
@@ -5132,7 +5138,7 @@ total_plots <-
 ```{r, echo = FALSE}
 equal_scales_EWS_fcn <-
   var_plot_price %>% 
-  filter(variable_clean %in% c("Effort simulation", "Weak stock", "Strong stock")) %>% 
+  filter(variable_clean %in% c("Effort simulation")) %>% 
   ggplot() +
   geom_line(aes(x = tset, y = value, color = variable_clean),
             size = .8,
@@ -5140,12 +5146,12 @@ equal_scales_EWS_fcn <-
             show.legend = T) +
   facet_wrap(~ scenario_id,
              nrow = 1) +
-  scale_color_manual(values = c("#A50E82FF", "#6A9E1FFF", "#052F61FF")) +
+  scale_color_manual(values = c("#A50E82FF")) +
   scale_x_continuous(breaks = seq(0, 200, 100),
                      expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0.5)) +
   labs(x = "",
-       y = "Nw, Ns, E",
+       y = "Fishing Effort",
        color = "") +
   theme_bw() +
   theme(panel.grid.major.x = element_blank(),
@@ -5163,6 +5169,14 @@ dif_scales_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Strong stock", "Weak stock")) %>% 
   ggplot() +
+  geom_hline(yintercept = 0.5,
+              linetype = "dashed",
+              color = "grey40",
+              alpha = 0.8) +
+  geom_hline(yintercept = 0.25,
+              linetype = "dotted",
+              color = "grey40",
+              alpha = 0.8) +
   geom_line(aes(x = tset, y = b_v_k, color = variable_clean),
             size = .8,
             alpha = .8,
