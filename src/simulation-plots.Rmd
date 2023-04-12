@@ -4577,12 +4577,21 @@ rev_ns_simu8 <- NaN*tset; rev_ns_simu8[1] <- 0
 rev_nw_simu8 <- NaN*tset; rev_nw_simu8[1] <- 0
 
 rev_sum_simu8 <- NaN*tset; rev_sum_simu8[1] <- 0
+
+E_simu8_s <- (alpha * E8 * (A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8^beta_s8 - (c))) * dt
 ```
 
 
 ```{r, echo = FALSE}
 for(i in 2:length(tset)) {
   
+  # if(N_w8 > 0) {
+  # dN_w8 <- (r_w * N_w8 * (1 - (N_w8/k_w)) - (q_w * N_w8^beta_w8 * E8)) * dt
+  # } else {
+  # dN_w8 <- 0
+  # }
+
+
   # change in time
   dt <- tset[i] - tset[i-1]
   
@@ -4605,28 +4614,35 @@ for(i in 2:length(tset)) {
   rev_sum8 <- rev_sum_simu8[i-1]
 
   # Calculate change in variable size at each time step
-  dN_s8 <- (r_s * N_s8 * (1 - (N_s8/k_s)) - (q_s * N_s8^beta_s8 * E8)) * dt
-  dN_w8 <- (r_w * N_w8 * (1 - (N_w8/k_w)) - (q_w * N_w8^beta_w8 * E8)) * dt
-  dE8 <- (alpha * E8 * (A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8^beta_s8 +
-                        A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 * q_w * N_w8^beta_w8 - (c))) * dt
-  dC_s8 <- (q_s * N_s8^beta_s8 * E8) * dt
-  dC_w8 <- (q_w * N_w8^beta_w8 * E8) * dt
-  dcpue_s8 <- (C_s8 / E8) * dt
-  dcpue_w8 <- (C_w8 / E8) * dt
-  dPi_s8 <- (C_s8 * A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 - C_s8 * c) * dt
-  dPi_w8 <- (C_w8 * A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 - C_w8 * c) * dt
-  dPi8 <- (C_s8 * A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 + C_w8 * A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 - ((C_s8 + C_w8) * c)) * dt
-  dcost_ns <- (cost_ns8 * E8/C_s8) * dt
-  dcost_nw <- (cost_nw8 * E8/C_w8) * dt
-  dcost_sum <- (E8 * (cost_nw8 + cost_ns8)/(C_s8 + C_w8)) * dt
-  drev_ns8 <- (A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8 * E8/C_s8) * dt
-  drev_nw8 <- (A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 * q_s * N_w8 * E8/C_w8) * dt
-  drev_sum8 <- ((A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8 * E8 + 
-                  A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 * q_w * N_w8 * E8/(C_s8 + C_w8))) * dt
+  if(N_w8 > 0) {
+    dN_s8 <- (r_s * N_s8 * (1 - (N_s8/k_s)) - (q_s * N_s8^beta_s8 * E8)) * dt
+    dN_w8 <- (r_w * N_w8 * (1 - (N_w8/k_w)) - (q_w * N_w8^beta_w8 * E8)) * dt
+    dE8 <- (alpha * E8 * (A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8^beta_s8 +
+                          A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 * q_w * N_w8^beta_w8 - (c))) * dt
+    dC_s8 <- (q_s * N_s8^beta_s8 * E8) * dt
+    dC_w8 <- (q_w * N_w8^beta_w8 * E8) * dt
+    dcpue_s8 <- (C_s8 / E8) * dt
+    dcpue_w8 <- (C_w8 / E8) * dt
+    dPi_s8 <- (C_s8 * A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 - C_s8 * c) * dt
+    dPi_w8 <- (C_w8 * A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 - C_w8 * c) * dt
+    dPi8 <- (C_s8 * A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 + C_w8 * A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 - ((C_s8 + C_w8) * c)) * dt
+    dcost_ns <- (cost_ns8 * E8/C_s8) * dt
+    dcost_nw <- (cost_nw8 * E8/C_w8) * dt
+    dcost_sum <- (E8 * (cost_nw8 + cost_ns8)/(C_s8 + C_w8)) * dt
+    drev_ns8 <- (A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8 * E8/C_s8) * dt
+    drev_nw8 <- (A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 * q_s * N_w8 * E8/C_w8) * dt
+    drev_sum8 <- ((A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8 * E8 + 
+                     A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 * q_w * N_w8 * E8/(C_s8 + C_w8))) * dt
+  
+  } else {
+    dN_s8 <- (r_s * N_s8 * (1 - (N_s8/k_s)) - (q_s * N_s8^beta_s8 * E8)) * dt
+    dN_w8 <- 0
+    dE8 <- (alpha * E8 * (A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8^beta_s8 - (c))) * dt
+  }
   
   # calculate total variable size and store in holding vectors
   
-  N_w_simu8[i] <- N_w8 + dN_w8
+  N_w_simu8[i] <- ifelse(N_w8 + dN_w8 < 0, 0, N_w8 + dN_w8)
   N_s_simu8[i] <- N_s8 + dN_s8 
   E_simu8[i] <- E8 + dE8
   C_s_simu8[i] <- C_s8 + dC_s8
@@ -4646,9 +4662,65 @@ for(i in 2:length(tset)) {
 }
 ```
 
+```{r}
+for(i in 2:length(tset)) {
+  
+  # change in time
+  dt <- tset[i] - tset[i-1]
+  
+  # placeholder variables to plug into the equations
+  N_w8 <- N_w_simu8[i-1]
+  N_s8 <- N_s_simu8[i-1]
+  E8 <- E_simu8[i-1]
+  
+  # Calculate change in variable size at each time step
+  if (N_w8 > 0) {
+    dN_s8 <- (r_s * N_s8 * (1 - (N_s8/k_s)) - (q_s * N_s8^beta_s8 * E8)) * dt
+    dN_w8 <- (r_w * N_w8 * (1 - (N_w8/k_w)) - (q_w * N_w8^beta_w8 * E8)) * dt
+    dE8 <- (alpha * E8 * (A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8^beta_s8 +
+                          A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 * q_w * N_w8^beta_w8 - (c))) * dt
+  } else {
+    dN_s8 <- (r_s * N_s8 * (1 - (N_s8/k_s)) - (q_s * N_s8^beta_s8 * E8)) * dt
+    dN_w8 <- 0
+    dE8 <- (alpha * E8 * (A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8^beta_s8 - (c))) * dt
+  }
+  
+  # calculate total variable size and store in holding vectors
+  
+  N_w_simu8[i] <- ifelse(N_w8 + dN_w8 < 0, 0, N_w8 + dN_w8)
+  N_s_simu8[i] <- N_s8 + dN_s8 
+  E_simu8[i] <- E8 + dE8
+  
+}
+
+
+
+```
+
+
 - Plot cost per catch and price per catch as a function of abundance for the strong stock. Revenue/catch and cost/catch.
 - Types of fishing profitabilities and subsidies in fisheries.
 - FAD scenario
+
+```{r}
+plot(x = tset, y = N_s_simu8,
+     col = "purple", las = 1,
+     type = "l",
+     lwd = 2,
+     xlab = "Strong stock abundance",
+     ylab = "Strong stock price, cost",
+     ylim = c(0, 4))
+lines(x = tset, y = N_w_simu8,
+     col = "black", type = "l",
+     lwd = 2)
+lines(x = tset, y = E_simu8,
+     col = "blue", type = "l",
+     lwd = 2)
+legend(x = 3.5, y = 1.5e+74,
+       legend = c("Revenue", "Cost"),
+       col = c("purple", "black"),
+       lwd = 2)
+```
 
 
 ```{r, include = FALSE}
@@ -5136,7 +5208,7 @@ total_plots <-
 ```
 
 ```{r, echo = FALSE}
-equal_scales_EWS_fcn <-
+#equal_scales_EWS_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Effort simulation")) %>% 
   ggplot() +
@@ -5165,7 +5237,7 @@ equal_scales_EWS_fcn <-
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
 
-dif_scales_fcn <-
+#dif_scales_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Strong stock", "Weak stock")) %>% 
   ggplot() +
@@ -5201,7 +5273,7 @@ dif_scales_fcn <-
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
 
-equal_scales_CPE_fcn <-
+#equal_scales_CPE_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Weak stock catch", "Strong stock catch", "Weak stock CPUE", "Strong stock CPUE")) %>% 
   ggplot() +
@@ -5229,7 +5301,7 @@ equal_scales_CPE_fcn <-
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
 
-equal_scales_pi_fcn <-
+#equal_scales_pi_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Profit sum", "Weak stock profits", "Strong stock profits")) %>% 
   ggplot() +
