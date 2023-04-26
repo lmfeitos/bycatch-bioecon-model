@@ -17,7 +17,7 @@ library(paletteer)
 library(gridExtra)
 library(janitor)
 library(plotly)
-
+library(ggthemes)
 # file path
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses/"
 outdir <- file.path(basedir, "model_outs") # calls present data from raster files
@@ -55,17 +55,17 @@ output_subs2 <- read_csv(file.path(outdir, "output_sub2.csv"))
 
 ```{r data wrangling, echo = FALSE}
 # wrangling dataset with outputs from the test with weak stock price as a function of catch
-output_fcn_test_pw_proc <- output_fcn_test_pw %>% 
-  mutate(b_v_k_s = N_s / k_s,
-         b_v_k_w = N_w / k_w,
-         b_v_k_s2 = N_s2 / k_s,
-         b_v_k_w2 = N_w2 / k_w) %>% 
-  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
-  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
-  mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
-         vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
-  mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
-  mutate(w_stock_rev = (p_w * q_w * k_w) / c)
+# output_fcn_test_pw_proc <- output_fcn_test_pw %>% 
+#   mutate(b_v_k_s = N_s / k_s,
+#          b_v_k_w = N_w / k_w,
+#          b_v_k_s2 = N_s2 / k_s,
+#          b_v_k_w2 = N_w2 / k_w) %>% 
+#   mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+#   mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
+#   mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
+#          vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
+#   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
+#   mutate(w_stock_rev = (p_w * q_w * k_w) / c)
 
 # wrangling dataset with outputs from the test with strong stock price as a function of catch
 s_w_range_proc <- output_s_ranges_w_one %>% 
@@ -4656,15 +4656,15 @@ weak_st2 <-
   guides(color = guide_legend(override.aes = list(size = 5)))
 ```
 
-```{r, fig.height=10, fig.width=8}
-total_plots <-
-  grid.arrange(patchworkGrob(strong_st2 /
-  weak_st2),
-  left = "Total revenue/catch, Log(Total cost/catch)")
-
-
-(strong_st_1 /
-    weak_st_1)
+```{r, fig.height=10, fig.width=8, echo = FALSE}
+# total_plots <-
+#   grid.arrange(patchworkGrob(strong_st2 /
+#   weak_st2),
+#   left = "Total revenue/catch, Log(Total cost/catch)")
+# 
+# 
+# (strong_st_1 /
+#     weak_st_1)
 
 ```
 
