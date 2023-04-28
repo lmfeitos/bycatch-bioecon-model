@@ -3533,6 +3533,74 @@ Pi_s_simu1 <- NaN*tset; Pi_s_simu1[1] <- 1
 Pi_w_simu1 <- NaN*tset; Pi_w_simu1[1] <- 1
 ```
 
+# DEMO CODE FROM CHRIS
+
+```{r}
+# Setup life history
+r <- 0.2
+K <- 10
+q <- 0.05
+fmsy <- r/2
+
+# Set up effort
+nyr <- 30
+E <- c(0, rep(NA, nyr-1))
+
+# Setup container
+data <- tibble(year=1:nyr,
+               N=NA,
+               E=E,
+               C=NA)
+
+# Record first year
+data$N[1] <- K
+data$C[1] <- 0
+
+# Loop through years
+i <- 2
+for(i in 2:nyr){
+
+  # Get N last year
+  N_prev <- data$N[i-1]
+
+  # Calculate exploitation this year
+  # C = qEN
+  # C/N = qE
+  # FMSY = qE
+  F_now <- fmsy/q
+
+  # Derive effort
+  # E = F/q
+  E_now <- F_now/q
+
+  # Calculate catch this year
+  C_now <- q * F_now * N_prev
+
+  # Calculate biomass this year
+  SP_now <- r*N_prev*(1-N_prev/K)
+  N_now <- N_prev + SP_now - C_now
+
+  # Record everything
+  data$N[i] <- N_now
+  data$C[i] <- C_now
+  data$E[i] <- E_now
+
+}
+
+# Derive some things
+data <- data %>%
+  mutate(depletion=N/K,
+         cpue=C/E)
+
+
+# Plot
+plot(N ~ year, data, ylim=c(0,10))
+plot(cpue ~ year, data)
+plot(C ~ year, data)
+plot(E ~ year, data)
+
+```
+
 
 ```{r, echo = FALSE}
 for(i in 2:length(tset)) {
