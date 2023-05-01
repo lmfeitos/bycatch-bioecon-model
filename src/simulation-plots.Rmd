@@ -3508,104 +3508,110 @@ E <- 0.5
 
 # time steps
 tset <- seq(from = 0, to = 200, length.out = 10000)
+
 ```
 
-```{r, echo = FALSE}
+```{r discrete time simulation, echo = FALSE}
+# nyr <- 200
+# 
+# data_c1 <- tibble(year = 1:nyr,
+#                   N_s1 = NA,
+#                   N_w1 = NA,
+#                   E1 = NA,
+#                   C_s1 = NA,
+#                   C_w1 = NA,
+#                   Pi_s1 = NA,
+#                   Pi_w1 = NA)
+# data_c1$N_s1[1] <- k_s
+# 
+# data_c1$N_w1[1] <- k_w
+# 
+# data_c1$E1[1] <- 0.5
+# 
+# data_c1$C_s1[1] <- 0
+# 
+# data_c1$C_w1[1] <- 0
+# 
+# data_c1$Pi_s1[1] <- 0
+# 
+# data_c1$Pi_w1[1] <- 0
 
+# i <- 2
+# for(i in 2:nyr) {
+#   
+#   N_s_prev1 <- data_c1$N_s1[i-1]
+#   N_w_prev1 <- data_c1$N_w1[i-1]
+#   E_prev1 <- data_c1$E1[i-1]
+#   
+#   
+# 
+#   # Calculate change in variable size at each time step
+#   E_now1 <- (alpha * E_prev1 * 
+#                (A_s * (q_s * N_s_prev1^beta_s1 * E_prev1)^-f_s1 * q_s * N_s_prev1^beta_s1 +
+#                         A_w * (q_w * N_w_prev1^beta_w1 * E_prev1)^-f_w1 * q_w * N_w_prev1^beta_w1 - (c)))
+#   C_s_now1 <- q_s * N_s_prev1^beta_s1 * E_now1
+#   C_w_now1 <- q_w * N_w_prev1^beta_w1 * E_now1
+#   SP_s_now1 <- r_s * N_s_prev1 * (1 - (N_s_prev1/k_s))
+#   SP_w_now1 <- r_w * N_w_prev1 * (1 - (N_w_prev1/k_w))
+#   N_s_now1 <- N_s_prev1 + SP_s_now1 - C_s_now1
+#   N_w_now1 <- N_w_prev1 + SP_w_now1 - C_w_now1
+#   Pi_s1 <- C_s_now1 * A_s * (q_s * N_s_now1^beta_s1 * E_now1)^-f_s1 - C_s_now1 * c
+#   Pi_s1 <- C_w_now1 * A_w * (q_w * N_w_now1^beta_w1 * E_now1)^-f_w1 - C_w_now1 * c
+#   #Pi1 <- (C_s1 * A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1 + C_w1 * A_w * (q_w * N_w1^beta_w1 * E1)^-f_w1 - ((C_s1 + C_w1) * c)) * dt
+#   
+#   # calculate total variable size and store in holding vectors
+#   
+#   # record everything
+#   data_c1$N_s1[i] <- N_s_now1
+#   data_c1$N_w1[i] <- N_w_now1
+#   data_c1$E1[i] <- E_now1
+#   data_c1$C_s1[i] <- C_s_now1
+#   data_c1$C_w1[i] <- C_w_now1
+#   data_c1$Pi_s1[i] <- Pi_s1
+#   data_c1$Pi_w1[i] <- Pi_w1
+#   
+# }
+# 
+# 
+# data_c1 <- data_c1 %>% 
+#   mutate(cpue_s = C_s1/E1,
+#          cpue_w = C_w1/E1,
+#          depletion_s = N_s1/k_s,
+#          depletion_w = N_w1/k_w)
+# 
+# plot(N_s1 ~ year, data_c1)
+# plot(N_w1 ~ year, data_c1)
+# plot(cpue_w ~ year, data_c1)
+```
+
+
+
+```{r, echo = FALSE}
 N_w_simu1 <- NaN*tset; N_w_simu1[1] <- N_w
 
 N_s_simu1 <- NaN*tset; N_s_simu1[1] <- N_s
 
 E_simu1 <- NaN*tset; E_simu1[1] <- E
 
-C_s_simu1 <- NaN*tset; C_s_simu1[1] <- 1
+C_s_simu1 <- NaN*tset; C_s_simu1[1] <- 0
 
-C_w_simu1 <- NaN*tset; C_w_simu1[1] <- 1
+C_w_simu1 <- NaN*tset; C_w_simu1[1] <- 0
 
-cpue_s_simu1 <- NaN*tset; cpue_s_simu1[1] <- 1
+cpue_s_simu1 <- NaN*tset; cpue_s_simu1[1] <- 0
 
-cpue_w_simu1 <- NaN*tset; cpue_w_simu1[1] <- 1
+cpue_w_simu1 <- NaN*tset; cpue_w_simu1[1] <- 0
 
-Pi_sum_simu1 <- NaN*tset; Pi_sum_simu1[1] <- 2
+Pi_sum_simu1 <- NaN*tset; Pi_sum_simu1[1] <- 0
 
-Pi_s_simu1 <- NaN*tset; Pi_s_simu1[1] <- 1
+Pi_s_simu1 <- NaN*tset; Pi_s_simu1[1] <- 0
 
-Pi_w_simu1 <- NaN*tset; Pi_w_simu1[1] <- 1
+Pi_w_simu1 <- NaN*tset; Pi_w_simu1[1] <- 0
 ```
-
-# DEMO CODE FROM CHRIS
-
-```{r}
-# Setup life history
-r <- 0.2
-K <- 10
-q <- 0.05
-fmsy <- r/2
-
-# Set up effort
-nyr <- 30
-E <- c(0, rep(NA, nyr-1))
-
-# Setup container
-data <- tibble(year=1:nyr,
-               N=NA,
-               E=E,
-               C=NA)
-
-# Record first year
-data$N[1] <- K
-data$C[1] <- 0
-
-# Loop through years
-i <- 2
-for(i in 2:nyr){
-
-  # Get N last year
-  N_prev <- data$N[i-1]
-
-  # Calculate exploitation this year
-  # C = qEN
-  # C/N = qE
-  # FMSY = qE
-  F_now <- fmsy/q
-
-  # Derive effort
-  # E = F/q
-  E_now <- F_now/q
-
-  # Calculate catch this year
-  C_now <- q * F_now * N_prev
-
-  # Calculate biomass this year
-  SP_now <- r*N_prev*(1-N_prev/K)
-  N_now <- N_prev + SP_now - C_now
-
-  # Record everything
-  data$N[i] <- N_now
-  data$C[i] <- C_now
-  data$E[i] <- E_now
-
-}
-
-# Derive some things
-data <- data %>%
-  mutate(depletion=N/K,
-         cpue=C/E)
-
-
-# Plot
-plot(N ~ year, data, ylim=c(0,10))
-plot(cpue ~ year, data)
-plot(C ~ year, data)
-plot(E ~ year, data)
-
-```
-
 
 ```{r, echo = FALSE}
 for(i in 2:length(tset)) {
   
-    # change in time
+# change in time
   dt <- tset[i] - tset[i-1]
   
   # placeholder variables to plug into the equations
@@ -3623,20 +3629,6 @@ for(i in 2:length(tset)) {
   # Calculate change in variable size at each time step
   dN_s1 <- (r_s * N_s1 * (1 - (N_s1/k_s)) - (q_s * N_s1^beta_s1 * E1)) * dt
   dN_w1 <- (r_w * N_w1 * (1 - (N_w1/k_w)) - (q_w * N_w1^beta_w1 * E1)) * dt
-  
-  if(dN_s1 < -N_s1) {
-  dN_s1 <- -N_s1
-  N_s1 <- 0
-  } else {
-  N_s1 <- N_s1 + dN_s1
- }
-
-  if(dN_w1 < -N_w1) {
-  dN_w1 <- -N_w1
-  N_w1 <- 0
-  } else {
-  N_w1 <- N_w1 + dN_w1
- }
   dE1 <- (alpha * E1 * (A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1 * q_s * N_s1^beta_s1 +
                         A_w * (q_w * N_w1^beta_w1 * E1)^-f_w1 * q_w * N_w1^beta_w1 - (c))) * dt
   dC_s1 <- (q_s * N_s1^beta_s1 * E1) * dt
@@ -3654,16 +3646,16 @@ for(i in 2:length(tset)) {
   E_simu1[i] <- E1 + dE1
   C_s_simu1[i] <- C_s1 + dC_s1
   C_w_simu1[i] <- C_w1 + dC_w1
-  cpue_s_simu1[i] <- cpue_s1 + dcpue_s1
-  cpue_w_simu1[i] <- cpue_w1 + dcpue_w1
+  cpue_s_simu1[i] <- (C_s1 + dC_s1) / (E1 + dE1)
+  cpue_w_simu1[i] <- (C_w1 + dC_w1) / (E1 + dE1)
   Pi_sum_simu1[i] <- pi1 + dPi1
   Pi_s_simu1[i] <- pi_s1 + dPi_s1
   Pi_w_simu1[i] <- pi_w1 + dPi_w1  
   
-}
-
+}  
 
 ```
+
 
 ```{r scenario 2, echo = FALSE}
 # set up the parameter space
@@ -3682,21 +3674,20 @@ N_s_simu2 <- NaN*tset; N_s_simu2[1] <- N_s
 
 E_simu2 <- NaN*tset; E_simu2[1] <- E
 
-C_s_simu2 <- NaN*tset; C_s_simu2[1] <- 1
+C_s_simu2 <- NaN*tset; C_s_simu2[1] <- 0
 
-C_w_simu2 <- NaN*tset; C_w_simu2[1] <- 1
+C_w_simu2 <- NaN*tset; C_w_simu2[1] <- 0
 
-cpue_s_simu2 <- NaN*tset; cpue_s_simu2[1] <- 1
+cpue_s_simu2 <- NaN*tset; cpue_s_simu2[1] <- 0
 
-cpue_w_simu2 <- NaN*tset; cpue_w_simu2[1] <- 1
+cpue_w_simu2 <- NaN*tset; cpue_w_simu2[1] <- 0
 
-Pi_sum_simu2 <- NaN*tset; Pi_sum_simu2[1] <- 2
+Pi_sum_simu2 <- NaN*tset; Pi_sum_simu2[1] <- 0
 
-Pi_s_simu2 <- NaN*tset; Pi_s_simu2[1] <- 1
+Pi_s_simu2 <- NaN*tset; Pi_s_simu2[1] <- 0
 
-Pi_w_simu2 <- NaN*tset; Pi_w_simu2[1] <- 1
+Pi_w_simu2 <- NaN*tset; Pi_w_simu2[1] <- 0
 
-t_Nw_0 <- 66.81668
 ```
 
 
@@ -3721,19 +3712,6 @@ for(i in 2:length(tset)) {
   # Calculate change in variable size at each time step
   dN_s2 <- (r_s * N_s2 * (1 - (N_s2/k_s)) - (q_s * N_s2^beta_s2 * E2)) * dt
   dN_w2 <- (r_w * N_w2 * (1 - (N_w2/k_w)) - (q_w * N_w2^beta_w2 * E2)) * dt
-  if(dN_s2 < -N_s2) {
-  dN_s2 <- -N_s2
-  N_s2 <- 0
-  } else {
-  N_s2 <- N_s2 + dN_s2
- }
-
-  if(dN_w2 < -N_w2) {
-  dN_w2 <- -N_w2
-  N_w2 <- 0
-  } else {
-  N_w2 <- N_w2 + dN_w2
- }
   dE2 <- (alpha * E2 * (A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 * q_s * N_s2^beta_s2 +
                         A_w * (q_w * N_w2^beta_w2 * E2)^-f_w2 * q_w * N_w2^beta_w2 - (c))) * dt
   dC_s2 <- (q_s * N_s2^beta_s2 * E2) * dt
@@ -3751,16 +3729,25 @@ for(i in 2:length(tset)) {
   E_simu2[i] <- E2 + dE2
   C_s_simu2[i] <- C_s2 + dC_s2
   C_w_simu2[i] <- C_w2 + dC_w2
-  cpue_s_simu2[i] <- cpue_s2 + dcpue_s2
-  cpue_w_simu2[i] <- cpue_w2 + dcpue_w2
+  cpue_s_simu2[i] <- (C_s2 + dC_s2) / (E2 + dE2)
+  cpue_w_simu2[i] <- (C_w2 + dC_w2) / (E2 + dE2)
   Pi_sum_simu2[i] <- pi2 + dPi2
   Pi_s_simu2[i] <- pi_s2 + dPi_s2
   Pi_w_simu2[i] <- pi_w2 + dPi_w2  
   
 }  
 
+plot(x = tset, y = cpue_s_simu2,
+     col = "black")
+lines(x = tset, y = cpue_w_simu2,
+      col = "blue")
+lines(x = tset, y = C_s_simu2,
+      col = "red")
+lines(x = tset, y = C_w_simu2,
+      col = "orange")
 
 ```
+
 
 ```{r scenario 5, echo = FALSE}
 # set up the parameter space
@@ -3785,19 +3772,19 @@ N_s_simu5 <- NaN*tset; N_s_simu5[1] <- N_s
 
 E_simu5 <- NaN*tset; E_simu5[1] <- E
 
-C_s_simu5 <- NaN*tset; C_s_simu5[1] <- 1
+C_s_simu5 <- NaN*tset; C_s_simu5[1] <- 0
 
-C_w_simu5 <- NaN*tset; C_w_simu5[1] <- 1
+C_w_simu5 <- NaN*tset; C_w_simu5[1] <- 0
 
-cpue_s_simu5 <- NaN*tset; cpue_s_simu5[1] <- 1
+cpue_s_simu5 <- NaN*tset; cpue_s_simu5[1] <- 0
 
-cpue_w_simu5 <- NaN*tset; cpue_w_simu5[1] <- 1
+cpue_w_simu5 <- NaN*tset; cpue_w_simu5[1] <- 0
 
-Pi_sum_simu5 <- NaN*tset; Pi_sum_simu5[1] <- 2
+Pi_sum_simu5 <- NaN*tset; Pi_sum_simu5[1] <- 0
 
-Pi_s_simu5 <- NaN*tset; Pi_s_simu5[1] <- 1
+Pi_s_simu5 <- NaN*tset; Pi_s_simu5[1] <- 0
 
-Pi_w_simu5 <- NaN*tset; Pi_w_simu5[1] <- 1
+Pi_w_simu5 <- NaN*tset; Pi_w_simu5[1] <- 0
 
 cost_ns_simu5 <- NaN*tset; cost_ns_simu5[1] <- 0.05
 
@@ -3847,8 +3834,6 @@ for(i in 2:length(tset)) {
                           A_w * (q_w * N_w5^beta_w5 * E5)^-f_w5 * q_w * N_w5^beta_w5 - (c))) * dt
     dC_s5 <- (q_s * N_s5^beta_s5 * E5) * dt
     dC_w5 <- (q_w * N_w5^beta_w5 * E5) * dt
-    dcpue_s5 <- (C_s5 / E5) * dt
-    dcpue_w5 <- (C_w5 / E5) * dt
     dPi_s5 <- (C_s5 * A_s * (q_s * N_s5^beta_s5 * E5)^-f_s5 - C_s5 * c) * dt
     dPi_w5 <- (C_w5 * A_w * (q_w * N_w5^beta_w5 * E5)^-f_w5 - C_w5 * c) * dt
     dPi5 <- (C_s5 * A_s * (q_s * N_s5^beta_s5 * E5)^-f_s5 + C_w5 * A_w * (q_w * N_w5^beta_w5 * E5)^-f_w5 - ((C_s5 + C_w5) * c)) * dt
@@ -3867,8 +3852,6 @@ for(i in 2:length(tset)) {
     dE5 <- (alpha * E5 * (A_s * (q_s * N_s5^beta_s5 * E5)^-f_s5 * q_s * N_s5^beta_s5 - (c))) * dt
     dC_s5 <- (q_s * N_s5^beta_s5 * E5) * dt
     dC_w5 <- 0
-    dcpue_s5 <- (C_s5 / E5) * dt
-    dcpue_w5 <- 0
     dPi_w5 <- 0
     dPi_s5 <- (C_s5 * A_s * (q_s * N_s5^beta_s5 * E5)^-f_s5 - (C_s5 * c)) * dt
     dPi5 <- (C_s5 * A_s * (q_s * N_s5^beta_s5 * E5)^-f_s5 - (C_s5 * c)) * dt
@@ -3887,8 +3870,8 @@ for(i in 2:length(tset)) {
   E_simu5[i] <- E5 + dE5
   C_s_simu5[i] <- C_s5 + dC_s5
   C_w_simu5[i] <- ifelse(N_w5 + dN_w5 < 0, 0, C_w5 + dC_w5)
-  cpue_s_simu5[i] <- cpue_s5 + dcpue_s5
-  cpue_w_simu5[i] <- ifelse(N_w5 + dN_w5 < 0, 0, cpue_w5 + dcpue_w5)
+  cpue_s_simu5[i] <- (C_s5 + dC_s5) / (E5 + dE5)
+  cpue_w_simu5[i] <- (C_w5 + dC_w5) / (E5 + dE5)
   Pi_sum_simu5[i] <- pi5 + dPi5
   Pi_s_simu5[i] <- pi_s5 + dPi_s5
   Pi_w_simu5[i] <- ifelse(N_w5 + dN_w5 < 0, 0, pi_w5 + dPi_w5)
@@ -3927,19 +3910,19 @@ N_s_simu7 <- NaN*tset; N_s_simu7[1] <- N_s
 
 E_simu7 <- NaN*tset; E_simu7[1] <- E
 
-C_s_simu7 <- NaN*tset; C_s_simu7[1] <- 1
+C_s_simu7 <- NaN*tset; C_s_simu7[1] <- 0
 
-C_w_simu7 <- NaN*tset; C_w_simu7[1] <- 1
+C_w_simu7 <- NaN*tset; C_w_simu7[1] <- 0
 
-cpue_s_simu7 <- NaN*tset; cpue_s_simu7[1] <- 1
+cpue_s_simu7 <- NaN*tset; cpue_s_simu7[1] <- 0
 
-cpue_w_simu7 <- NaN*tset; cpue_w_simu7[1] <- 1
+cpue_w_simu7 <- NaN*tset; cpue_w_simu7[1] <- 0
 
-Pi_sum_simu7 <- NaN*tset; Pi_sum_simu7[1] <- 2
+Pi_sum_simu7 <- NaN*tset; Pi_sum_simu7[1] <- 0
 
-Pi_s_simu7 <- NaN*tset; Pi_s_simu7[1] <- 1
+Pi_s_simu7 <- NaN*tset; Pi_s_simu7[1] <- 0
 
-Pi_w_simu7 <- NaN*tset; Pi_w_simu7[1] <- 1
+Pi_w_simu7 <- NaN*tset; Pi_w_simu7[1] <- 0
 
 cost_ns_simu7 <- NaN*tset; cost_ns_simu7[1] <- 0.05
 
@@ -3988,8 +3971,6 @@ for(i in 2:length(tset)) {
                           A_w * (q_w * N_w7^beta_w7 * E7)^-f_w7 * q_w * N_w7^beta_w7 - (c))) * dt
     dC_s7 <- (q_s * N_s7^beta_s7 * E7) * dt
     dC_w7 <- (q_w * N_w7^beta_w7 * E7) * dt
-    dcpue_s7 <- (C_s7 / E7) * dt
-    dcpue_w7 <- (C_w7 / E7) * dt
     dPi_s7 <- (C_s7 * A_s * (q_s * N_s7^beta_s7 * E7)^-f_s7 - C_s7 * c) * dt
     dPi_w7 <- (C_w7 * A_w * (q_w * N_w7^beta_w7 * E7)^-f_w7 - C_w7 * c) * dt
     dPi7 <- (C_s7 * A_s * (q_s * N_s7^beta_s7 * E7)^-f_s7 + C_w7 * A_w * (q_w * N_w7^beta_w7 * E7)^-f_w7 - ((C_s7 + C_w7) * c)) * dt
@@ -4008,8 +3989,6 @@ for(i in 2:length(tset)) {
     dE7 <- (alpha * E7 * (A_s * (q_s * N_s7^beta_s7 * E7)^-f_s7 * q_s * N_s7^beta_s7 - (c))) * dt
     dC_s7 <- (q_s * N_s7^beta_s7 * E7) * dt
     dC_w7 <- 0
-    dcpue_s7 <- (C_s7 / E7) * dt
-    dcpue_w7 <- 0
     dPi_w7 <- 0
     dPi_s7 <- (C_s7 * A_s * (q_s * N_s7^beta_s7 * E7)^-f_s7 - (C_s7 * c)) * dt
     dPi7 <- (C_s7 * A_s * (q_s * N_s7^beta_s7 * E7)^-f_s7 - (C_s7 * c)) * dt
@@ -4028,8 +4007,8 @@ for(i in 2:length(tset)) {
   E_simu7[i] <- E7 + dE7
   C_s_simu7[i] <- C_s7 + dC_s7
   C_w_simu7[i] <- ifelse(N_w7 + dN_w7 < 0, 0, C_w7 + dC_w7)
-  cpue_s_simu7[i] <- cpue_s7 + dcpue_s7
-  cpue_w_simu7[i] <- ifelse(N_w7 + dN_w7 < 0, 0, cpue_w7 + dcpue_w7)
+  cpue_s_simu7[i] <- (C_s7 + dC_s7) / (E7 + dE7)
+  cpue_w_simu7[i] <- (C_w7 + dC_w7) / (E7 + dE7)
   Pi_sum_simu7[i] <- pi7 + dPi7
   Pi_s_simu7[i] <- pi_s7 + dPi_s7
   Pi_w_simu7[i] <- ifelse(N_w7 + dN_w7 < 0, 0, pi_w7 + dPi_w7)
@@ -4067,19 +4046,19 @@ N_s_simu8 <- NaN*tset; N_s_simu8[1] <- N_s
 
 E_simu8 <- NaN*tset; E_simu8[1] <- E
 
-C_s_simu8 <- NaN*tset; C_s_simu8[1] <- 1
+C_s_simu8 <- NaN*tset; C_s_simu8[1] <- 0
 
-C_w_simu8 <- NaN*tset; C_w_simu8[1] <- 1
+C_w_simu8 <- NaN*tset; C_w_simu8[1] <- 0
 
-cpue_s_simu8 <- NaN*tset; cpue_s_simu8[1] <- 1
+cpue_s_simu8 <- NaN*tset; cpue_s_simu8[1] <- 0
 
-cpue_w_simu8 <- NaN*tset; cpue_w_simu8[1] <- 1
+cpue_w_simu8 <- NaN*tset; cpue_w_simu8[1] <- 0
 
-Pi_sum_simu8 <- NaN*tset; Pi_sum_simu8[1] <- 2
+Pi_sum_simu8 <- NaN*tset; Pi_sum_simu8[1] <- 0
 
-Pi_s_simu8 <- NaN*tset; Pi_s_simu8[1] <- 1
+Pi_s_simu8 <- NaN*tset; Pi_s_simu8[1] <- 0
 
-Pi_w_simu8 <- NaN*tset; Pi_w_simu8[1] <- 1
+Pi_w_simu8 <- NaN*tset; Pi_w_simu8[1] <- 0
 
 cost_ns_simu8 <- NaN*tset; cost_ns_simu8[1] <- 0.05
 
@@ -4128,8 +4107,6 @@ for(i in 2:length(tset)) {
                           A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 * q_w * N_w8^beta_w8 - (c))) * dt
     dC_s8 <- (q_s * N_s8^beta_s8 * E8) * dt
     dC_w8 <- (q_w * N_w8^beta_w8 * E8) * dt
-    dcpue_s8 <- (C_s8 / E8) * dt
-    dcpue_w8 <- (C_w8 / E8) * dt
     dPi_s8 <- (C_s8 * A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 - (C_s8 * c)) * dt
     dPi_w8 <- (C_w8 * A_w * (q_w * N_w8^beta_w8 * E8)^-f_w8 - (C_w8 * c)) * dt
     dPi8 <- (C_s8 * A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 + 
@@ -4149,8 +4126,6 @@ for(i in 2:length(tset)) {
     dE8 <- (alpha * E8 * (A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 * q_s * N_s8^beta_s8 - (c))) * dt
     dC_s8 <- (q_s * N_s8^beta_s8 * E8) * dt
     dC_w8 <- 0
-    dcpue_s8 <- (C_s8 / E8) * dt
-    dcpue_w8 <- 0
     dPi_w8 <- 0
     dPi_s8 <- (C_s8 * A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 - (C_s8 * c)) * dt
     dPi8 <- (C_s8 * A_s * (q_s * N_s8^beta_s8 * E8)^-f_s8 - (C_s8 * c)) * dt
@@ -4169,8 +4144,8 @@ for(i in 2:length(tset)) {
   E_simu8[i] <- E8 + dE8
   C_s_simu8[i] <- C_s8 + dC_s8
   C_w_simu8[i] <- ifelse(N_w8 + dN_w8 < 0, 0, C_w8 + dC_w8)
-  cpue_s_simu8[i] <- cpue_s8 + dcpue_s8
-  cpue_w_simu8[i] <- ifelse(N_w8 + dN_w8 < 0, 0, cpue_w8 + dcpue_w8)
+  cpue_s_simu8[i] <- (C_s8 + dC_s8) / (E8 + dE8)
+  cpue_w_simu8[i] <- (C_w8 + dC_w8) / (E8 + dE8)
   Pi_sum_simu8[i] <- pi8 + dPi8
   Pi_s_simu8[i] <- pi_s8 + dPi_s8
   Pi_w_simu8[i] <- ifelse(N_w8 + dN_w8 < 0, 0, pi_w8 + dPi_w8)
@@ -4310,36 +4285,36 @@ catch_w_df <- cbind(C_w_simu1,C_w_simu2, C_w_simu5, C_w_simu7, C_w_simu8, tset) 
 
 
 cpue_s_df <- cbind(cpue_s_simu1, cpue_s_simu2, cpue_s_simu5, cpue_s_simu7, cpue_s_simu8,tset) %>% #cpue_s_simu3, cpue_s_simu4,cpue_s_simu6,
-  as.data.frame() %>% 
-  pivot_longer(cols = starts_with("cpue_s_"),
-               names_to = "variable",
-               values_to = "value") %>% 
-  mutate(scenario_id = case_when(
-    str_detect(variable, "1") ~ "1",
-    str_detect(variable, "2") ~ "2",
-    # str_detect(variable, "3") ~ "3",
-    # str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "3",
-    # str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "4",
-    str_detect(variable, "8") ~ "5"))
+ as.data.frame() %>% 
+ pivot_longer(cols = starts_with("cpue_s_"),
+              names_to = "variable",
+              values_to = "value") %>% 
+ mutate(scenario_id = case_when(
+   str_detect(variable, "1") ~ "1",
+   str_detect(variable, "2") ~ "2",
+   # str_detect(variable, "3") ~ "3",
+   # str_detect(variable, "4") ~ "4",
+   str_detect(variable, "5") ~ "3",
+   # str_detect(variable, "6") ~ "6",
+   str_detect(variable, "7") ~ "4",
+   str_detect(variable, "8") ~ "5"))
 
 
 
 cpue_w_df <- cbind(cpue_w_simu1, cpue_w_simu2, cpue_w_simu5, cpue_w_simu7, cpue_w_simu8, tset) %>% #cpue_w_simu3, cpue_w_simu4, cpue_w_simu6, 
-  as.data.frame() %>% 
-  pivot_longer(cols = starts_with("cpue_w_"),
-               names_to = "variable",
-               values_to = "value") %>% 
-  mutate(scenario_id = case_when(
-    str_detect(variable, "1") ~ "1",
-    str_detect(variable, "2") ~ "2",
-    # str_detect(variable, "3") ~ "3",
-    # str_detect(variable, "4") ~ "4",
-    str_detect(variable, "5") ~ "3",
-    # str_detect(variable, "6") ~ "6",
-    str_detect(variable, "7") ~ "4",
-    str_detect(variable, "8") ~ "5"))
+ as.data.frame() %>% 
+ pivot_longer(cols = starts_with("cpue_w_"),
+              names_to = "variable",
+              values_to = "value") %>% 
+ mutate(scenario_id = case_when(
+   str_detect(variable, "1") ~ "1",
+   str_detect(variable, "2") ~ "2",
+   # str_detect(variable, "3") ~ "3",
+   # str_detect(variable, "4") ~ "4",
+   str_detect(variable, "5") ~ "3",
+   # str_detect(variable, "6") ~ "6",
+   str_detect(variable, "7") ~ "4",
+   str_detect(variable, "8") ~ "5"))
 
 profits_df <- cbind(Pi_sum_simu1, Pi_sum_simu2, Pi_sum_simu5, Pi_sum_simu7, Pi_sum_simu8, tset) %>% #Pi_sum_simu3, Pi_sum_simu4, Pi_sum_simu6,
   as.data.frame() %>% 
@@ -4514,7 +4489,7 @@ var_plot_price <- var_full_price %>%
     str_detect(variable, "rev_ns_") ~ "Strong stock revenue/catch",
     str_detect(variable, "rev_nw_") ~ "Weak stock revenue/catch",
     str_detect(variable, "rev_sum") ~ "Revenue sum/catch",
-  )) 
+  ))
 
 ```
 
@@ -4750,7 +4725,8 @@ equal_scales_EWS_fcn <-
   scale_color_manual(values = c("#A50E82FF")) +
   scale_x_continuous(breaks = seq(0, 200, 100),
                      expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0.5)) +
+  scale_y_continuous(breaks = seq(0, 30, 10),
+                     expand = c(0,0.5)) +
   labs(x = "",
        y = "Fishing Effort",
        color = "") +
@@ -4802,9 +4778,9 @@ dif_scales_fcn <-
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
 
-equal_scales_CPE_fcn <-
+equal_scales_catch_fcn <-
   var_plot_price %>% 
-  filter(variable_clean %in% c("Weak stock catch", "Strong stock catch", "Weak stock CPUE", "Strong stock CPUE")) %>% 
+  filter(variable_clean %in% c("Weak stock catch", "Strong stock catch")) %>% 
   ggplot() +
   geom_line(aes(x = tset, y = value, color = variable_clean),
             size = .8,
@@ -4812,11 +4788,11 @@ equal_scales_CPE_fcn <-
             show.legend = T) +
   facet_wrap(~ scenario_id,
              nrow = 1) +
-  scale_color_manual(values = c("#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F")) +
+  scale_color_manual(values = c("#33A02C", "#FB9A99")) +
   scale_x_continuous(breaks = seq(0, 200, 100),
                      expand = c(0,0)) +
   labs(x = "",
-       y = "CPUE, Catch",
+       y = "Catch",
        color = "") +
   theme_bw() +
   theme(panel.grid.major.x = element_blank(),
@@ -4829,6 +4805,36 @@ equal_scales_CPE_fcn <-
         axis.title.y = element_text(color = "black", size = 12, vjust = 2),
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
+
+
+equal_scales_cpue_fcn <-
+  var_plot_price %>% 
+  filter(variable_clean %in% c("Weak stock CPUE", "Strong stock CPUE")) %>% 
+  ggplot() +
+  geom_line(aes(x = tset, y = value, color = variable_clean),
+            size = .8,
+            alpha = .8,
+            show.legend = T) +
+  facet_wrap(~ scenario_id,
+             nrow = 1) +
+  scale_color_manual(values = c("#E31A1C", "#FDBF6F")) +
+  scale_x_continuous(breaks = seq(0, 200, 100),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "CPUE",
+       color = "") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.spacing = unit(5, "mm"),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        axis.title.x = element_text(color = "black", size = 12),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom")
+
 
 equal_scales_pi_fcn <-
   var_plot_price %>% 
@@ -4863,7 +4869,8 @@ equal_scales_pi_fcn <-
 fcn_plot <-
   equal_scales_EWS_fcn /
    dif_scales_fcn /
-  equal_scales_CPE_fcn /
+  equal_scales_catch_fcn /
+    equal_scales_cpue_fcn /
      equal_scales_pi_fcn +
   plot_annotation(tag_levels = "A") +
   theme(panel.grid.major = element_blank())
