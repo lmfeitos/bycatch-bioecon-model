@@ -212,8 +212,26 @@ $$
 ```{r}
 s_w_range_proc_test <-
   s_w_range_proc %>% 
-           filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4) %>% 
+           filter(p_w < 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4) %>% 
   distinct_all()
+
+s_w_range_proc_test_min <-
+  s_w_range_proc %>%
+  filter(p_w < 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4 & b_v_k_w > 0 & b_v_k_w < 0.001) %>% 
+  distinct_all() %>%
+  group_by(st_stock_rev, vuln_ratio_w) %>% 
+  summarise(min = min(b_v_k_w)) %>%  
+  distinct_at(vars(st_stock_rev, vuln_ratio_w, min))
+
+s_w_range_proc_test_min2 <-
+  s_w_range_proc %>%
+  filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4 & b_v_k_w > 0 & b_v_k_w < 0.001) %>% 
+  distinct_all() %>%
+  group_by(st_stock_rev, vuln_ratio_w) %>% 
+  summarise(min = min(b_v_k_w)) %>%  
+  distinct_at(vars(st_stock_rev, vuln_ratio_w, min))
+
+
 ```
 
 ```{r, echo = FALSE}
@@ -222,10 +240,15 @@ col_limit <- c(0, 0.63)
 
 
 s_w_range_proc_plot <-
-  ggplot(data = s_w_range_proc %>% 
-           filter(p_w < 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4) %>% 
-           distinct_all()) +
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_v_k_w, width = .04)) +
+  ggplot() +
+  geom_tile(data = s_w_range_proc_test,
+            aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_v_k_w, width = .04)) +
+  geom_smooth(data = s_w_range_proc_test_min,
+             aes(x = vuln_ratio_w, y = st_stock_rev, color = min),
+             color = "black",
+             se = FALSE,
+             linetype = "dashed",
+             linewidth = .5) +
   scale_fill_paletteer_c("grDevices::Blues 3",
                           #rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.6, 0.1),
@@ -237,7 +260,7 @@ s_w_range_proc_plot <-
                      expand = c(0,0)) +
   labs(x = "",
        y = "Strong stock economic potential",
-       fill = "Weak stock depletion (B/K)",
+       fill = "Weak stock biomass (B/K)",
        title = "Weak stock price = 0") +
 #  coord_equal() +
   theme_bw() +
@@ -249,10 +272,17 @@ s_w_range_proc_plot <-
         panel.spacing = unit(3, "mm"))
 
 s_w_range_proc_plot2 <-
-  ggplot(data = s_w_range_proc %>% 
+  ggplot() +
+  geom_tile(data = s_w_range_proc %>% 
            filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4) %>% 
-           distinct_all()) +
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_v_k_w, width = .04)) +
+           distinct_all(),
+           aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_v_k_w, width = .04)) +
+  geom_smooth(data = s_w_range_proc_test_min2,
+              aes(x = vuln_ratio_w, y = st_stock_rev, color = min),
+              color = "black",
+              se = FALSE,
+              linetype = "dashed",
+              linewidth = .5) +
   scale_fill_paletteer_c("grDevices::Blues 3",
                          # rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.6, 0.1),
@@ -264,7 +294,7 @@ s_w_range_proc_plot2 <-
                      expand = c(0,0)) +
   labs(x = "",
        y = "",
-       fill = "Weak stock depletion (B/K)",
+       fill = "Weak stock biomass (B/K)",
        title = "Weak stock price = 1") +
   #coord_equal() +
   theme_bw() +
@@ -277,10 +307,15 @@ s_w_range_proc_plot2 <-
 
 
 w_s_range_proc_plot1 <-
-  ggplot(data = w_s_range_proc %>%
+  ggplot() + 
+  geom_tile(data = w_s_range_proc %>%
            filter(p_s == 1 & vuln_ratio_w <= 4) %>% 
-           distinct_all()) + 
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = b_v_k_w, width = .04)) +
+           distinct_all(),
+           aes(x = vuln_ratio_w, y = w_stock_rev, fill = b_v_k_w, width = .04)) +
+  geom_vline(xintercept = 2.6,
+             color = "black",
+             linewidth = .5,
+             linetype = "dashed") +
   scale_fill_paletteer_c("grDevices::Blues 3",
                          # rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.6, 0.1),
@@ -292,7 +327,7 @@ w_s_range_proc_plot1 <-
                      expand = c(0,0)) +
   labs(x = "",
        y = "Weak stock economic potential",
-       fill = "Weak stock depletion (B/K)",
+       fill = "Weak stock biomass (B/K)",
        title = "Strong stock price = 1") +
 #  coord_equal() +
   theme_bw() +
@@ -304,10 +339,15 @@ w_s_range_proc_plot1 <-
         panel.spacing = unit(3, "mm"))
   
 w_s_range_proc_plot2 <- 
-  ggplot(data = w_s_range_proc %>% 
+  ggplot() + 
+  geom_tile(data = w_s_range_proc %>% 
            filter(p_s == 2 & vuln_ratio_w <= 4) %>% 
-           distinct_all()) + 
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = b_v_k_w, width = .04)) +
+           distinct_all(),
+           aes(x = vuln_ratio_w, y = w_stock_rev, fill = b_v_k_w, width = .04)) +
+  geom_vline(xintercept = 1.4,
+             color = "black",
+             linewidth = .5,
+             linetype = "dashed") +
   scale_fill_paletteer_c("grDevices::Blues 3",
                          # rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
                          breaks = seq(0, 0.6, 0.1),
@@ -319,7 +359,7 @@ w_s_range_proc_plot2 <-
                      expand = c(0,0)) +
   labs(x = "",
        y = "",
-       fill = "Weak stock depletion (B/K)",
+       fill = "Weak stock biomass (B/K)",
        title = "Strong stock price = 2") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
@@ -350,8 +390,8 @@ plot_1 <- grid.arrange(patchworkGrob(range_plot_1 /
     plot_layout(guides = "collect")),
   bottom = "Vulnerability ratios\n(Vw/Vs)")
   
- # ggsave(file.path(outdir, "plot_1.png"), plot = plot_1,
- #       width = 12, height = 8, bg = "white", dpi = 300)
+#ggsave(file.path(outdir, "plot_1.png"), plot = plot_1,
+#      width = 12, height = 8, bg = "white", dpi = 300)
 ```
 
 ```{r, echo = FALSE}
@@ -628,116 +668,6 @@ names(no_sub) <- c("0.05")
 col_limit <- c(0, 0.63)
 
 # Create series of plots for pw = 0.1
-subs1_s_proc_plot0 <-
-  ggplot(data = s_w_range_proc %>% 
-           filter(p_w == 1)) +
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("grDevices::Blues 3",
-                         direction = -1,
-                         limits = col_limit) +
-  facet_wrap(~ c,
-             labeller = labeller(c = no_sub)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 16, 4),
-                     expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-subs1_s_proc_plot1 <-
-  ggplot(data = output_subs1_proc %>% 
-           filter(p_w == 1 & c == 0.045)) +
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
-  scale_fill_paletteer_c("grDevices::Blues 3",
-                         direction = -1,
-                         limits = col_limit) +
-  facet_wrap(~ c,
-             nrow = 1,
-             scales = "free_y",
-             labeller = labeller(c = sub1_label1)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 16, 4),
-                     expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-
-subs1_s_proc_plot2 <-
-  ggplot(data = output_subs1_proc %>% 
-           filter(p_w == 1 & c == 0.0375 & st_stock_rev <= 20)) + 
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("grDevices::Blues 3",
-                         direction = -1,
-                         limits = col_limit) +
-  facet_wrap(~ c,
-             nrow = 1,
-             scales = "free_y",
-             labeller = labeller(c = sub1_label2)) +
-  scale_x_continuous(breaks = seq(1, 10, 3),
-                     expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-subs1_s_proc_plot3 <-
-  ggplot(data = output_subs1_proc %>% 
-           filter(p_w == 1 & c == 0.025 & st_stock_rev <= 20)) + 
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
-  scale_fill_gradient2(breaks = seq(0, 0.2, 0.05),
-                         low = "#2A5783FF", 
-                         mid = "#FCFEFBFF",
-                         high = "#408749FF",
-                         midpoint = 0.1,
-                         limits = col_limit) +
-  facet_wrap(~ c,
-             nrow = 1,
-             scales = "free_y",
-             labeller = labeller(c = sub1_label3)) +
-  scale_x_continuous(breaks = seq(1, 10, 3),
-                     expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
 
 # Create plots for a smaller range of Vw/Vs
 subs1_s_proc_plot0.1 <-
@@ -883,19 +813,6 @@ output_subs1_proc %>%
 ```
 
 
-```{r, echo = FALSE, fig.height=7, fig.width=8, include = FALSE}
-# Gather all plots for pw = 1 
-sub1 <- grid.arrange(patchworkGrob(subs1_s_proc_plot0 /
-                                     subs1_s_proc_plot1 / 
-                                     subs1_s_proc_plot2 /
-                                     subs1_s_proc_plot3 +
-  plot_layout(ncol = 2)),
-  left = "Strong stock revenue stream",
-  bottom = "Vw/Vs")  
-
-# ggsave(file.path(outdir, "subsidy_ps1.png"), plot = sub1,
-#     width = 6, height = 7, bg = "white", dpi = 300)
-```
 
 ```{r, include = FALSE}
 sub1.1 <- grid.arrange(patchworkGrob(subs1_s_proc_plot0.1 /
@@ -914,117 +831,6 @@ sub1.1 <- grid.arrange(patchworkGrob(subs1_s_proc_plot0.1 /
 
 ```{r, echo = FALSE, include = FALSE}
 # Create series of plots for pw = 0.1 with full range of vulnerabilities
-subs2_s_proc_plot0 <-
-  ggplot(data = s_w_range_proc %>% 
-           filter(p_w < 1)) +
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         #breaks = seq(0, 0.35, 0.1),
-                         direction = -1) +
-  facet_wrap(~ c,
-             labeller = labeller(c = no_sub)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-
-subs2_s_proc_plot1 <-
-  ggplot(data = output_subs1_proc %>% 
-           filter(p_w < 1 & c == 0.045)) +
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1),
-                         direction = -1) +
-  facet_wrap(~ c,
-             nrow = 1,
-             scales = "free_y",
-             labeller = labeller(c = sub1_label1)) +
-  scale_x_continuous(breaks = seq(1, 10, 3),
-                     expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-
-subs2_s_proc_plot2 <-
-  ggplot(data = output_subs1_proc %>% 
-           filter(p_w < 1 & c == 0.0375 & st_stock_rev <= 20)) + 
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.3, 0.1),
-                         direction = -1) +
-  facet_wrap(~ c,
-             nrow = 1,
-             scales = "free_y",
-             labeller = labeller(c = sub1_label2)) +
-  scale_x_continuous(breaks = seq(1, 10, 3),
-                     expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-subs2_s_proc_plot3 <-
-  ggplot(data = output_subs1_proc %>% 
-           filter(p_w < 1 & c == 0.025 & st_stock_rev <= 20)) + 
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.2, 0.05),
-                         direction = -1) +
-  facet_wrap(~ c,
-             nrow = 1,
-             scales = "free_y",
-             labeller = labeller(c = sub1_label3)) +
-  scale_x_continuous(breaks = seq(1, 10, 3),
-                     expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
 # Create series of plots for pw = 0.1 with vulnerabilities ranging from 1 to 4
 subs2_s_proc_plot0.1 <-
   ggplot(data = s_w_range_proc %>% 
@@ -1132,19 +938,6 @@ subs2_s_proc_plot3.1 <-
 
 ```
 
-```{r, echo = FALSE, fig.height=7, fig.width=7, include = FALSE}
-# Gather all plots for pw = 0.1 
-sub2 <- grid.arrange(patchworkGrob(subs2_s_proc_plot0 / 
-                                     subs2_s_proc_plot1 / 
-                                     subs2_s_proc_plot2 /
-                                     subs2_s_proc_plot3 +
-  plot_layout(ncol = 2)),
-  left = "Strong stock revenue stream",
-  bottom = "Vw/Vs")  
-
-#ggsave(file.path(outdir, "subsidy_ps2.png"), plot =  sub2,
-#       width = 6, height = 7, bg = "white", dpi = 300)
-```
 
 ```{r, echo = FALSE, include = FALSE}
 # Gather all plots for pw = 0.1 with vulnerabiliy range subset
@@ -1176,121 +969,6 @@ names(sub1_label3) <- c("0.025")
 
 no_sub <- c("0% subsidy")
 names(no_sub) <- c("0.05")
-
-# Create series of plots for pw = 0.1
-subs1_w_proc_plot0 <-
-  ggplot(data = w_s_range_proc %>% 
-           filter(p_s == 1)) +
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                         direction = -1,
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.35, 0.1)) +
-  facet_wrap(~ c,
-             labeller = labeller(c = no_sub)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 8, 2),
-                     expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-subs1_w_proc_plot1 <-
-  ggplot(data = output_subs2_proc %>% 
-           filter(p_s == 1 & c == 0.045)) +
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                         direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1)) +
-  facet_wrap(~ c,
-             nrow = 1,
-             scales = "free_y",
-             labeller = labeller(c = sub1_label1)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 8, 2),
-                     expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-
-subs1_w_proc_plot2 <-
-  ggplot(data = output_subs2_proc %>% 
-           filter(p_s == 1 & c == 0.0375)) + 
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                         direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.3, 0.1)) +
-  facet_wrap(~ c,
-             nrow = 1,
-             scales = "free_y",
-             labeller = labeller(c = sub1_label2)) +
-  scale_x_continuous(breaks = seq(1, 10, 3),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 12, 2),
-                     expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-subs1_w_proc_plot3 <-
-  ggplot(data = output_subs2_proc %>% 
-           filter(p_s == 1 & c == 0.025)) + 
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                         direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.2, 0.05)) +
-  facet_wrap(~ c,
-             nrow = 1,
-             scales = "free_y",
-             labeller = labeller(c = sub1_label3)) +
-  scale_x_continuous(breaks = seq(1, 10, 3),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 16, 4),
-                     expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
 
 
 # Create plots for a smaller range of Vw/Vs
@@ -1404,19 +1082,6 @@ subs1_w_proc_plot3.1 <-
 - 0.0375 = 25% subsidy
 - 0.025 = 50% subsidy
 
-```{r, echo = FALSE, fig.height=7, fig.width=8, include = FALSE}
-# Gather all plots for pw = 1 
-sub_w1 <- grid.arrange(patchworkGrob(subs1_w_proc_plot0 /
-                                     subs1_w_proc_plot1 / 
-                                     subs1_w_proc_plot2 /
-                                     subs1_w_proc_plot3 +
-  plot_layout(ncol = 2)),
-  left = "Weak stock revenue stream",
-  bottom = "Vw/Vs")  
-
-# ggsave(file.path(outdir, "subsidy_pw1.png"), plot = sub_w1,
-#     width = 6, height = 7, bg = "white", dpi = 300)
-```
 
 ```{r, echo = FALSE, include = FALSE}
 sub_w1.1 <- grid.arrange(patchworkGrob(subs1_w_proc_plot0.1 /
@@ -1436,121 +1101,6 @@ sub_w1.1 <- grid.arrange(patchworkGrob(subs1_w_proc_plot0.1 /
 
 ```{r, echo = FALSE, include = FALSE}
 # Create series of plots for pw = 0.1 with full range of vulnerabilities
-subs2_w_proc_plot0 <-
-  ggplot(data = w_s_range_proc %>% 
-           filter(p_s == 2)) +
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                         direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.2, 0.05)) +
-  facet_wrap(~ c,
-             labeller = labeller(c = no_sub)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 8, 2),
-                     expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-
-subs2_w_proc_plot1 <-
-  ggplot(data = output_subs2_proc %>% 
-           filter(p_s == 2 & c == 0.045)) +
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1, width = .1)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                         direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.2, 0.05)) +
-  facet_wrap(~ c,
-             nrow = 1,
-             scales = "free_y",
-             labeller = labeller(c = sub1_label1)) +
-  scale_x_continuous(breaks = seq(1, 10, 3),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 8, 2),
-                     expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-
-subs2_w_proc_plot2 <-
-  ggplot(data = output_subs2_proc %>% 
-           filter(p_s == 2 & c == 0.0375)) + 
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                         direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.2, 0.05)) +
-  facet_wrap(~ c,
-             nrow = 1,
-             scales = "free_y",
-             labeller = labeller(c = sub1_label2)) +
-  scale_x_continuous(breaks = seq(1, 10, 3),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 12, 2),
-                     expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-subs2_w_proc_plot3 <-
-  ggplot(data = output_subs2_proc %>% 
-           filter(p_s == 2 & c == 0.025)) + 
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = log_b_v_k_w, height = 1.6, width = .1)) +
-  scale_fill_paletteer_c("ggthemes::Green-Blue-White Diverging",
-                         direction = -1,
-                         rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.1, 0.025)) +
-  facet_wrap(~ c,
-             nrow = 1,
-             scales = "free_y",
-             labeller = labeller(c = sub1_label3)) +
-  scale_x_continuous(breaks = seq(1, 10, 3),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 16, 4),
-                     expand = c(0,0)) +
-  labs(x = "",
-       y = "",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text.y = element_text(size = 10, color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
 
 # Create series of plots for pw = 0.1 with vulnerabilities ranging from 1 to 4
 subs2_w_proc_plot0.1 <-
@@ -3608,8 +3158,8 @@ for(i in 2:length(tset)) {
   cpue_s_simu1[i] <- (q_s * (N_s1 + dN_s1)^beta_s1 * E1 + dE1) / (E1 + dE1)
   cpue_w_simu1[i] <- (q_w * (N_w1 + dN_w1)^beta_w1 * E1 + dE1) / (E1 + dE1)
   Pi_sum_simu1[i] <- sum(pi_s1 + dPi_s1 + pi_w1 + dPi_w1)
-  Pi_s_simu1[i] <- pi_s1 + dPi_s1
-  Pi_w_simu1[i] <- pi_w1 + dPi_w1  
+  Pi_s_simu1[i] <- (C_s1 * A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1 - C_s1 * c) + dPi_s1
+  Pi_w_simu1[i] <- (C_w1 * A_w * (q_w * N_w1^beta_w1 * E1)^-f_w1 - C_w1 * c) + dPi_w1  
   
 }  
 
@@ -3702,8 +3252,8 @@ for(i in 2:length(tset)) {
   cpue_s_simu2[i] <- (q_s * (N_s2 + dN_s2)^beta_s2 * E2 + dE2) / (E2 + dE2)
   cpue_w_simu2[i] <- (q_w * (N_w2 + dN_w2)^beta_w2 * E2 + dE2) / (E2 + dE2)
   Pi_sum_simu2[i] <- sum(pi_s2 + dPi_s2 + pi_w2 + dPi_w2)
-  Pi_s_simu2[i] <- pi_s2 + dPi_s2
-  Pi_w_simu2[i] <- pi_w2 + dPi_w2  
+  Pi_s_simu2[i] <- (C_s2 * A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 - C_s2 * c) + dPi_s2
+  Pi_w_simu2[i] <- (C_w2 * A_w * (q_w * N_w2^beta_w2 * E2)^-f_w2 - C_w2 * c) + dPi_w2  
   
 }  
 
@@ -3841,13 +3391,14 @@ for(i in 2:length(tset)) {
   N_w_simu3[i] <- ifelse(N_w3 + dN_w3 < 0, 0, N_w3 + dN_w3)
   N_s_simu3[i] <- N_s3 + dN_s3
   E_simu3[i] <- E3 + dE3
-  C_s_simu3[i] <- q_s * (N_s3 + dN_s3)^beta_s3 * E3 + dE3
-  C_w_simu3[i] <- ifelse(N_w3 + dN_w3 < 0, 0, q_w * (N_w3 + dN_w3)^beta_w3 * E3 + dE3)
+  C_s_simu3[i] <- q_s * (N_s3 + dN_s3)^beta_s3 * (E3 + dE3)
+  C_w_simu3[i] <- ifelse(N_w3 + dN_w3 < 0, 0, q_w * (N_w3 + dN_w3)^beta_w3 * (E3 + dE3))
   cpue_s_simu3[i] <- (q_s * (N_s3 + dN_s3)^beta_s3 * E3 + dE3) / (E3 + dE3)
   cpue_w_simu3[i] <- (q_w * (N_w3 + dN_w3)^beta_w3 * E3 + dE3) / (E3 + dE3)
   Pi_sum_simu3[i] <- sum(pi_s3 + dPi_s3 + ifelse(N_w3 + dN_w3 < 0, 0, pi_w3 + dPi_w3))
-  Pi_s_simu3[i] <- pi_s3 + dPi_s3
-  Pi_w_simu3[i] <- ifelse(N_w3 + dN_w3 < 0, 0, pi_w3 + dPi_w3)
+  Pi_s_simu3[i] <- (q_s * (N_s3 + dN_s3)^beta_s3 * (E3 + dE3) * A_s * (q_s * N_s3^beta_s3 * E3)^-f_s3 - (q_s * (N_s3 + dN_s3)^beta_s3 * (E3 + dE3) * c)) + dPi_s3
+  Pi_w_simu3[i] <- ifelse(N_w3 + dN_w3 < 0, 0, q_w * (N_w3 + dN_w3)^beta_w3 * (E3 + dE3) * A_w * (q_w * N_w3^beta_w3 * E3)^-f_w3 
+                                                                            - (q_w * (N_w3 + dN_w3)^beta_w3 * (E3 + dE3) * c))  + dPi_w3
   cost_ns_simu3[i] <- cost_ns3 + dcost_ns3
   cost_nw_simu3[i] <- ifelse(N_w3 + dN_w3 < 0, 0, cost_nw3 + dcost_nw3)
   cost_sum_simu3[i] <- sum(cost_ns3 + dcost_ns3 + ifelse(N_w3 + dN_w3 < 0, 0, cost_nw3 + dcost_nw3))
@@ -4698,7 +4249,7 @@ equal_scales_EWS_fcn <-
   scale_x_continuous(breaks = seq(0, 200, 100),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 30, 10),
-                     expand = c(0,0.5)) +
+                     expand = c(0, 0.5)) +
   labs(x = "",
        y = "Fishing Effort",
        color = "") +
@@ -4778,6 +4329,7 @@ b_v_k_fcn <-
 equal_scales_catch_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Weak stock catch", "Strong stock catch")) %>% 
+  mutate(variable_clean = str_replace_all(variable_clean, "catch", "")) %>% 
   ggplot() +
   geom_line(aes(x = tset, y = value, color = variable_clean),
             size = .8,
@@ -4785,7 +4337,7 @@ equal_scales_catch_fcn <-
             show.legend = T) +
   facet_wrap(~ scenario_id,
              nrow = 1) +
-  scale_color_manual(values = c("#33A02C", "#FB9A99")) +
+  scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
   scale_x_continuous(breaks = seq(0, 200, 100),
                      expand = c(0,0)) +
   labs(x = "",
@@ -4806,6 +4358,7 @@ equal_scales_catch_fcn <-
 equal_scales_cpue_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Weak stock CPUE", "Strong stock CPUE")) %>% 
+  mutate(variable_clean = str_replace_all(variable_clean, "CPUE", "")) %>% 
   ggplot() +
   geom_line(aes(x = tset, y = value, color = variable_clean),
             size = .8,
@@ -4813,7 +4366,7 @@ equal_scales_cpue_fcn <-
             show.legend = T) +
   facet_wrap(~ scenario_id,
              nrow = 1) +
-  scale_color_manual(values = c("#E31A1C", "#FDBF6F")) +
+  scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
   scale_x_continuous(breaks = seq(0, 200, 100),
                      expand = c(0,0)) +
   labs(x = "",
@@ -4831,7 +4384,7 @@ equal_scales_cpue_fcn <-
         legend.position = "bottom")
 
 
-equal_scales_pi_fcn <-
+#equal_scales_pi_fcn <-
   var_plot_price %>% 
   filter(variable_clean %in% c("Profit sum", "Weak stock profits", "Strong stock profits")) %>% 
   ggplot() +
@@ -4840,7 +4393,8 @@ equal_scales_pi_fcn <-
             alpha = .8,
             show.legend = T) +
   facet_wrap(~ scenario_id,
-             nrow = 1) +
+             nrow = 1,
+             scales = "free_y") +
   scale_color_manual(values = c("#FF7F00", "#CAB2D6", "#6A3D9A")) +
   scale_x_continuous(breaks = seq(0, 200, 100),
                      expand = c(0,0)) +
@@ -4848,9 +4402,8 @@ equal_scales_pi_fcn <-
        y = "Profits",
        color = "") +
   theme_bw() +
-  theme(panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.minor.y = element_blank(),
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
         panel.spacing = unit(5, "mm"),
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
@@ -4874,7 +4427,7 @@ fcn_plot <-
 fcn_plot
 
 #ggplotly(fcn_plot)
-# ggsave(file.path(outdir, "p_fcn.png"), plot = fcn_plot,
-#        height = 10, width = 8, bg = "white", dpi = 300)
+#ggsave(file.path(outdir, "profit_plot_fcn.png"), plot = equal_scales_pi_fcn,
+#      height = 4, width = 6, bg = "white", dpi = 300)
 ```
 
