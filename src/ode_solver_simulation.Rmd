@@ -11,6 +11,9 @@ library(tidyverse)
 library(deSolve)
 library(patchwork)
 library(gridExtra)
+
+basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses/"
+outdir <- file.path(basedir, "model_outs") # calls present data from raster files
 ```
 
 ```{r}
@@ -48,6 +51,9 @@ f_w2 <- 0
 f_w3 <- 0.22
 f_w4 <- 0.22
 f_w5 <- 0.1
+
+# time steps
+times <- seq(0, 200, by = .1)
 ```
 
 
@@ -72,7 +78,6 @@ parameters_1 <- c(q_s = 0.02, q_w = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.99,
                 c = 0.05, A_w = 2, A_s = 1, beta_w1 = 1, beta_s1 = 1, f_w1 = 0, f_s1 = 0)
 
 # Define the time interval and solve the ODEs
-times <- seq(0, 200, by = 1)
 out1 <- ode(y = state, times = times, func = scenario_1, parms = parameters_1)
 
 out1 <- out1 %>% 
@@ -103,25 +108,26 @@ out1 <- out1 %>%
   pivot_longer(cols = starts_with("pi_"),
                names_to = "stock_profit",
                values_to = "profit_level") %>% 
-  mutate(scenario_id = "1")
+  mutate(scenario_id = "1") %>% 
+  mutate(scenario_label = "No hyperstability")
 
 out1_stock <- out1 %>% 
-  select(time, stock, stock_size, scenario_id)
+  select(time, stock, stock_size, scenario_label)
 
 out1_effort <- out1 %>% 
-  select(time, effort, effort_level, scenario_id)
+  select(time, effort, effort_level, scenario_label)
 
 out1_catch <- out1 %>% 
-  select(time, stock_catch, catch_size, scenario_id)
+  select(time, stock_catch, catch_size, scenario_label)
 
 out1_cpue <- out1 %>% 
-  select(time, stock_cpue, cpue_level, scenario_id)
+  select(time, stock_cpue, cpue_level, scenario_label)
 
 out1_cost <- out1 %>% 
-  select(time, cost_scenario, cost, scenario_id)
+  select(time, cost_scenario, cost, scenario_label)
 
 out1_profit <- out1 %>% 
-  select(time, stock_profit, profit_level, scenario_id)
+  select(time, stock_profit, profit_level, scenario_label)
 
 ```
 
@@ -176,25 +182,26 @@ out2 <- out2 %>%
   pivot_longer(cols = starts_with("pi_"),
                names_to = "stock_profit",
                values_to = "profit_level") %>% 
-  mutate(scenario_id = "2")
+  mutate(scenario_id = "2") %>% 
+  mutate(scenario_label = "Strong stock hyperstable")
 
 out2_stock <- out2 %>% 
-  select(time, stock, stock_size, scenario_id)
+  select(time, stock, stock_size, scenario_label)
 
 out2_effort <- out2 %>% 
-  select(time, effort, effort_level, scenario_id)
+  select(time, effort, effort_level, scenario_label)
 
 out2_catch <- out2 %>% 
-  select(time, stock_catch, catch_size, scenario_id)
+  select(time, stock_catch, catch_size, scenario_label)
 
 out2_cpue <- out2 %>% 
-  select(time, stock_cpue, cpue_level,scenario_id)
+  select(time, stock_cpue, cpue_level,scenario_label)
 
 out2_cost <- out2 %>% 
-  select(time, cost_scenario, cost, scenario_id)
+  select(time, cost_scenario, cost, scenario_label)
 
 out2_profit <- out2 %>% 
-  select(time, stock_profit, profit_level, scenario_id)
+  select(time, stock_profit, profit_level, scenario_label)
 
   
 ```
@@ -268,25 +275,26 @@ out3 <- out3 %>% as.data.frame() %>%
   pivot_longer(cols = starts_with("pi_"),
                names_to = "stock_profit",
                values_to = "profit_level") %>% 
-  mutate(scenario_id = "3")
+  mutate(scenario_id = "3") %>% 
+  mutate(scenario_label = "Weak stock hyperstable")
 
 out3_stock <- out3 %>% 
-  select(time, stock, stock_size, scenario_id)
+  select(time, stock, stock_size, scenario_label)
 
 out3_effort <- out3 %>% 
-  select(time, effort, effort_level, scenario_id) 
+  select(time, effort, effort_level, scenario_label) 
 
 out3_catch <- out3 %>% 
-  select(time, stock_catch, catch_size, scenario_id)
+  select(time, stock_catch, catch_size, scenario_label)
 
 out3_cpue <- out3 %>% 
-  select(time, stock_cpue, cpue_level, scenario_id)
+  select(time, stock_cpue, cpue_level, scenario_label)
 
 out3_cost <- out3 %>% 
-  select(time, cost_scenario, cost,scenario_id)
+  select(time, cost_scenario, cost,scenario_label)
 
 out3_profit <- out3 %>% 
-  select(time, stock_profit, profit_level, scenario_id)
+  select(time, stock_profit, profit_level, scenario_label)
 
 ```
 
@@ -355,25 +363,26 @@ out4 <- out4 %>%
   pivot_longer(cols = starts_with("pi_"),
                names_to = "stock_profit",
                values_to = "profit_level") %>% 
-  mutate(scenario_id = "4")
+  mutate(scenario_id = "4") %>% 
+  mutate(scenario_label = "Both stocks hyperstable")
 
 out4_stock <- out4 %>% 
-  select(time, stock, stock_size, scenario_id)
+  select(time, stock, stock_size, scenario_label)
 
 out4_effort <- out4 %>% 
-  select(time, effort, effort_level, scenario_id)
+  select(time, effort, effort_level, scenario_label)
 
 out4_catch <- out4 %>% 
-  select(time, stock_catch, catch_size, scenario_id)
+  select(time, stock_catch, catch_size, scenario_label)
 
 out4_cpue <- out4 %>% 
-  select(time, stock_cpue, cpue_level, scenario_id)
+  select(time, stock_cpue, cpue_level, scenario_label)
 
 out4_cost <- out4 %>% 
-  select(time, cost_scenario, cost, scenario_id)
+  select(time, cost_scenario, cost, scenario_label)
 
 out4_profit <- out4 %>% 
-  select(time, stock_profit, profit_level, scenario_id)
+  select(time, stock_profit, profit_level, scenario_label)
 
 ```
 
@@ -463,7 +472,7 @@ out5_profit <- out5 %>%
 ```
 
 ```{r}
-out_stock_join <- bind_rows(out1_stock, out2_stock, out3_stock, out4_stock, out5_stock) %>% 
+out_stock_join <- bind_rows(out1_stock, out2_stock, out3_stock, out4_stock) %>% #, out5_stock 
   mutate(b_v_k = case_when(
     str_detect(stock, "N_s") ~ stock_size/4,
     str_detect(stock, "N_w") ~ stock_size/2
@@ -473,23 +482,23 @@ out_stock_join <- bind_rows(out1_stock, out2_stock, out3_stock, out4_stock, out5
     str_detect(stock, "N_w") ~ "Weak stock"
   ))
 
-out_effort_join <- bind_rows(out1_effort, out2_effort, out3_effort, out4_effort, out5_effort)
+out_effort_join <- bind_rows(out1_effort, out2_effort, out3_effort, out4_effort) #, out5_effort
 
-out_catch_join <- bind_rows(out1_catch, out2_catch, out3_catch, out4_catch, out5_catch) %>% 
+out_catch_join <- bind_rows(out1_catch, out2_catch, out3_catch, out4_catch) %>% #, out5_catch
   mutate(stock_catch = case_when(
     str_detect(stock_catch, "_s") ~ "Strong stock",
     str_detect(stock_catch, "_w") ~ "Weak stock"
   ))
 
-out_cpue_join <- bind_rows(out1_cpue, out2_cpue, out3_cpue, out4_cpue, out5_cpue) %>% 
+out_cpue_join <- bind_rows(out1_cpue, out2_cpue, out3_cpue, out4_cpue) %>% #, out5_cpue 
   mutate(stock_cpue = case_when(
     str_detect(stock_cpue, "_s") ~ "Strong stock",
     str_detect(stock_cpue, "_w") ~ "Weak stock"
   ))
 
-out_cost_join <- bind_rows(out1_cost, out2_cost, out3_cost, out4_cost, out5_cost)
+out_cost_join <- bind_rows(out1_cost, out2_cost, out3_cost, out4_cost) #, out5_cost
 
-out_profit_join <- bind_rows(out1_profit, out2_profit, out3_profit, out4_profit, out5_profit) %>% 
+out_profit_join <- bind_rows(out1_profit, out2_profit, out3_profit, out4_profit) %>% #, out5_profit
   mutate(stock_profit = case_when(
     str_detect(stock_profit, "_st") ~ "Strong stock",
     str_detect(stock_profit, "_w") ~ "Weak stock",
@@ -499,7 +508,7 @@ out_profit_join <- bind_rows(out1_profit, out2_profit, out3_profit, out4_profit,
 ```
 
 
-```{r create stock plots}
+```{r create stock plots, fig.width=8}
 b_v_k_plot <- 
   ggplot() +
   geom_hline(yintercept = 0.5,
@@ -512,13 +521,17 @@ b_v_k_plot <-
               alpha = 0.8) +
   geom_line(data = out_stock_join, 
             aes(x = time, y = b_v_k, color = stock),
-            size = 1,
+            linewidth = 1,
             show.legend = F) +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
   scale_x_continuous(breaks = seq(0, 200, 100),
                      expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0.01)) +
-  facet_wrap(~ scenario_id,
+  facet_wrap(~ factor(scenario_label,
+                      levels = c("No hyperstability",
+                                 "Strong stock hyperstable",
+                                 "Weak stock hyperstable",
+                                 "Both stocks hyperstable")),
              nrow = 1) +
   labs(x = "",
        y = "B/K",
@@ -528,9 +541,9 @@ b_v_k_plot <-
         panel.grid.major = element_blank(),
         panel.spacing = unit(5, "mm"),
         strip.background = element_rect(fill = "transparent"),
-        strip.text = element_text(color = "black", size = 11),
+        strip.text = element_text(color = "black", size = 10),
         axis.title.x = element_text(color = "black", size = 12, vjust = -2),
-        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
 
@@ -541,11 +554,15 @@ effort_plot <-
   ggplot() +
   geom_line(data = out_effort_join,
             aes(x = time, y = effort_level),
-            size = .8,
+            linewidth = .8,
             alpha = .8,
             color = "#A50E82FF",
             show.legend = F) +
-  facet_wrap(~ scenario_id,
+  facet_wrap(~ factor(scenario_label,
+                      levels = c("No hyperstability",
+                                 "Strong stock hyperstable",
+                                 "Weak stock hyperstable",
+                                 "Both stocks hyperstable")),
              nrow = 1) +
   scale_x_continuous(breaks = seq(0, 200, 100),
                      expand = c(0,0)) +
@@ -561,7 +578,7 @@ effort_plot <-
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
         axis.title.x = element_text(color = "black", size = 12),
-        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
 ```
@@ -571,10 +588,14 @@ catch_plot <-
   ggplot() +
   geom_line(data = out_catch_join,
             aes(x = time, y = catch_size, color = stock_catch),
-            size = .8,
+            linewidth = .8,
             alpha = .8,
             show.legend = F) +
-  facet_wrap(~ scenario_id,
+  facet_wrap(~ factor(scenario_label,
+                      levels = c("No hyperstability",
+                                 "Strong stock hyperstable",
+                                 "Weak stock hyperstable",
+                                 "Both stocks hyperstable")),
              nrow = 1) +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
   scale_x_continuous(breaks = seq(0, 200, 100),
@@ -591,7 +612,7 @@ catch_plot <-
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
         axis.title.x = element_text(color = "black", size = 12),
-        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
 ```
@@ -603,15 +624,19 @@ cpue_plot <-
             aes(x = time, y = cpue_level, color = stock_cpue),
             size = .8,
             alpha = .8,
-            show.legend = T) +
-  facet_wrap(~ scenario_id,
+            show.legend = F) +
+  facet_wrap(~ factor(scenario_label,
+                      levels = c("No hyperstability",
+                                 "Strong stock hyperstable",
+                                 "Weak stock hyperstable",
+                                 "Both stocks hyperstable")),
              nrow = 1) +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
   scale_x_continuous(breaks = seq(0, 200, 100),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 0.1, 0.02),
                      expand = c(0, 0.001)) +
-  labs(x = "Time",
+  labs(x = "",
        y = "CPUE",
        color = "") +
   theme_bw() +
@@ -621,7 +646,7 @@ cpue_plot <-
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
         axis.title.x = element_text(color = "black", size = 12),
-        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
 ```
@@ -638,7 +663,11 @@ profit_plot <-
             size = .8,
             alpha = .8,
             show.legend = T) +
-  facet_wrap(~ scenario_id,
+  facet_wrap(~ factor(scenario_label,
+                      levels = c("No hyperstability",
+                                 "Strong stock hyperstable",
+                                 "Weak stock hyperstable",
+                                 "Both stocks hyperstable")),
              nrow = 1) +
   scale_color_manual(values = c("#6A9E1FFF","#052F61FF", "brown")) +
   scale_x_continuous(breaks = seq(0, 200, 100),
@@ -653,8 +682,8 @@ profit_plot <-
         panel.spacing = unit(5, "mm"),
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
-        axis.title.x = element_text(color = "black", size = 12),
-        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.title.x = element_text(color = "black", size = 12, face = "bold"),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
 ```
@@ -666,7 +695,11 @@ cost_plot <-
             aes(x = time, y = cost),
             color = "black",
             size = .8) +
-  facet_wrap(~ scenario_id,
+  facet_wrap(~ factor(scenario_label,
+                      levels = c("No hyperstability",
+                                 "Strong stock hyperstable",
+                                 "Weak stock hyperstable",
+                                 "Both stocks hyperstable")),
              nrow = 1) +
   scale_x_continuous(breaks = c(0, 200, 100),
                      expand = c(0,0)) +
@@ -681,7 +714,7 @@ cost_plot <-
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
         axis.title.x = element_text(color = "black", size = 12),
-        axis.title.y = element_text(color = "black", size = 12, vjust = 2),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
 ```
@@ -689,19 +722,143 @@ cost_plot <-
 
 
 ```{r, fig.width=10, fig.height=10}
-#catch_cpue_stock_plot <- 
+stock_cpue_plot <- 
   b_v_k_plot /
-  catch_plot /
+#  catch_plot /
   cpue_plot +
   plot_layout(ncol = 1) +
   plot_annotation(tag_levels = "A")
+
+ggsave(file.path(outdir, "stock_cpue_plot.png"), plot =  stock_cpue_plot,
+        width = 8, height = 6, bg = "white", dpi = 300)
 ```
 
 ```{r, fig.width=10, fig.height=10}
-effort_plot /
-  cost_plot /
+effort_profit_plot <-
+  effort_plot /
+#  cost_plot /
   profit_plot +
   plot_layout(ncol = 1) +
   plot_annotation(tag_levels = "A")
+
+ggsave(file.path(outdir, "effort_profit_plot.png"), plot =  effort_profit_plot,
+        width = 8, height = 6, bg = "white", dpi = 300)
 ```
+
+```{r, fig.width=10, fig.height=10}
+full_plot <- 
+  b_v_k_plot /
+  cpue_plot /
+  effort_plot /
+  profit_plot +
+  plot_layout(ncol = 1) +
+  plot_annotation(tag_levels = "A")
+
+ggsave(file.path(outdir, "full_ts_plot.png"), plot =  full_plot,
+        width = 8, height = 10, bg = "white", dpi = 300)
+```
+
+
+```{r simulate the effect of hyperstability on CPUE}
+# Define the values of N
+N <- seq(0, 5, by = 0.2)
+
+# Define the values of q and beta for the two scenarios
+q <- 1
+r <- 1
+beta_1 <- 1
+beta_2 <- 0.56
+
+# Create a data frame with N and CPUE values for both scenarios
+df_v <- data.frame(N = rep(N, 2), 
+                 V = c(N^(beta_1-1), N^(beta_2-1)),
+                 beta = rep(c("No hyperstability", "Hyperstability"), each = length(N)))
+
+df_cpue <- data.frame(N = rep(N, 2), 
+                 CPUE = c(q * N^beta_1, q * N^beta_2),
+                 beta = rep(c("No hyperstability", "Hyperstability"), each = length(N)))
+
+# Create the plot using ggplot2
+v_beta_plot <-
+  ggplot(df_v,
+       aes(x = N, y = V, color = beta)) + 
+  geom_line(linewidth = 1,
+            alpha = .7) +
+  labs(x = "Stock size",
+       y = "Vulnerability",
+       color = "Catch flexibility") +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  scale_color_manual(values = c("red", "blue")) +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom",
+        legend.text = element_text(color = "black", size = 10))
+
+#ggsave(file.path(outdir, "v_beta_plot.png"), plot = v_beta_plot,
+#        width = 8, height = 6, bg = "white", dpi = 300)
+
+cpue_beta_plot <-
+  ggplot(df_cpue %>% filter(N <= 2, CPUE <= 2),
+       aes(x = N, y = CPUE, color = beta)) + 
+  geom_line(linewidth = 1,
+            alpha = .7) +
+  labs(x = "Stock size",
+       y = "CPUE",
+       color = "Catch flexibility") +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  scale_color_manual(values = c("red", "blue")) +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom",
+        legend.text = element_text(color = "black", size = 10))
+
+#ggsave(file.path(outdir, "cpue_beta_plot.png"), plot = cpue_beta_plot,
+#        width = 8, height = 6, bg = "white", dpi = 300)
+```
+
+```{r, fig.height=8, fig.width=6}
+beta_cpue_plot <-
+  v_beta_plot /
+  cpue_beta_plot +
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "A") &
+  theme(legend.position = "bottom")
+
+ggsave(file.path(outdir, "beta_cpue_plot.png"), plot = beta_cpue_plot,
+        width = 8, height = 6, bg = "white", dpi = 300)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

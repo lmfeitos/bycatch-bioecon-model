@@ -230,8 +230,7 @@ s_w_range_proc_test_min2 <-
   group_by(st_stock_rev, vuln_ratio_w) %>% 
   summarise(min = min(b_v_k_w)) %>%  
   distinct_at(vars(st_stock_rev, vuln_ratio_w, min))
-
-
+  
 ```
 
 ```{r, echo = FALSE}
@@ -648,6 +647,22 @@ w_s_range_proc %>%
 # msy_gather
 ```
 
+```{r calculate minimum values}
+output_subs1_min <- 
+  output_subs1_proc %>% 
+  filter(p_w == 1 & c == 0.0375 & st_stock_rev <= 12 & vuln_ratio_w <= 4 & b_v_k_w > 0 & b_v_k_w < 0.001) %>% 
+  distinct_all() %>% 
+  group_by(st_stock_rev, vuln_ratio_w) %>% 
+  summarise(min = min(b_v_k_w))
+
+output_subs1_min2 <- 
+  output_subs1_proc %>% 
+  filter(p_w < 1 & c == 0.0375 & st_stock_rev <= 12 & vuln_ratio_w <= 4 & b_v_k_w > 0 & b_v_k_w < 0.001) %>% 
+  distinct_all() %>% 
+  group_by(st_stock_rev, vuln_ratio_w) %>% 
+  summarise(min = min(b_v_k_w))
+```
+
 
 ## Fisheries subsidy analyses
 
@@ -728,6 +743,12 @@ subs1_s_proc_plot2.1 <-
   scale_fill_paletteer_c("grDevices::Blues 3",
                          direction = -1,
                          limits = col_limit) +
+  geom_smooth(data = output_subs1_min,
+              aes(x = vuln_ratio_w, y = st_stock_rev, color = min),
+              color = "black",
+              se = FALSE,
+              linetype = "dashed",
+              linewidth = .5) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -738,7 +759,8 @@ subs1_s_proc_plot2.1 <-
                      expand = c(0,0)) +
   labs(x = "",
        y = "",
-       fill = "Weak stock biomass (B/K)") +
+       fill = "Weak stock biomass (B/K)",
+       title = "Weak stock price = 1") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -888,6 +910,12 @@ subs2_s_proc_plot2.1 <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w < 1 & c == 0.0375 & vuln_ratio_w <= 4 & st_stock_rev <= 12)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = b_v_k_w, height = 1.2, width = .1)) +
+  geom_smooth(data = output_subs1_min2,
+              aes(x = vuln_ratio_w, y = st_stock_rev, color = min),
+              color = "black",
+              se = FALSE,
+              linetype = "dashed",
+              linewidth = .5) +
   scale_fill_paletteer_c("grDevices::Blues 3",
                          direction = -1,
                          limits = col_limit) +
@@ -900,8 +928,9 @@ subs2_s_proc_plot2.1 <-
   scale_y_continuous(breaks = seq(0, 12, 2),
                      expand = c(0,0)) +
   labs(x = "",
-       y = "",
-       fill = "Weak stock biomass (B/K)") +
+       y = "Strong stock revenue potential",
+       fill = "Weak stock biomass (B/K)",
+       title = "Weak stock price = 0") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -1030,6 +1059,10 @@ subs1_w_proc_plot2.1 <-
   scale_fill_paletteer_c("grDevices::Blues 3",
                          direction = -1,
                          limits = col_limit) +
+  geom_vline(xintercept = 1.9,
+             color = "black",
+             size = .5,
+             linetype = "dashed") +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1039,8 +1072,9 @@ subs1_w_proc_plot2.1 <-
   scale_y_continuous(breaks = seq(0, 12, 2),
                      expand = c(0,0)) +
   labs(x = "",
-       y = "",
-       fill = "Weak stock biomass (B/K)") +
+       y = "Weak stock revenue potential",
+       fill = "Weak stock biomass (B/K)",
+       title = "Strong stock price = 1") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -1162,6 +1196,10 @@ subs2_w_proc_plot2.1 <-
   scale_fill_paletteer_c("grDevices::Blues 3",
                          direction = -1,
                          limits = col_limit) +
+  geom_vline(xintercept = 1.3,
+             size = .5,
+             color = "black",
+             linetype = "dashed") +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
@@ -1172,7 +1210,8 @@ subs2_w_proc_plot2.1 <-
                      expand = c(0,0)) +
   labs(x = "",
        y = "",
-       fill = "Weak stock biomass (B/K)") +
+       fill = "Weak stock biomass (B/K)",
+       title = "Strong stock price = 2") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -1238,6 +1277,20 @@ sub_w2.1 <- grid.arrange(patchworkGrob(subs2_w_proc_plot0.1 /
 # ggsave(file.path(outdir, "subsidy_pw2.1.png"), plot =  sub_w2.1,
 #        width = 6, height = 7, bg = "white", dpi = 300)
 ```
+
+```{r, fig.height=8, fig.width=8}
+sub_plot_25pct <- grid.arrange(patchworkGrob(subs2_s_proc_plot2.1 / 
+                                               subs1_s_proc_plot2.1 /
+                                               subs1_w_proc_plot2.1 /
+                                               subs2_w_proc_plot2.1 +
+                                plot_layout(ncol = 2,
+                                            guides = "collect")),
+                               bottom = "Vulnerability ratios\n(Vw/Vs)")
+
+#ggsave(file.path(outdir, "sub_plot_25pct.png"), plot = sub_plot_25pct,
+#      width = 12, height = 8, bg = "white", dpi = 300)
+```
+
 
 ```{r, echo = FALSE, fig.height=10, fig.width=7, include = FALSE}
 subs_1_2 <- grid.arrange(patchworkGrob(subs2_s_proc_plot0.1 / 
