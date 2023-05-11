@@ -26,34 +26,41 @@ q_s <- 0.02
 q_w <- 0.02
 k_w <- 2
 k_s <- 4
-
+r_s <- 1
+r_w <- 0.99
+weight_s <- 1
+weight_w <- 1
 # define parameters that switch per scenario
 beta_s1 <- 1
 beta_s2 <- 0.56
 beta_s3 <- 1
 beta_s4 <- 0.56
 beta_s5 <- 0.2
+beta_s6 <- 0.2
 
 beta_w1 <- 1
 beta_w2 <- 1
 beta_w3 <- 0.56
 beta_w4 <- 0.56
 beta_w5 <- 0.56
+beta_w6 <- 0.56
   
 f_s1 <- 0 
 f_s2 <- 0.22
 f_s3 <- 0
 f_s4 <- 0.22
 f_s5 <- 0.815
+f_s6 <- 0.815
   
 f_w1 <- 0
 f_w2 <- 0
 f_w3 <- 0.22
 f_w4 <- 0.22
 f_w5 <- 0.1
+f_w6 <- 0.1
 
 # time steps
-times <- seq(0, 200, by = .1)
+times <- seq(0, 200, by = 1)
 ```
 
 
@@ -84,11 +91,13 @@ out1 <- out1 %>%
   as.data.frame() %>% 
   mutate(catch_s1 = q_s * N_s1^beta_s1 * E1,
          catch_w1 = q_w * N_w1^beta_w1 * E1,
+         price_s1 = A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1, 
+         price_w1 = A_w * (q_w * N_w1^beta_w1 * E1)^-f_w1,
          cpue_s1 = catch_s1 / E1,
          cpue_w1 = catch_w1 / E1,
          cost1 = cost * E1,
-         pi_st1 = catch_s1 * A_s * (q_s * N_s1^beta_s1 * E1)^-f_s1 - (catch_s1 * cost),
-         pi_w1 = catch_w1 * A_w * (q_w * N_w1^beta_w1 * E1)^-f_w1 - (catch_w1 * cost),
+         pi_st1 = catch_s1 * price_s1 - (catch_s1 * cost1),
+         pi_w1 = catch_w1 * price_w1 - (catch_w1 * cost1),
          pi_sum1 = rowSums(across(c(pi_st1, pi_w1)))) %>% 
   pivot_longer(cols = dplyr::starts_with("N_"),
                names_to = "stock",
@@ -99,6 +108,9 @@ out1 <- out1 %>%
   pivot_longer(cols = starts_with("catch_"),
                names_to = "stock_catch",
                values_to = "catch_size") %>% 
+  pivot_longer(cols = starts_with("price_"),
+               names_to = "stock_price",
+               values_to = "price") %>% 
   pivot_longer(cols = starts_with("cpue_"),
                names_to = "stock_cpue",
                values_to = "cpue_level") %>% 
@@ -119,6 +131,9 @@ out1_effort <- out1 %>%
 
 out1_catch <- out1 %>% 
   select(time, stock_catch, catch_size, scenario_label)
+
+out1_price <- out1 %>% 
+  select(time, stock_price, price, scenario_label)
 
 out1_cpue <- out1 %>% 
   select(time, stock_cpue, cpue_level, scenario_label)
@@ -158,11 +173,13 @@ out2 <- out2 %>%
   as.data.frame() %>% 
   mutate(catch_s2 = q_s * N_s2^beta_s2 * E2,
          catch_w2 = q_w * N_w2^beta_w2 * E2,
+         price_s2 = A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2,
+         price_w2 = A_w * (q_w * N_w2^beta_w2 * E2)^-f_w2,
          cpue_s2 = catch_s2 / E2,
          cpue_w2 = catch_w2 / E2,
          cost2 = cost * E2,
-         pi_st2 = catch_s2 * A_s * (q_s * N_s2^beta_s2 * E2)^-f_s2 - (catch_s2 * cost),
-         pi_w2 = catch_w2 * A_w * (q_w * N_w2^beta_w2 * E2)^-f_w2 - (catch_w2 * cost),
+         pi_st2 = catch_s2 * price_s2 - (catch_s2 * cost2),
+         pi_w2 = catch_w2 * price_w2 - (catch_w2 * cost2),
          pi_sum2 = rowSums(across(c(pi_st2, pi_w2)))) %>% 
   pivot_longer(cols = dplyr::starts_with("N_"),
                names_to = "stock",
@@ -173,6 +190,9 @@ out2 <- out2 %>%
   pivot_longer(cols = starts_with("catch_"),
                names_to = "stock_catch",
                values_to = "catch_size") %>% 
+  pivot_longer(cols = starts_with("price_"),
+               names_to = "stock_price",
+               values_to = "price") %>% 
   pivot_longer(cols = starts_with("cpue_"),
                names_to = "stock_cpue",
                values_to = "cpue_level") %>% 
@@ -194,6 +214,9 @@ out2_effort <- out2 %>%
 out2_catch <- out2 %>% 
   select(time, stock_catch, catch_size, scenario_label)
 
+out2_price <- out2 %>% 
+  select(time, stock_price, price, scenario_label)
+
 out2_cpue <- out2 %>% 
   select(time, stock_cpue, cpue_level,scenario_label)
 
@@ -212,10 +235,7 @@ out2_profit <- out2 %>%
 # Define the function that calculates the derivatives
 scenario_3 <- function(time, state, parameters) {
     with(as.list(c(state, parameters)), {
-   # N_s3 <- state[1]
-   # N_w3 <- state[2]
-   # E3 <- state[3]
-  
+
     # Calculate the derivatives
     if(N_w3 > 0) {
       dN_s3 <- r_s * N_s3 * (1 - N_s3/k_s) - (q_s * N_s3^beta_s3 * E3)
@@ -250,12 +270,29 @@ out3 <- out3 %>% as.data.frame() %>%
   )) %>% 
   mutate(catch_s3 = q_s * N_s3^beta_s3 * E3,
          catch_w3 = q_w * N_w3^beta_w3 * E3,
+         price_s3 = A_s * (q_s * N_s3^beta_s3 * E3)^-f_s3,
+         price_w3 = A_w * (q_w * N_w3^beta_w3 * E3)^-f_w3,
          cpue_s3 = catch_s3 / E3,
          cpue_w3 = catch_w3 / E3,
          cost3 = cost * E3,
-         pi_st3 = catch_s3 * A_s * (q_s * N_s3^beta_s3 * E3)^-f_s3 - (catch_s3 * cost),
-         pi_w3 = catch_w3 * A_w * (q_w * N_w3^beta_w3 * E3)^-f_w3 - (catch_w3 * cost)) %>% 
-  mutate_at(vars(pi_w3), ~replace(., is.nan(.), 0)) %>% 
+         pi_st3 = catch_s3 *price_s3 - (catch_s3 * cost3),
+         pi_w3 = catch_w3 * price_w3 - (catch_w3 * cost3)) %>% 
+         # biomass_s3 = N_s3 * weight_s/k_s,
+         # biomass_w3 = N_w3 * weight_w/k_w,
+         # fishing_s3 = catch_s3 / biomass_s3,
+         # fishing_w3 = catch_w3 / biomass_w3,
+         # y_msy_s3 = k_s * r_s/4,
+         # y_msy_w3 = k_w * r_w/4,
+         # b_msy_s3 = r_s/2,
+         # b_msy_w3 = r_w/2,
+         # f_msy_s3 = q_s * E3,
+         # f_msy_w3 = q_w * E3,
+         # b_bmsy_s3 = biomass_s3 / b_msy_s3,
+         # b_bmsy_w3 = biomass_w3 / b_msy_w3,
+         # f_fmsy_s3 = fishing_s3 / f_msy_s3,
+         # f_fmsy_w3 = fishing_w3 / f_msy_w3) %>% 
+  mutate_at(vars(pi_w3), ~ replace(., is.nan(.), 0)) %>% #, fishing_w3
+  mutate_at(vars(price_w3), ~ replace(., is.infinite(.), 0)) %>% 
   mutate(pi_sum3 = rowSums(across(c(pi_st3, pi_w3)))) %>% 
   pivot_longer(cols = dplyr::starts_with("N_"),
                names_to = "stock",
@@ -266,6 +303,9 @@ out3 <- out3 %>% as.data.frame() %>%
   pivot_longer(cols = starts_with("catch_"),
                names_to = "stock_catch",
                values_to = "catch_size") %>% 
+  pivot_longer(cols = starts_with("price_"),
+               names_to = "stock_price",
+               values_to = "price") %>% 
   pivot_longer(cols = starts_with("cpue_"),
                names_to = "stock_cpue",
                values_to = "cpue_level") %>% 
@@ -275,6 +315,27 @@ out3 <- out3 %>% as.data.frame() %>%
   pivot_longer(cols = starts_with("pi_"),
                names_to = "stock_profit",
                values_to = "profit_level") %>% 
+  # pivot_longer(cols = starts_with("biomass_"),
+  #              names_to = "stock_biomass",
+  #              values_to = "biomass_level") %>% 
+  # pivot_longer(cols = starts_with("fishing_"),
+  #              names_to = "stock_fishing",
+  #              values_to = "fishing_level") %>% 
+  # pivot_longer(cols = starts_with("y_msy_"),
+  #              names_to = "stock_msy",
+  #              values_to = "msy_yield") %>% 
+  # pivot_longer(cols = starts_with("b_msy"),
+  #              names_to = "stock_bmsy",
+  #              values_to = "bmsy_level") %>% 
+  # pivot_longer(cols = starts_with("f_msy"),
+  #              names_to = "stock_fmsy",
+  #              values_to = "fmsy_level") %>% 
+  # pivot_longer(cols = starts_with("b_bmsy"),
+  #              names_to = "stock_bbmsy",
+  #              values_to = "bbmsy_value") %>% 
+  #   pivot_longer(cols = starts_with("f_fmsy"),
+  #              names_to = "stock_ffmsy",
+  #              values_to = "ffmsy_value") %>% 
   mutate(scenario_id = "3") %>% 
   mutate(scenario_label = "Weak stock hyperstable")
 
@@ -287,6 +348,9 @@ out3_effort <- out3 %>%
 out3_catch <- out3 %>% 
   select(time, stock_catch, catch_size, scenario_label)
 
+out3_price <- out3 %>% 
+  select(time, stock_price, price, scenario_label)
+
 out3_cpue <- out3 %>% 
   select(time, stock_cpue, cpue_level, scenario_label)
 
@@ -296,7 +360,92 @@ out3_cost <- out3 %>%
 out3_profit <- out3 %>% 
   select(time, stock_profit, profit_level, scenario_label)
 
+# out3_biomass <- out3 %>% 
+#   select(time, stock_biomass, biomass_level, scenario_label)
+# 
+# out3_fishing <- out3 %>% 
+#   select(time, stock_fishing, fishing_level, scenario_label)
+# 
+# out3_msy <- out3 %>% 
+#   select(time, stock_msy, msy_yield, scenario_label)
+# 
+# out3_bmsy <- out3 %>% 
+#   select(time, stock_bmsy, bmsy_level, scenario_label)
+# 
+# out3_fmsy <- out3 %>% 
+#   select(time, stock_fmsy, fmsy_level, scenario_label)
+# 
+# out3_bbmsy <- out3 %>% 
+#   select(stock_bbmsy, bbmsy_value)
+# 
+# out3_ffmsy <- out3 %>% 
+#   select(stock_ffmsy, ffmsy_value)
+# 
+# out3_b_f_msy <- cbind(out3_bbmsy, out3_ffmsy)
 ```
+
+```{r, fig.height=8, fig.width=8}
+# biomass_plot <- 
+#   ggplot() +
+#   geom_line(data = out3_biomass,
+#             aes(x = time, y = biomass_level, color = stock_biomass),
+#             size = .7) +
+#   geom_line(data = out3_bmsy,
+#             aes(x = time, y = bmsy_level, color = stock_bmsy),
+#             size = .7,
+#             alpha = .5) +
+#   scale_color_brewer(palette = "Dark2") +
+#   labs(x = "Time",
+#        y = "B/K",
+#        color = "Biomass metrics",
+#        title = "Biomass plot")
+# 
+# fishing_plot <- 
+#   ggplot() +
+#   geom_line(data = out3_fishing,
+#             aes(x = time, y = fishing_level, color = stock_fishing),
+#             size = .7) +
+#   geom_line(data = out3_fmsy,
+#             aes(x = time, y = fmsy_level, color = stock_fmsy),
+#             size = .7,
+#             alpha = .5) +
+#   scale_color_brewer(palette = "Dark2") +
+#   labs(x = "Time",
+#        y = "Fishing",
+#        color = "Fishing metrics",
+#        title = "Fishing plot")
+# 
+# b_f_msy_plot <-
+#   ggplot() +
+#   geom_point(data = out3_b_f_msy %>% 
+#                mutate(stock = case_when(
+#                  str_detect(stock_bbmsy, "s3") ~ "Strong stock",
+#                  str_detect(stock_bbmsy, "w3") ~ "Weak stock"
+#                )),
+#              aes(x = bbmsy_value, y = ffmsy_value, color = stock),
+#             size = 1,
+#             alpha = .5) +
+#   scale_color_brewer(palette = "Dark2") +
+#   geom_hline(yintercept = 1,
+#              color = "gray",
+#              linetype = "dashed",
+#              linewidth = .5) +
+#   geom_vline(xintercept = 1,
+#              color = "gray",
+#              linetype = "dashed",
+#              linewidth = .5) +
+#   labs(x = "B/Bmsy",
+#        y = "F/Fmsy",
+#        color = "Stock",
+#        title = "Kobe plot")
+# 
+# biomass_plot /
+#   fishing_plot /
+#   b_f_msy_plot &
+#   theme_bw() +
+#   theme(panel.grid = element_blank())
+```
+
 
 ```{r}
 scenario_4 <- function(time, state, parameters) {
@@ -338,12 +487,15 @@ out4 <- out4 %>%
   )) %>% 
   mutate(catch_s4 = q_s * N_s4^beta_s4 * E4,
          catch_w4 = q_w * N_w4^beta_w4 * E4,
+         price_s4 = A_s * (q_s * N_s4^beta_s4 * E4)^-f_s4,
+         price_w4 = A_w * (q_w * N_w4^beta_w4 * E4)^-f_w4,
          cpue_s4 = catch_s4 / E4,
          cpue_w4 = catch_w4 / E4,
          cost4 = cost * E4,
-         pi_st4 = catch_s4 * A_s * (q_s * N_s4^beta_s4 * E4)^-f_s4 - (catch_s4 * cost),
-         pi_w4 = catch_w4 * A_w * (q_w * N_w4^beta_w4 * E4)^-f_w4 - (catch_w4 * cost)) %>% 
+         pi_st4 = catch_s4 * price_s4 - (catch_s4 * cost4),
+         pi_w4 = catch_w4 * price_w4 - (catch_w4 * cost4)) %>% 
   mutate_at(vars(pi_w4), ~replace(., is.nan(.), 0)) %>% 
+  mutate_at(vars(price_w4), ~ replace(., is.infinite(.), 0)) %>% 
   mutate(pi_sum4 = rowSums(across(c(pi_st4, pi_w4)))) %>% 
   pivot_longer(cols = dplyr::starts_with("N_"),
                names_to = "stock",
@@ -354,6 +506,9 @@ out4 <- out4 %>%
   pivot_longer(cols = starts_with("catch_"),
                names_to = "stock_catch",
                values_to = "catch_size") %>% 
+  pivot_longer(cols = starts_with("price_"),
+               names_to = "stock_price",
+               values_to = "price") %>% 
   pivot_longer(cols = starts_with("cpue_"),
                names_to = "stock_cpue",
                values_to = "cpue_level") %>% 
@@ -375,6 +530,9 @@ out4_effort <- out4 %>%
 out4_catch <- out4 %>% 
   select(time, stock_catch, catch_size, scenario_label)
 
+out4_price <- out4 %>% 
+  select(time, stock_price, price, scenario_label)
+
 out4_cpue <- out4 %>% 
   select(time, stock_cpue, cpue_level, scenario_label)
 
@@ -387,89 +545,478 @@ out4_profit <- out4 %>%
 ```
 
 ```{r}
-scenario_5 <- function(time, state, parameters) {
-  with(as.list(c(state, parameters)), {
-    
-    # Calculate the derivatives
-    if(N_w5 > 0){
-    dN_s5 <- r_s * N_s5 * (1 - (N_s5/k_s)) - (q_s * N_s5^beta_s5 * E5) 
-    dN_w5 <- r_w * N_w5 * (1 - (N_w5/k_w)) - (q_w * N_w5^beta_w5 * E5) 
-    dE5 <- alpha * E5 * (A_s * (q_s * N_s5^beta_s5 * E5)^-f_s5 * q_s * N_s5^beta_s5 +
-                        A_w * (q_w * N_w5^beta_w5 * E5)^-f_w5 * q_w * N_w5^beta_w5 - (c))
-  
-    } else {
-      
-      dN_s5 <- r_s * N_s5 * (1 - (N_s5/k_s)) - (q_s * N_s5^beta_s5 * E5)
-      dN_w5 <- 0
-      dE5 <- alpha * E5 * (A_s * (q_s * N_s5^beta_s5 * E5)^-f_s5 * q_s * N_s5^beta_s5 - (c))
-      
-    }
-  
-    # Return the derivatives as a list
-    return(list(c(dN_s5, dN_w5, dE5))) #, dC_s1, dC_w1, dPi_w1, dPi_s1
-  })
-}
-
-# Define the initial state and parameters
-state5 <- c(N_s5 = 4, N_w5 = 2, E5 = 0.5) #, C_s1 = 0, C_w1 = 0, Pi_s1 = 0, Pi_w1 = 0
-parameters_5 <- c(q_s = 0.02, q_w = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.99, alpha = 1,
-                c = 0.05, A_w = 1, A_s = 1, beta_w5 = 0.56, beta_s5 = 0.2, f_w5 = 0.1, f_s5 = 0.815)
-
-# Solve ODEs
-out5 <- ode(y = state5, times = times, func = scenario_5, parms = parameters_5)
-
-out5 <- out5 %>% as.data.frame() %>% 
-  mutate(N_w5 = case_when(
-    N_w5 < 0 ~ 0,
-    TRUE ~ N_w5
-  )) %>% 
-  mutate(catch_s5 = q_s * N_s5^beta_s5 * E5,
-         catch_w5 = q_w * N_w5^beta_w5 * E5,
-         cpue_s5 = catch_s5 / E5,
-         cpue_w5 = catch_w5 / E5,
-         cost5 = cost * E5,
-         pi_st5 = catch_s5 * A_s * (q_s * N_s5^beta_s5 * E5)^-f_s5 - (catch_s5 * cost),
-         pi_w5 = catch_w5 * A_w * (q_w * N_w5^beta_w5 * E5)^-f_w5 - (catch_w5 * cost)) %>% 
-  mutate_at(vars(pi_w5), ~replace(., is.nan(.), 0)) %>% 
-  mutate(pi_sum5 = rowSums(across(c(pi_st5, pi_w5)))) %>% 
-  pivot_longer(cols = dplyr::starts_with("N_"),
-               names_to = "stock",
-               values_to = "stock_size") %>% 
-  pivot_longer(cols = dplyr::starts_with("E"),
-               names_to = "effort",
-               values_to = "effort_level") %>% 
-  pivot_longer(cols = starts_with("catch_"),
-               names_to = "stock_catch",
-               values_to = "catch_size") %>% 
-  pivot_longer(cols = starts_with("cpue_"),
-               names_to = "stock_cpue",
-               values_to = "cpue_level") %>% 
-  pivot_longer(cols = starts_with("cost"),
-               names_to = "cost_scenario",
-               values_to = "cost") %>% 
-  pivot_longer(cols = starts_with("pi_"),
-               names_to = "stock_profit",
-               values_to = "profit_level") %>% 
-  mutate(scenario_id = "5")
-
-out5_stock <- out5 %>% 
-  select(time, stock, stock_size, scenario_id)
-
-out5_effort <- out5 %>% 
-  select(time, effort, effort_level, scenario_id)
-
-out5_catch <- out5 %>% 
-  select(time, stock_catch, catch_size, scenario_id)
-
-out5_cpue <- out5 %>% 
-  select(time, stock_cpue, cpue_level, scenario_id)
-
-out5_cost <- out5 %>% 
-  select(time, cost_scenario, cost, scenario_id)
-
-out5_profit <- out5 %>% 
-  select(time, stock_profit, profit_level, scenario_id)
+# scenario_5 <- function(time, state, parameters) {
+#   with(as.list(c(state, parameters)), {
+#     
+#     # Calculate the derivatives
+#     if(N_w5 > 0){
+#     dN_s5 <- r_s * N_s5 * (1 - (N_s5/k_s)) - (q_s * N_s5^beta_s5 * E5) 
+#     dN_w5 <- r_w * N_w5 * (1 - (N_w5/k_w)) - (q_w * N_w5^beta_w5 * E5) 
+#     dE5 <- alpha * E5 * (A_s * (q_s * N_s5^beta_s5 * E5)^-f_s5 * q_s * N_s5^beta_s5 +
+#                         A_w * (q_w * N_w5^beta_w5 * E5)^-f_w5 * q_w * N_w5^beta_w5 - (c))
+#   
+#     } else {
+#       
+#       dN_s5 <- r_s * N_s5 * (1 - (N_s5/k_s)) - (q_s * N_s5^beta_s5 * E5)
+#       dN_w5 <- 0
+#       dE5 <- alpha * E5 * (A_s * (q_s * N_s5^beta_s5 * E5)^-f_s5 * q_s * N_s5^beta_s5 - (c))
+#       
+#     }
+#   
+#     # Return the derivatives as a list
+#     return(list(c(dN_s5, dN_w5, dE5))) #, dC_s1, dC_w1, dPi_w1, dPi_s1
+#   })
+# }
+# 
+# # Define the initial state and parameters
+# state5 <- c(N_s5 = 100, N_w5 = 50, E5 = 0.5) #, C_s1 = 0, C_w1 = 0, Pi_s1 = 0, Pi_w1 = 0
+# parameters_5 <- c(q_s = 0.02, q_w = 0.02, k_s = 100, k_w = 50, r_s = 1, r_w = 0.99, alpha = 1,
+#                 c = 0.05, A_w = 1, A_s = 1, beta_w5 = 0.56, beta_s5 = 0.2, f_w5 = 0.1, f_s5 = 0.815)
+# 
+# # Solve ODEs
+# out5 <- ode(y = state5, times = times, func = scenario_5, parms = parameters_5)
+# 
+# out5 <- out5 %>% as.data.frame() %>% 
+#   mutate(N_w5 = case_when(
+#     N_w5 < 0 ~ 0,
+#     TRUE ~ N_w5
+#   )) %>% 
+#     mutate(N_s5 = case_when(
+#     N_s5 < 0 ~ 0,
+#     TRUE ~ N_s5
+#   )) %>% 
+#   mutate(catch_s5 = q_s * N_s5^beta_s5 * E5,
+#          catch_w5 = q_w * N_w5^beta_w5 * E5,
+#          cpue_s5 = catch_s5 / E5,
+#          cpue_w5 = catch_w5 / E5,
+#          cost5 = cost * E5,
+#          pi_st5 = catch_s5 * A_s * (q_s * N_s5^beta_s5 * E5)^-f_s5 - (catch_s5 * cost),
+#          pi_w5 = catch_w5 * A_w * (q_w * N_w5^beta_w5 * E5)^-f_w5 - (catch_w5 * cost)) %>% 
+#   mutate_at(vars(pi_w5, pi_st5), ~replace(., is.nan(.), 0)) %>% 
+#   mutate(pi_sum5 = rowSums(across(c(pi_st5, pi_w5)))) %>% 
+#   pivot_longer(cols = dplyr::starts_with("N_"),
+#                names_to = "stock",
+#                values_to = "stock_size") %>% 
+#   pivot_longer(cols = dplyr::starts_with("E"),
+#                names_to = "effort",
+#                values_to = "effort_level") %>% 
+#   pivot_longer(cols = starts_with("catch_"),
+#                names_to = "stock_catch",
+#                values_to = "catch_size") %>% 
+#   pivot_longer(cols = starts_with("cpue_"),
+#                names_to = "stock_cpue",
+#                values_to = "cpue_level") %>% 
+#   pivot_longer(cols = starts_with("cost"),
+#                names_to = "cost_scenario",
+#                values_to = "cost") %>% 
+#   pivot_longer(cols = starts_with("pi_"),
+#                names_to = "stock_profit",
+#                values_to = "profit_level") %>% 
+#   mutate(scenario_id = "5")
+# 
+# out5_stock <- out5 %>% 
+#   select(time, stock, stock_size, scenario_id)
+# 
+# out5_effort <- out5 %>% 
+#   select(time, effort, effort_level, scenario_id)
+# 
+# out5_catch <- out5 %>% 
+#   select(time, stock_catch, catch_size, scenario_id) %>% 
+#   mutate(stock_catch = case_when(
+#     str_detect(stock_catch, "_s") ~ "Strong stock",
+#     str_detect(stock_catch, "_w") ~ "Weak stock"
+#   ))
+# 
+# out5_cpue <- out5 %>% 
+#   select(time, stock_cpue, cpue_level, scenario_id)
+# 
+# out5_cost <- out5 %>% 
+#   select(time, cost_scenario, cost, scenario_id)
+# 
+# out5_profit <- out5 %>% 
+#   select(time, stock_profit, profit_level, scenario_id) %>% 
+#   mutate(stock_profit = case_when(
+#     str_detect(stock_profit, "_st") ~ "Strong stock",
+#     str_detect(stock_profit, "_w") ~ "Weak stock",
+#     str_detect(stock_profit, "_sum") ~ "Total profit",
+#   ))
 ```
+
+```{r, fig.width=8, fig.height=12}
+# stock5_plot <- 
+#   ggplot() +
+#   # geom_hline(yintercept = 0.5,
+#   #             linetype = "dashed",
+#   #             color = "grey40",
+#   #             alpha = 0.8) +
+#   # geom_hline(yintercept = 0.25,
+#   #             linetype = "dotted",
+#   #             color = "grey40",
+#   #             alpha = 0.8) +
+#   geom_line(data = out5_stock %>% 
+#               mutate(stock = case_when(
+#                 str_detect(stock, "_s") ~ "Strong stock",
+#                 str_detect(stock, "_w") ~ "Weak stock"
+#               )), 
+#             aes(x = time, y = stock_size, color = stock),
+#             linewidth = 1,
+#             show.legend = T) + 
+#   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
+#   scale_x_continuous(breaks = seq(0, 200, 100),
+#                      expand = c(0,0)) +
+#  # scale_y_continuous(expand = c(0,0.01)) +
+#   labs(x = "",
+#        y = "Stock size",
+#        color = "") +
+#   theme_bw() +
+#   theme(panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank(),
+#         panel.spacing = unit(5, "mm"),
+#         strip.background = element_rect(fill = "transparent"),
+#         strip.text = element_text(color = "black", size = 10),
+#         axis.title.x = element_text(color = "black", size = 12, vjust = -2),
+#         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
+#         axis.text = element_text(color = "black", size = 10),
+#         legend.position = "bottom")
+# 
+# effort5_plot <-
+#   ggplot() +
+#   geom_line(data = out5_effort,
+#             aes(x = time, y = effort_level),
+#             linewidth = .8,
+#             alpha = .8,
+#             color = "#A50E82FF",
+#             show.legend = F) +
+#   scale_x_continuous(breaks = seq(0, 200, 100),
+#                      expand = c(0,0)) +
+#   # scale_y_continuous(breaks = seq(0, 30, 10),
+#   #                    expand = c(0, 0.5)) +
+#   labs(x = "",
+#        y = "Fishing Effort",
+#        color = "") +
+#   theme_bw() +
+#   theme(panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank(),
+#         panel.spacing = unit(5, "mm"),
+#         strip.background = element_rect(fill = "transparent"),
+#         strip.text = element_text(color = "black", size = 11),
+#         axis.title.x = element_text(color = "black", size = 12),
+#         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
+#         axis.text = element_text(color = "black", size = 10),
+#         legend.position = "bottom")
+# 
+# catch5_plot <- 
+#   ggplot() +
+#   geom_line(data = out5_catch,
+#             aes(x = time, y = catch_size, color = stock_catch),
+#             linewidth = .8,
+#             alpha = .8,
+#             show.legend = T) +
+#   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
+#   scale_x_continuous(breaks = seq(0, 200, 100),
+#                      expand = c(0,0)) +
+#   # scale_y_continuous(breaks = seq(0, 1, by = 0.25),
+#   #                    expand = c(0,0.01)) +
+#   labs(x = "",
+#        y = "Catch",
+#        color = "") +
+#   theme_bw() +
+#   theme(panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank(),
+#         panel.spacing = unit(5, "mm"),
+#         strip.background = element_rect(fill = "transparent"),
+#         strip.text = element_text(color = "black", size = 11),
+#         axis.title.x = element_text(color = "black", size = 12),
+#         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
+#         axis.text = element_text(color = "black", size = 10),
+#         legend.position = "bottom")
+# 
+# cpue5_plot <- 
+#   ggplot() +
+#   geom_line(data = out5_cpue,
+#             aes(x = time, y = cpue_level, color = stock_cpue),
+#             size = .8,
+#             alpha = .8,
+#             show.legend = T) +
+#   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
+#   scale_x_continuous(breaks = seq(0, 200, 100),
+#                      expand = c(0,0)) +
+#   # scale_y_continuous(breaks = seq(0, 0.1, 0.02),
+#   #                    expand = c(0, 0.001)) +
+#   labs(x = "",
+#        y = "CPUE",
+#        color = "") +
+#   theme_bw() +
+#   theme(panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank(),
+#         panel.spacing = unit(5, "mm"),
+#         strip.background = element_rect(fill = "transparent"),
+#         strip.text = element_text(color = "black", size = 11),
+#         axis.title.x = element_text(color = "black", size = 12),
+#         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
+#         axis.text = element_text(color = "black", size = 10),
+#         legend.position = "bottom")
+# 
+# out5_profit$stock_profit <-
+#   factor(out5_profit$stock_profit,
+#          levels = c("Strong stock", "Weak stock", "Total profit"))
+# 
+# profit5_plot <- 
+#   ggplot() +
+#   geom_line(data = out5_profit,
+#             aes(x = time, y = profit_level, color = stock_profit),
+#             size = .8,
+#             alpha = .8,
+#             show.legend = T) +
+#   scale_color_manual(values = c("#6A9E1FFF","#052F61FF", "brown")) +
+#   scale_x_continuous(breaks = seq(0, 200, 100),
+#                      expand = c(0,0)) +
+# #  scale_y_continuous(expand = c(0, 0.01)) +
+#   labs(x = "Time",
+#        y = "Profits",
+#        color = "") +
+#   theme_bw() +
+#   theme(panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank(),
+#         panel.spacing = unit(5, "mm"),
+#         strip.background = element_rect(fill = "transparent"),
+#         strip.text = element_text(color = "black", size = 11),
+#         axis.title.x = element_text(color = "black", size = 12, face = "bold"),
+#         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
+#         axis.text = element_text(color = "black", size = 10),
+#         legend.position = "bottom")
+# 
+# stock5_plot /
+#   catch5_plot /
+#   cpue5_plot /
+#   effort5_plot /
+#   profit5_plot 
+```
+
+```{r}
+# scenario_6 <- function(time, state, parameters) {
+#   with(as.list(c(state, parameters)), {
+#     
+#     # Calculate the derivatives
+#     if(N_w6 > 0){
+#     dN_s6 <- r_s * N_s6 * (1 - (N_s6/k_s)) - (q_s * N_s6^beta_s6 * E6) 
+#     dN_w6 <- r_w * N_w6 * (1 - (N_w6/k_w)) - (q_w * N_w6^beta_w6 * E6) 
+#     dE6 <- alpha * E6 * (A_s * (q_s * N_s6^beta_s6 * E6)^-f_s6 * q_s * N_s6^beta_s6 +
+#                         A_w * (q_w * N_w6^beta_w6 * E6)^-f_w6 * q_w * N_w6^beta_w6 - (c))
+#   
+#     } else {
+#       
+#       dN_s6 <- r_s * N_s6 * (1 - (N_s6/k_s)) - (q_s * N_s6^beta_s6 * E6)
+#       dN_w6 <- 0
+#       dE6 <- alpha * E6 * (A_s * (q_s * N_s6^beta_s6 * E6)^-f_s6 * q_s * N_s6^beta_s6 - (c))
+#       
+#     }
+#   
+#     # Return the derivatives as a list
+#     return(list(c(dN_s6, dN_w6, dE6))) #, dC_s1, dC_w1, dPi_w1, dPi_s1
+#   })
+# }
+# 
+# # Define the initial state and parameters
+# state6 <- c(N_s6 = 4, N_w6 = 2, E6 = 0.5) #, C_s1 = 0, C_w1 = 0, Pi_s1 = 0, Pi_w1 = 0
+# parameters_6 <- c(q_s = 0.02, q_w = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.99, alpha = 1,
+#                 c = 0.05, A_w = 1, A_s = 1, beta_w6 = 0.56, beta_s6 = 0.2, f_w6 = 0.1, f_s6 = 0.815)
+# 
+# # Solve ODEs
+# out6 <- ode(y = state6, times = times, func = scenario_6, parms = parameters_6)
+# 
+# out6 <- out6 %>% as.data.frame() %>% 
+#   mutate(N_w6 = case_when(
+#     N_w6 < 0 ~ 0,
+#     TRUE ~ N_w6
+#   )) %>% 
+#     mutate(N_s6 = case_when(
+#     N_s6 < 0 ~ 0,
+#     TRUE ~ N_s6
+#   )) %>% 
+#   mutate(catch_s6 = q_s * N_s6^beta_s6 * E6,
+#          catch_w6 = q_w * N_w6^beta_w6 * E6,
+#          cpue_s6 = catch_s6 / E6,
+#          cpue_w6 = catch_w6 / E6,
+#          cost6 = cost * E6,
+#          pi_st6 = catch_s6 * A_s * (q_s * N_s6^beta_s6 * E6)^-f_s6 - (catch_s6 * cost),
+#          pi_w6 = catch_w6 * A_w * (q_w * N_w6^beta_w6 * E6)^-f_w6 - (catch_w6 * cost)) %>% 
+#   mutate_at(vars(pi_w6, pi_st6), ~replace(., is.nan(.), 0)) %>% 
+#   mutate(pi_sum6 = rowSums(across(c(pi_st6, pi_w6)))) %>% 
+#   pivot_longer(cols = dplyr::starts_with("N_"),
+#                names_to = "stock",
+#                values_to = "stock_size") %>% 
+#   pivot_longer(cols = dplyr::starts_with("E"),
+#                names_to = "effort",
+#                values_to = "effort_level") %>% 
+#   pivot_longer(cols = starts_with("catch_"),
+#                names_to = "stock_catch",
+#                values_to = "catch_size") %>% 
+#   pivot_longer(cols = starts_with("cpue_"),
+#                names_to = "stock_cpue",
+#                values_to = "cpue_level") %>% 
+#   pivot_longer(cols = starts_with("cost"),
+#                names_to = "cost_scenario",
+#                values_to = "cost") %>% 
+#   pivot_longer(cols = starts_with("pi_"),
+#                names_to = "stock_profit",
+#                values_to = "profit_level") %>% 
+#   mutate(scenario_id = "6")
+# 
+# out6_stock <- out6 %>% 
+#   select(time, stock, stock_size, scenario_id)
+# 
+# out6_effort <- out6 %>% 
+#   select(time, effort, effort_level, scenario_id)
+# 
+# out6_catch <- out6 %>% 
+#   select(time, stock_catch, catch_size, scenario_id) %>% 
+#   mutate(stock_catch = case_when(
+#     str_detect(stock_catch, "_s") ~ "Strong stock",
+#     str_detect(stock_catch, "_w") ~ "Weak stock"
+#   ))
+# 
+# out6_cpue <- out6 %>% 
+#   select(time, stock_cpue, cpue_level, scenario_id)
+# 
+# out6_cost <- out6 %>% 
+#   select(time, cost_scenario, cost, scenario_id)
+# 
+# out6_profit <- out6 %>% 
+#   select(time, stock_profit, profit_level, scenario_id) %>% 
+#   mutate(stock_profit = case_when(
+#     str_detect(stock_profit, "_st") ~ "Strong stock",
+#     str_detect(stock_profit, "_w") ~ "Weak stock",
+#     str_detect(stock_profit, "_sum") ~ "Total profit",
+#   ))
+```
+
+
+
+```{r, fig.width=8, fig.height=12}
+# stock6_plot <- 
+#   ggplot() +
+#   geom_hline(yintercept = 0.5,
+#               linetype = "dashed",
+#               color = "grey40",
+#               alpha = 0.8) +
+#   geom_hline(yintercept = 0.25,
+#               linetype = "dotted",
+#               color = "grey40",
+#               alpha = 0.8) +
+#   geom_line(data = out6_stock %>% 
+#               mutate(stock = case_when(
+#                 str_detect(stock, "_s") ~ "Strong stock",
+#                 str_detect(stock, "_w") ~ "Weak stock"
+#               )), 
+#             aes(x = time, y = stock_size, color = stock),
+#             linewidth = 1,
+#             show.legend = T) + 
+#   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
+#   scale_x_continuous(breaks = seq(0, 200, 100),
+#                      expand = c(0,0)) +
+#   scale_y_continuous(expand = c(0,0.01)) +
+#   labs(x = "",
+#        y = "Stock size",
+#        color = "") +
+#   theme_bw() +
+#   theme(panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank(),
+#         panel.spacing = unit(5, "mm"),
+#         strip.background = element_rect(fill = "transparent"),
+#         strip.text = element_text(color = "black", size = 10),
+#         axis.title.x = element_text(color = "black", size = 12, vjust = -2),
+#         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
+#         axis.text = element_text(color = "black", size = 10),
+#         legend.position = "bottom")
+# 
+# effort6_plot <-
+#   ggplot() +
+#   geom_line(data = out6_effort,
+#             aes(x = time, y = effort_level),
+#             linewidth = .8,
+#             alpha = .8,
+#             color = "#A50E82FF",
+#             show.legend = F) +
+#   scale_x_continuous(breaks = seq(0, 200, 100),
+#                      expand = c(0,0)) +
+#   scale_y_continuous(breaks = seq(0, 30, 10),
+#                      expand = c(0, 0.5)) +
+#   labs(x = "",
+#        y = "Fishing Effort",
+#        color = "") +
+#   theme_bw() +
+#   theme(panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank(),
+#         panel.spacing = unit(5, "mm"),
+#         strip.background = element_rect(fill = "transparent"),
+#         strip.text = element_text(color = "black", size = 11),
+#         axis.title.x = element_text(color = "black", size = 12),
+#         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
+#         axis.text = element_text(color = "black", size = 10),
+#         legend.position = "bottom")
+# 
+# catch6_plot <- 
+#   ggplot() +
+#   geom_line(data = out6_catch,
+#             aes(x = time, y = catch_size, color = stock_catch),
+#             linewidth = .8,
+#             alpha = .8,
+#             show.legend = F) +
+#   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
+#   scale_x_continuous(breaks = seq(0, 200, 100),
+#                      expand = c(0,0)) +
+#   scale_y_continuous(breaks = seq(0, 1, by = 0.25),
+#                      expand = c(0,0.01)) +
+#   labs(x = "",
+#        y = "Catch",
+#        color = "") +
+#   theme_bw() +
+#   theme(panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank(),
+#         panel.spacing = unit(5, "mm"),
+#         strip.background = element_rect(fill = "transparent"),
+#         strip.text = element_text(color = "black", size = 11),
+#         axis.title.x = element_text(color = "black", size = 12),
+#         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
+#         axis.text = element_text(color = "black", size = 10),
+#         legend.position = "bottom")
+# 
+# out6_profit$stock_profit <-
+#   factor(out6_profit$stock_profit,
+#          levels = c("Strong stock", "Weak stock", "Total profit"))
+# 
+# profit6_plot <- 
+#   ggplot() +
+#   geom_line(data = out6_profit,
+#             aes(x = time, y = profit_level, color = stock_profit),
+#             size = .8,
+#             alpha = .8,
+#             show.legend = T) +
+#   scale_color_manual(values = c("#6A9E1FFF","#052F61FF", "brown")) +
+#   scale_x_continuous(breaks = seq(0, 200, 100),
+#                      expand = c(0,0)) +
+#   scale_y_continuous(expand = c(0, 0.01)) +
+#   labs(x = "Time",
+#        y = "Profits",
+#        color = "") +
+#   theme_bw() +
+#   theme(panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank(),
+#         panel.spacing = unit(5, "mm"),
+#         strip.background = element_rect(fill = "transparent"),
+#         strip.text = element_text(color = "black", size = 11),
+#         axis.title.x = element_text(color = "black", size = 12, face = "bold"),
+#         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
+#         axis.text = element_text(color = "black", size = 10),
+#         legend.position = "bottom")
+# 
+# stock6_plot /
+#   catch6_plot /
+#   effort6_plot /
+#   profit6_plot 
+```
+
 
 ```{r}
 out_stock_join <- bind_rows(out1_stock, out2_stock, out3_stock, out4_stock) %>% #, out5_stock 
@@ -488,6 +1035,12 @@ out_catch_join <- bind_rows(out1_catch, out2_catch, out3_catch, out4_catch) %>% 
   mutate(stock_catch = case_when(
     str_detect(stock_catch, "_s") ~ "Strong stock",
     str_detect(stock_catch, "_w") ~ "Weak stock"
+  ))
+
+out_price_join <- bind_rows(out1_price, out2_price, out3_price, out4_price) %>%  
+  mutate(stock_price = case_when(
+    str_detect(stock_price, "_s") ~ "Strong stock",
+    str_detect(stock_price, "_w") ~ "Weak stock"
   ))
 
 out_cpue_join <- bind_rows(out1_cpue, out2_cpue, out3_cpue, out4_cpue) %>% #, out5_cpue 
@@ -582,6 +1135,41 @@ effort_plot <-
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
 ```
+
+```{r create price plot}
+price_plot <- 
+  ggplot() +
+  geom_line(data = out_price_join,
+            aes(x = time, y = price, color = stock_price),
+            linewidth = .8,
+            alpha = .8,
+            show.legend = F) +
+   facet_wrap(~ factor(scenario_label,
+                       levels = c("No hyperstability",
+                                  "Strong stock hyperstable",
+                                  "Weak stock hyperstable",
+                                  "Both stocks hyperstable")), 
+              nrow = 1) +
+  scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
+  scale_x_continuous(breaks = seq(0, 200, 100),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 7, by = 1),
+                     expand = c(0,0.01)) +
+  labs(x = "",
+       y = "Price",
+       color = "") +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.spacing = unit(5, "mm"),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        axis.title.x = element_text(color = "black", size = 12),
+        axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom")
+```
+
 
 ```{r create catch plot}
 catch_plot <- 
@@ -720,48 +1308,59 @@ cost_plot <-
 ```
 
 
-
+# Plot 1
 ```{r, fig.width=10, fig.height=10}
 stock_cpue_plot <- 
   b_v_k_plot /
-#  catch_plot /
+  catch_plot /
   cpue_plot +
   plot_layout(ncol = 1) +
   plot_annotation(tag_levels = "A")
 
-ggsave(file.path(outdir, "stock_cpue_plot.png"), plot =  stock_cpue_plot,
-        width = 8, height = 6, bg = "white", dpi = 300)
+stock_cpue_plot
+
+#ggsave(file.path(outdir, "stock_cpue_plot.png"), plot =  stock_cpue_plot,
+#        width = 8, height = 6, bg = "white", dpi = 300)
 ```
+
+#Plot 2
 
 ```{r, fig.width=10, fig.height=10}
 effort_profit_plot <-
   effort_plot /
-#  cost_plot /
+  cost_plot /
   profit_plot +
   plot_layout(ncol = 1) +
   plot_annotation(tag_levels = "A")
 
-ggsave(file.path(outdir, "effort_profit_plot.png"), plot =  effort_profit_plot,
-        width = 8, height = 6, bg = "white", dpi = 300)
+effort_profit_plot
+
+#ggsave(file.path(outdir, "effort_profit_plot.png"), plot =  effort_profit_plot,
+#        width = 8, height = 6, bg = "white", dpi = 300)
 ```
 
-```{r, fig.width=10, fig.height=10}
+# Plot 3
+```{r, fig.width=10, fig.height=15}
 full_plot <- 
   b_v_k_plot /
   cpue_plot /
   effort_plot /
+  price_plot /
+  cost_plot /
   profit_plot +
   plot_layout(ncol = 1) +
   plot_annotation(tag_levels = "A")
 
-ggsave(file.path(outdir, "full_ts_plot.png"), plot =  full_plot,
-        width = 8, height = 10, bg = "white", dpi = 300)
+full_plot
+
+#ggsave(file.path(outdir, "full_ts_plot.png"), plot =  full_plot,
+#        width = 8, height = 10, bg = "white", dpi = 300)
 ```
 
 
 ```{r simulate the effect of hyperstability on CPUE}
 # Define the values of N
-N <- seq(0, 5, by = 0.2)
+N <- seq(0, 5, by = 0.1)
 
 # Define the values of q and beta for the two scenarios
 q <- 1
@@ -772,11 +1371,11 @@ beta_2 <- 0.56
 # Create a data frame with N and CPUE values for both scenarios
 df_v <- data.frame(N = rep(N, 2), 
                  V = c(N^(beta_1-1), N^(beta_2-1)),
-                 beta = rep(c("No hyperstability", "Hyperstability"), each = length(N)))
+                 beta = rep(c("Not hyperstable", "Hyperstable"), each = length(N)))
 
 df_cpue <- data.frame(N = rep(N, 2), 
                  CPUE = c(q * N^beta_1, q * N^beta_2),
-                 beta = rep(c("No hyperstability", "Hyperstability"), each = length(N)))
+                 beta = rep(c("Not hyperstable", "Hyperstable"), each = length(N)))
 
 # Create the plot using ggplot2
 v_beta_plot <-
@@ -784,12 +1383,12 @@ v_beta_plot <-
        aes(x = N, y = V, color = beta)) + 
   geom_line(linewidth = 1,
             alpha = .7) +
-  labs(x = "Stock size",
+  labs(x = "Biomass",
        y = "Vulnerability",
        color = "Catch flexibility") +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
-  scale_color_manual(values = c("red", "blue")) +
+  scale_color_brewer(palette = "Dark2") +
   theme_bw() +
   theme(panel.grid = element_blank(),
         axis.title = element_text(color = "black", size = 12),
@@ -797,20 +1396,20 @@ v_beta_plot <-
         legend.position = "bottom",
         legend.text = element_text(color = "black", size = 10))
 
-#ggsave(file.path(outdir, "v_beta_plot.png"), plot = v_beta_plot,
-#        width = 8, height = 6, bg = "white", dpi = 300)
+# ggsave(file.path(outdir, "v_beta_plot.png"), plot = v_beta_plot,
+#         width = 8, height = 6, bg = "white", dpi = 300)
 
 cpue_beta_plot <-
   ggplot(df_cpue %>% filter(N <= 2, CPUE <= 2),
        aes(x = N, y = CPUE, color = beta)) + 
   geom_line(linewidth = 1,
             alpha = .7) +
-  labs(x = "Stock size",
+  labs(x = "Biomass",
        y = "CPUE",
        color = "Catch flexibility") +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
-  scale_color_manual(values = c("red", "blue")) +
+  scale_color_brewer(palette = "Dark2") +
   theme_bw() +
   theme(panel.grid = element_blank(),
         axis.title = element_text(color = "black", size = 12),
@@ -818,20 +1417,23 @@ cpue_beta_plot <-
         legend.position = "bottom",
         legend.text = element_text(color = "black", size = 10))
 
-#ggsave(file.path(outdir, "cpue_beta_plot.png"), plot = cpue_beta_plot,
-#        width = 8, height = 6, bg = "white", dpi = 300)
+# ggsave(file.path(outdir, "cpue_beta_plot.png"), plot = cpue_beta_plot,
+#         width = 8, height = 6, bg = "white", dpi = 300)
 ```
 
-```{r, fig.height=8, fig.width=6}
+# Plot 3
+```{r, fig.height=6, fig.width=8}
 beta_cpue_plot <-
-  v_beta_plot /
+  v_beta_plot +
   cpue_beta_plot +
   plot_layout(guides = "collect") +
   plot_annotation(tag_levels = "A") &
   theme(legend.position = "bottom")
 
-ggsave(file.path(outdir, "beta_cpue_plot.png"), plot = beta_cpue_plot,
-        width = 8, height = 6, bg = "white", dpi = 300)
+beta_cpue_plot
+
+ # ggsave(file.path(outdir, "beta_cpue_plot.png"), plot = beta_cpue_plot,
+ #         width = 8, height = 6, bg = "white", dpi = 300)
 ```
 
 

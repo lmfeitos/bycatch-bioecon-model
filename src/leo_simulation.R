@@ -219,8 +219,8 @@ for(i in 2:nyr){
   N_s_prev <- data_f$N_s[i-1]
   
   # Calculate effort
-  E_now <- alpha * E_now * (A_s * (q_s * N_s_prev^beta_s[i-1] * E_now)^-f_s * q_s * N_s_prev^beta_s[i-1] + 
-    A_w * (q_w * N_w_prev^beta_w[i-1] * E_now)^-f_w * q_w * N_w_prev^beta_w[i-1]) - (cost * E_now)
+  E_now <- alpha * E_now * (A_s * (q_s * N_s_prev^beta_s * E_now)^-f_s * q_s * N_s_prev^beta_s[i-1] + 
+    A_w * (q_w * N_w_prev^beta_w * E_now)^-f_w * q_w * N_w_prev^beta_w) - (cost * E_now)
   
   # Calculate prices
   p_s_f <- A_s * (q_s * N_s_prev^beta_s[i- 1] * E_now)^-f_s * q_s * N_s_prev^beta_s[i-1]
@@ -257,6 +257,34 @@ for(i in 2:nyr){
   # Calculate biomass
   N_w_now <- N_w_prev + SP_w_now - C_w_now
   N_s_now <- N_s_prev + SP_s_now - C_s_now
+  
+  # Calculate B
+  B_s_now <- N_s_prev * weight_s
+  B_w_now <- N_w_prev * weight_w
+  
+  # Calculate F
+  F_s_now <- C_s_now / B_s_now
+  F_w_now <- C_w_now / B_w_now
+  
+  # Calculate MSY 
+  MSY_s <- 0.5 * B_s_now * F_s_now
+  MSY_w <- 0.5 * B_w_now * F_w_now
+  
+  # Calculate Bmsy
+  B_msy_s <- k_s * MSY_s
+  B_msy_w <- k_w * MSY_w
+  
+  #calculate B/Bmsy
+  Bs_B_msy_s <- B / B_msy_s
+  Bw_B_msy_w <- B / B_msy_w
+  
+  # Calculate Fmsy
+  F_msy_s <- r_s / 2 * q_s
+  F_msy_w <- r_w / 2 * q_w
+  
+  # Calculate F/Fmsy
+  F_Fmsy_s <- F_s_now / F_msy_s
+  F_Fmsy_w <- F_w_now / F_msy_w
   
   # Record results
   data_f$N_w[i] <- N_w_now
