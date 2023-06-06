@@ -19,7 +19,7 @@ library(janitor)
 library(plotly)
 library(ggthemes)
 # file path
-basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses/"
+basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
 outdir <- file.path(basedir, "model_outs") # calls present data from raster files
 ```
 
@@ -32,9 +32,9 @@ output_s_ranges_w_one <- read_csv(file.path(outdir, "output_s_ranges_w_one.csv")
 
 output_w_ranges_s_one <- read_csv(file.path(outdir, "output_w_ranges_s_one.csv"))
 
-output_msy1 <- read_csv(file.path(outdir, "output_msy1.csv"))
-
-output_msy2 <- read_csv(file.path(outdir, "output_msy2.csv"))
+# output_msy1 <- read_csv(file.path(outdir, "output_msy1.csv"))
+# 
+# output_msy2 <- read_csv(file.path(outdir, "output_msy2.csv"))
 
 output_subs1 <- read_csv(file.path(outdir, "output_sub1.csv"))
 
@@ -93,27 +93,27 @@ w_s_range_proc <- output_w_ranges_s_one %>%
   mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
   mutate(log_bvkw = log1p(b_v_k_w))
 
-# wrangling dataset with outputs from the test with prices constant (strong stock price varying) and strong stock managed to MSY
-output_msy1_proc <- output_msy1 %>% 
-  mutate(b_v_k_s = N_s / k_s,
-         b_v_k_w = N_w / k_w) %>%  
-  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
-  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
-  mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
-         vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
-  mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
-  mutate(w_stock_rev = (p_w * q_w * k_w) / c)
-
-# wrangling dataset with outputs from the test with prices constant (weak stock price varying) and strong stock managed to MSY
-output_msy2_proc <- output_msy2 %>% 
-   mutate(b_v_k_s = N_s / k_s,
-         b_v_k_w = N_w / k_w) %>%  
-  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
-  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
-  mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
-         vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
-  mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
-  mutate(w_stock_rev = (p_w * q_w * k_w) / c)
+# # wrangling dataset with outputs from the test with prices constant (strong stock price varying) and strong stock managed to MSY
+# output_msy1_proc <- output_msy1 %>% 
+#   mutate(b_v_k_s = N_s / k_s,
+#          b_v_k_w = N_w / k_w) %>%  
+#   mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+#   mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
+#   mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
+#          vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
+#   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
+#   mutate(w_stock_rev = (p_w * q_w * k_w) / c)
+# 
+# # wrangling dataset with outputs from the test with prices constant (weak stock price varying) and strong stock managed to MSY
+# output_msy2_proc <- output_msy2 %>% 
+#    mutate(b_v_k_s = N_s / k_s,
+#          b_v_k_w = N_w / k_w) %>%  
+#   mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+#   mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
+#   mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
+#          vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
+#   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
+#   mutate(w_stock_rev = (p_w * q_w * k_w) / c)
 
 
 # wrangling dataset with outputs from the test with prices constant (strong stock price varying) and cost varying (subsidies)
@@ -643,6 +643,32 @@ output_subs1_proc_test1 <- output_subs1_proc %>%
   filter(p_w == 1 & c == 0.0375 & extinct == "yes")
 ```
 
+```{r calculating elasticities of subsidies on vulnerability ratios}
+min_vw_sw_range0 = 2.6667
+min_vw_sub1_test0 = 1.88235
+
+cost_full = 0.05
+cost_sub = 0.0375
+
+# Elasticity following the mid-point formula:
+## deltaQ = Q2 - Q1 / (Q2 + Q1) / 2 * 100
+## deltaP = P2 - P1 / (P2 + P1) / 2 * 100
+## deltaQ / deltaP
+
+## Vulnerability elasticity:
+e_vuln0 <- (min_vw_sub1_test0 - min_vw_sw_range0)/ (min_vw_sub1_test0 + min_vw_sw_range0) / 2
+
+e_vuln0_pct <- e_vuln0 * 100
+
+## Subsidy elasticity
+e_sub0 <- (cost_sub - cost_full) /  (cost_sub + cost_full)/ 2
+
+e_sub0_pct <- e_sub0 * 100
+
+elas0_final <- e_vuln0_pct/e_sub0_pct
+elas0_final # 1.206944%
+```
+
 
 ```{r}
 s_w_range_proc_test %>% 
@@ -827,6 +853,37 @@ output_subs2_proc_test2 <- output_subs2_proc %>%
 
 ```
 
+```{r calculating elasticities of subsidies on vulnerability ratios for non-synergistic scenarios}
+min_vw_ws_range2 = 1.45455
+min_vw_sub1_test2 = 1.30612
+
+cost_full = 0.05
+cost_sub = 0.0375
+
+# Elasticity following the mid-point formula:
+## deltaQ = Q2 - Q1 / (Q2 + Q1) / 2 * 100
+## deltaP = P2 - P1 / (P2 + P1) / 2 * 100
+## deltaQ / deltaP
+
+## Vulnerability elasticity:
+e_vuln2 <- (min_vw_sub1_test2 - min_vw_ws_range2)/ (min_vw_sub1_test2 + min_vw_ws_range2) / 2
+
+e_vuln2_pct <- e_vuln2 * 100
+
+## Subsidy elasticity
+e_sub2 <- (cost_sub - cost_full) /  (cost_sub + cost_full)/ 2
+
+e_sub2_pct <- e_sub2 * 100
+
+elas2_final <- e_vuln2_pct/e_sub2_pct
+elas2_final # 0.3763%
+```
+
+```{r}
+# average elasticity of subsidies
+elas_ave <- (elas0_final + elas2_final)/2
+elas_ave
+```
 
 
 ```{r, echo = FALSE, include = FALSE}
