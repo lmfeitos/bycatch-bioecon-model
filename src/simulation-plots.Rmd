@@ -18,6 +18,8 @@ library(gridExtra)
 library(janitor)
 library(plotly)
 library(ggthemes)
+library(ggnewscale)
+library(RColorBrewer)
 # file path
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
 outdir <- file.path(basedir, "model_outs") # calls present data from raster files
@@ -28,18 +30,11 @@ outdir <- file.path(basedir, "model_outs") # calls present data from raster file
 
 output_s_ranges_w_one <- read_csv(file.path(outdir, "output_s_ranges_w_one.csv"))
 
-#output_s_ranges_w_ranges2 <- read_csv(file.path(outdir, "output_s_ranges_w_ranges2.csv"))
-
 output_w_ranges_s_one <- read_csv(file.path(outdir, "output_w_ranges_s_one.csv"))
-
-# output_msy1 <- read_csv(file.path(outdir, "output_msy1.csv"))
-# 
-# output_msy2 <- read_csv(file.path(outdir, "output_msy2.csv"))
 
 output_subs1 <- read_csv(file.path(outdir, "output_sub1.csv"))
 
 output_subs2 <- read_csv(file.path(outdir, "output_sub2.csv"))
-#output_full <- read_csv(file.path(outdir, "output_full.csv"))
 ```
 
 ```{r, echo = FALSE}
@@ -72,13 +67,14 @@ s_w_range_proc <- output_s_ranges_w_one %>%
   mutate(b_v_k_s = N_s / k_s,
          b_v_k_w = N_w / k_w) %>% 
   mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
-  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
-  mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
-         vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
+  mutate(vuln_ratio_w = round(vuln_ratio_w, 5)) %>% 
   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
   mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
-  mutate(log_bvkw = log1p(b_v_k_w)) %>% 
   mutate(c = as.factor(c))
+
+checK <- s_w_range_proc %>% 
+  filter(p_w < 1) %>% 
+  count(vuln_ratio_w, st_stock_rev)
 
 
 # wrangling dataset with outputs from the test with strong stock price as a function of catch
@@ -86,34 +82,11 @@ w_s_range_proc <- output_w_ranges_s_one %>%
   mutate(b_v_k_s = N_s / k_s,
          b_v_k_w = N_w / k_w) %>% 
   mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
-  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
-  mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
-         vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
+  mutate(vuln_ratio_w = round(vuln_ratio_w, 5)) %>% 
   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
   mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
-  mutate(log_bvkw = log1p(b_v_k_w))
+  mutate(c = as.factor(c)) 
 
-# # wrangling dataset with outputs from the test with prices constant (strong stock price varying) and strong stock managed to MSY
-# output_msy1_proc <- output_msy1 %>% 
-#   mutate(b_v_k_s = N_s / k_s,
-#          b_v_k_w = N_w / k_w) %>%  
-#   mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
-#   mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
-#   mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
-#          vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
-#   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
-#   mutate(w_stock_rev = (p_w * q_w * k_w) / c)
-# 
-# # wrangling dataset with outputs from the test with prices constant (weak stock price varying) and strong stock managed to MSY
-# output_msy2_proc <- output_msy2 %>% 
-#    mutate(b_v_k_s = N_s / k_s,
-#          b_v_k_w = N_w / k_w) %>%  
-#   mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
-#   mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
-#   mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
-#          vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
-#   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
-#   mutate(w_stock_rev = (p_w * q_w * k_w) / c)
 
 
 # wrangling dataset with outputs from the test with prices constant (strong stock price varying) and cost varying (subsidies)
@@ -121,13 +94,9 @@ output_subs1_proc <- output_subs1 %>%
    mutate(b_v_k_s = N_s / k_s,
          b_v_k_w = N_w / k_w) %>%  
   mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
-  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
-  mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
-         vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
+  mutate(vuln_ratio_w = round(vuln_ratio_w, 5)) %>% 
   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
   mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
-  mutate(log_b_v_k_w = log1p(b_v_k_w)) %>% 
-  mutate(log_b_v_k_w = round(log_b_v_k_w, 3)) %>% 
   mutate(c = as.factor(c))
 
 # wrangling dataset with outputs from the test with prices constant (strong stock price varying) and cost varying (subsidies)
@@ -135,13 +104,9 @@ output_subs2_proc <- output_subs2 %>%
    mutate(b_v_k_s = N_s / k_s,
          b_v_k_w = N_w / k_w) %>%  
   mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
-  mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
-  mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
-         vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
+  mutate(vuln_ratio_w = round(vuln_ratio_w, 5)) %>% 
   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
   mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
-  mutate(log_b_v_k_w = log1p(b_v_k_w)) %>% 
-  mutate(log_b_v_k_w = round(log_b_v_k_w, 3)) %>% 
   mutate(c = as.factor(c))
 ```
 
@@ -219,10 +184,14 @@ s_w_range_proc_test <-
 
 s_w_range_proc_test_min <-
   s_w_range_proc %>%
-  filter(p_w < 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4 & b_v_k_w > 0 & b_v_k_w < 0.001) %>% 
+  filter(p_w < 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4 & b_v_k_w > 0) %>%  
   distinct_all() %>%
   group_by(st_stock_rev, vuln_ratio_w) %>% 
-  summarise(min = min(b_v_k_w)) %>%  
+  summarise(min = min(b_v_k_w)) %>% 
+  distinct_at(vars(st_stock_rev, vuln_ratio_w, min)) %>% 
+  ungroup() %>% 
+  group_by(st_stock_rev) %>% 
+  mutate(min_2 = min(min)) %>% 
   distinct_at(vars(st_stock_rev, vuln_ratio_w, min))
 
 s_w_range_proc_test_min2 <-
@@ -234,6 +203,95 @@ s_w_range_proc_test_min2 <-
   distinct_at(vars(st_stock_rev, vuln_ratio_w, min))
   
 ```
+
+- Color scale for the fill
+Green for B/K > 0.5
+Yellow for B/K < 0.375 and > 0.5
+Red for B/K < 0.375
+```{r}
+thresholds <- c(0.5, 0.375, 0.051)
+library(geomtextpath)
+#s_w_range_proc_plot <-
+  ggplot() +
+  geom_tile(data = s_w_range_proc_test %>% 
+              filter(b_v_k_w >= 0.5),
+            aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_v_k_w, width = .1)) +
+  scale_fill_brewer(palette = "Greens")
+  # scale_fill_paletteer_c("grDevices::Blues 3",
+  #                         breaks = seq(0, 0.6, 0.2),
+  #                         direction = -1,
+  #                         limits = col_limit) +
+  scale_x_continuous(breaks = seq(1, 3, 0.5),
+                     limits = c(1, 3),
+                     expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(1, 6, 1),
+                     limits = c(1.5, 6),
+                     expand = c(0,0)) +
+  labs(x = "",
+       y = "Strong stock economic potential",
+       fill = "Weak stock biomass\n(B/K)") +
+#  coord_equal() +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        panel.spacing = unit(3, "mm")) +
+  geom_contour(data = subset(s_w_range_proc_test, b_v_k_w > 0),
+               aes(x = vuln_ratio_w, y = st_stock_rev, z = b_v_k_w),
+               breaks = thresholds[thresholds > 0],
+               color = "red",
+               linetype = "dashed",
+               linewidth = 1)
+
+  
+# Plot with added contours
+ggplot() +
+  geom_tile(data = s_w_range_proc_test,
+            aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_v_k_w, width = .1)) +
+  facet_wrap(~ factor(price_title)) +
+  scale_fill_viridis_c(option = "D",
+                       begin = 0.63,
+                       end = 0,
+                       breaks = c(0.6, 0.5, 0.375, 0.2, 0),
+                       labels = c("Above MSY", "At MSY", "Overfished", "Depleted", "Extinct"),
+                       limits = col_limit,
+                       rescaler = ~ scales::rescale_mid(.x, mid = 0.375)) +
+  scale_x_continuous(breaks = seq(1, 3, 0.5),
+                     limits = c(1, 3),
+                     expand = c(0, 0)) +
+  scale_y_continuous(breaks = seq(1, 8, 1),
+                     expand = c(0, 0)) +
+  labs(x = "",
+       y = "Strong stock economic potential",
+       fill = "Weak stock biomass\n(B/K)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        panel.spacing = unit(3, "mm")) +
+  # Add contours
+  geom_contour(data = s_w_range_proc_test %>% 
+                 filter(b_v_k_w > 0) %>% 
+                 mutate(label = case_when(
+                   b_v_k_w >= 0.5 ~ "MSY",
+                   b_v_k_w < 0.5 & b_v_k_w >= 0.375 ~ "Overfished",
+                   b_v_k_w < 0.051 ~ "Extinct"
+                 )),
+               aes(x = vuln_ratio_w, y = st_stock_rev, z = b_v_k_w),
+               colour = c("white"), 
+               breaks = thresholds[thresholds > 0],
+               linetype = "dashed",
+               alpha = 0.5,
+               linewidth = .8) +
+  geom_labelcontour(bins = 3, size = 2, straight = FALSE)
+```
+
 
 ```{r, echo = FALSE}
 col_limit <- c(0, 0.63)
