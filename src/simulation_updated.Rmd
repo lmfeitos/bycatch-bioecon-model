@@ -216,7 +216,7 @@ write_csv(output_sub1_final, file = file.path(outdir, "output_sub1.csv"), col_na
 # In this code chunk, I'll generate the dataset to simulate a scenario where a fishery subsidy increases the catchability of the strong stock in several levels.
 
 scenarios_df_subs2 <- expand.grid(p_w = seq(1, 10, 0.1),
-                                  p_s = c(0, 1),
+                                  p_s = c(1, 2),
                                   r_s = 1,
                                   r_w = seq(0.01, 0.99, 0.01),
                                   q_s = 0.02,

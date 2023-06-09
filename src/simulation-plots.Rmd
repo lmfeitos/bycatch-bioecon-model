@@ -19,7 +19,9 @@ library(janitor)
 library(plotly)
 library(ggthemes)
 library(ggnewscale)
+library(geomtextpath)
 library(RColorBrewer)
+library(ggtext)
 # file path
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
 outdir <- file.path(basedir, "model_outs") # calls present data from raster files
@@ -49,18 +51,6 @@ output_subs2 <- read_csv(file.path(outdir, "output_sub2.csv"))
 
 
 ```{r data wrangling, echo = FALSE}
-# wrangling dataset with outputs from the test with weak stock price as a function of catch
-# output_fcn_test_pw_proc <- output_fcn_test_pw %>% 
-#   mutate(b_v_k_s = N_s / k_s,
-#          b_v_k_w = N_w / k_w,
-#          b_v_k_s2 = N_s2 / k_s,
-#          b_v_k_w2 = N_w2 / k_w) %>% 
-#   mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
-#   mutate(vuln_ratio_s = (q_s/r_s) / (q_w/r_w)) %>% 
-#   mutate(vuln_ratio_w = round(vuln_ratio_w, 5),
-#          vuln_ratio_s = round(vuln_ratio_s, 5)) %>% 
-#   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
-#   mutate(w_stock_rev = (p_w * q_w * k_w) / c)
 
 # wrangling dataset with outputs from the test with strong stock price as a function of catch
 s_w_range_proc <- output_s_ranges_w_one %>% 
@@ -70,7 +60,9 @@ s_w_range_proc <- output_s_ranges_w_one %>%
   mutate(vuln_ratio_w = round(vuln_ratio_w, 5)) %>% 
   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
   mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
-  mutate(c = as.factor(c))
+  mutate(c = as.factor(c)) %>% 
+  mutate(b_bmsy_s = N_s/(k_s/2),
+         b_bmsy_w = N_w/(k_w/2))
 
 checK <- s_w_range_proc %>% 
   filter(p_w < 1) %>% 
@@ -85,7 +77,9 @@ w_s_range_proc <- output_w_ranges_s_one %>%
   mutate(vuln_ratio_w = round(vuln_ratio_w, 5)) %>% 
   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
   mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
-  mutate(c = as.factor(c)) 
+  mutate(c = as.factor(c)) %>% 
+  mutate(b_bmsy_s = N_s/(k_s/2),
+         b_bmsy_w = N_w/(k_w/2))
 
 
 
@@ -97,7 +91,9 @@ output_subs1_proc <- output_subs1 %>%
   mutate(vuln_ratio_w = round(vuln_ratio_w, 5)) %>% 
   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
   mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
-  mutate(c = as.factor(c))
+  mutate(c = as.factor(c)) %>% 
+  mutate(b_bmsy_s = N_s/(k_s/2),
+         b_bmsy_w = N_w/(k_w/2))
 
 # wrangling dataset with outputs from the test with prices constant (strong stock price varying) and cost varying (subsidies)
 output_subs2_proc <- output_subs2 %>%  
@@ -107,7 +103,9 @@ output_subs2_proc <- output_subs2 %>%
   mutate(vuln_ratio_w = round(vuln_ratio_w, 5)) %>% 
   mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
   mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
-  mutate(c = as.factor(c))
+  mutate(c = as.factor(c)) %>% 
+  mutate(b_bmsy_s = N_s/(k_s/2),
+         b_bmsy_w = N_w/(k_w/2))
 ```
 
 
@@ -180,7 +178,7 @@ s_w_range_proc_test <-
            filter(p_w < 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4) %>% 
   distinct_all() %>% 
   mutate(price_title = case_when(
-    p_w < 1 ~ "Weak stock price = 0"))
+    p_w < 1 ~ "Weak stock price = 0")) 
 
 s_w_range_proc_test_min <-
   s_w_range_proc %>%
@@ -208,123 +206,34 @@ s_w_range_proc_test_min2 <-
 Green for B/K > 0.5
 Yellow for B/K < 0.375 and > 0.5
 Red for B/K < 0.375
-```{r}
-thresholds <- c(0.5, 0.375, 0.051)
-library(geomtextpath)
-#s_w_range_proc_plot <-
-  ggplot() +
-  geom_tile(data = s_w_range_proc_test %>% 
-              filter(b_v_k_w >= 0.5),
-            aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_v_k_w, width = .1)) +
-  scale_fill_brewer(palette = "Greens")
-  # scale_fill_paletteer_c("grDevices::Blues 3",
-  #                         breaks = seq(0, 0.6, 0.2),
-  #                         direction = -1,
-  #                         limits = col_limit) +
-  scale_x_continuous(breaks = seq(1, 3, 0.5),
-                     limits = c(1, 3),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(1, 6, 1),
-                     limits = c(1.5, 6),
-                     expand = c(0,0)) +
-  labs(x = "",
-       y = "Strong stock economic potential",
-       fill = "Weak stock biomass\n(B/K)") +
-#  coord_equal() +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        strip.text = element_text(color = "black", size = 11),
-        panel.spacing = unit(3, "mm")) +
-  geom_contour(data = subset(s_w_range_proc_test, b_v_k_w > 0),
-               aes(x = vuln_ratio_w, y = st_stock_rev, z = b_v_k_w),
-               breaks = thresholds[thresholds > 0],
-               color = "red",
-               linetype = "dashed",
-               linewidth = 1)
-
-  
-# Plot with added contours
-ggplot() +
-  geom_tile(data = s_w_range_proc_test,
-            aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_v_k_w, width = .1)) +
-  facet_wrap(~ factor(price_title)) +
-  scale_fill_viridis_c(option = "D",
-                       begin = 0.63,
-                       end = 0,
-                       breaks = c(0.6, 0.5, 0.375, 0.2, 0),
-                       labels = c("Above MSY", "At MSY", "Overfished", "Depleted", "Extinct"),
-                       limits = col_limit,
-                       rescaler = ~ scales::rescale_mid(.x, mid = 0.375)) +
-  scale_x_continuous(breaks = seq(1, 3, 0.5),
-                     limits = c(1, 3),
-                     expand = c(0, 0)) +
-  scale_y_continuous(breaks = seq(1, 8, 1),
-                     expand = c(0, 0)) +
-  labs(x = "",
-       y = "Strong stock economic potential",
-       fill = "Weak stock biomass\n(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        strip.text = element_text(color = "black", size = 11),
-        panel.spacing = unit(3, "mm")) +
-  # Add contours
-  geom_contour(data = s_w_range_proc_test %>% 
-                 filter(b_v_k_w > 0) %>% 
-                 mutate(label = case_when(
-                   b_v_k_w >= 0.5 ~ "MSY",
-                   b_v_k_w < 0.5 & b_v_k_w >= 0.375 ~ "Overfished",
-                   b_v_k_w < 0.051 ~ "Extinct"
-                 )),
-               aes(x = vuln_ratio_w, y = st_stock_rev, z = b_v_k_w),
-               colour = c("white"), 
-               breaks = thresholds[thresholds > 0],
-               linetype = "dashed",
-               alpha = 0.5,
-               linewidth = .8) +
-  geom_labelcontour(bins = 3, size = 2, straight = FALSE)
-```
 
 
 ```{r, echo = FALSE}
-col_limit <- c(0, 0.63)
+#Contour thresholds
+thresholds <- c(1, 0.5, 0.0051)
+
+# Fill scale limits
+col_limit <- c(0, 1.25)
 
 s_w_range_proc_plot <-
   ggplot() +
-  geom_tile(data = s_w_range_proc_test,
-            aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_v_k_w, width = .04)) +
-  geom_smooth(data = s_w_range_proc_test_min,
-             aes(x = vuln_ratio_w, y = st_stock_rev, color = min),
-             color = "black",
-             se = FALSE,
-             linetype = "dashed",
-             linewidth = .5) +
-  # geom_point(data = s_w_range_proc_test_min %>% 
-  #              filter(vuln_ratio_w == 2.08696 & st_stock_rev == 1.92),
-  #              aes(x = vuln_ratio_w, y = st_stock_rev, fill = min),
-  #            size = 4,
-  #            shape = 20,
-  #            color = "black") +
+  geom_tile(data = s_w_range_proc_test %>% 
+           filter(p_w == 0 & st_stock_rev <= 8 & vuln_ratio_w <= 3),
+            aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_bmsy_w, width = .1)) +
   facet_wrap(~ factor(price_title)) +
-  scale_fill_paletteer_c("grDevices::Blues 3",
-                         breaks = seq(0, 0.6, 0.1),
-                         direction = -1,
-                         limits = col_limit) +
-   scale_x_continuous(breaks = seq(1, 4, 0.5),
-                     expand = c(0,0)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nB/B<sub>MSY</sub>") +
+  scale_x_continuous(breaks = seq(1, 3, 0.5),
+                     limits = c(1, 3),
+                     expand = c(0, 0)) +
   scale_y_continuous(breaks = seq(1, 8, 1),
-                     expand = c(0,0)) +
+                     expand = c(0, 0)) +
   labs(x = "",
-       y = "Strong stock economic potential",
-       fill = "Weak stock biomass\n(B/K)") +
-#  coord_equal() +
+       y = "Strong stock economic potential") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -332,36 +241,40 @@ s_w_range_proc_plot <-
         axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
-        panel.spacing = unit(3, "mm"))
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) +
+  # Add contours
+  geom_contour(data = s_w_range_proc_test,
+               aes(x = vuln_ratio_w, y = st_stock_rev, z = b_bmsy_w),
+               color = "black",
+               breaks = thresholds[thresholds > 0],
+               linetype = "dashed",
+               alpha = 0.7,
+               linewidth = .8)
 
 s_w_range_proc_plot2 <-
   ggplot() +
   geom_tile(data = s_w_range_proc %>% 
-           filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 4) %>% 
-           distinct_all() %>% 
+           filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 3) %>%
              mutate(price_title = case_when(
                p_w == 1 ~ "Weak stock price = 1"
              )),
-           aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_v_k_w, width = .04)) +
-  geom_smooth(data = s_w_range_proc_test_min2,
-              aes(x = vuln_ratio_w, y = st_stock_rev, color = min),
-              color = "black",
-              se = FALSE,
-              linetype = "dashed",
-              linewidth = .5) +
-  facet_wrap(~ price_title) +
-  scale_fill_paletteer_c("grDevices::Blues 3",
-                         breaks = seq(0, 0.6, 0.1),
-                         direction = -1,
-                         limits = col_limit) +
-  scale_x_continuous(breaks = seq(1, 4, 0.5),
-                     expand = c(0,0)) +
+           aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_bmsy_w, width = .1)) +
+  facet_wrap(~ factor(price_title)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nB/B<sub>MSY</sub>") +
+  scale_x_continuous(breaks = seq(1, 3, 0.5),
+                     limits = c(1, 3),
+                     expand = c(0, 0)) +
   scale_y_continuous(breaks = seq(1, 8, 1),
-                     expand = c(0,0)) +
+                     expand = c(0, 0)) +
   labs(x = "",
-       y = "",
-       fill = "Weak stock biomass\n(B/K)") +
-  #coord_equal() +
+       y = "Strong stock economic potential") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -369,36 +282,46 @@ s_w_range_proc_plot2 <-
         axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
-        panel.spacing = unit(3, "mm"))
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) +
+  # Add contours
+  geom_contour(data = s_w_range_proc %>% 
+                 filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 3),
+               aes(x = vuln_ratio_w, y = st_stock_rev, z = b_bmsy_w),
+               color = "black",
+               breaks = thresholds[thresholds > 0],
+               linetype = "dashed",
+               alpha = 0.7,
+               linewidth = .8)
 
 
 w_s_range_proc_plot1 <-
   ggplot() + 
   geom_tile(data = w_s_range_proc %>%
-           filter(p_s == 1 & vuln_ratio_w <= 4) %>% 
-           distinct_all() %>% 
+           filter(p_s == 1 & vuln_ratio_w <= 3) %>% 
              mutate(price_title = case_when(
                p_s == 1 ~ "Strong stock price = 1"
              )),
-           aes(x = vuln_ratio_w, y = w_stock_rev, fill = b_v_k_w, width = .04)) +
-  geom_vline(xintercept = 2.6,
+           aes(x = vuln_ratio_w, y = w_stock_rev, fill = b_bmsy_w, width = .1)) +
+  geom_vline(xintercept = 2.703,
              color = "black",
-             linewidth = .5,
+             linewidth = .8,
              linetype = "dashed") +
   facet_wrap(~ price_title) +
-  scale_fill_paletteer_c("grDevices::Blues 3",
-                         # rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.6, 0.1),
-                         direction = -1,
-                         limits = col_limit) +
-  scale_x_continuous(breaks = seq(0, 4, 0.5),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 8, 1),
-                     expand = c(0,0)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nB/B<sub>MSY</sub>") +
+  scale_x_continuous(breaks = seq(1, 3, 0.5),
+                     limits = c(1, 3),
+                     expand = c(0, 0)) +
+  scale_y_continuous(breaks = seq(1, 8, 1),
+                     expand = c(0, 0)) +
   labs(x = "",
-       y = "Weak stock economic potential",
-       fill = "Weak stock biomass\n(B/K)") +
-#  coord_equal() +
+       y = "Weak stock economic potential") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -406,8 +329,19 @@ w_s_range_proc_plot1 <-
         axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
-        panel.spacing = unit(3, "mm"))
-  
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) +
+  # Add contours
+  geom_contour(data = w_s_range_proc %>% 
+                 filter(p_s == 1 & vuln_ratio_w <= 3),
+               aes(x = vuln_ratio_w, y = w_stock_rev, z = b_bmsy_w),
+               color = "black",
+               breaks = thresholds[thresholds == 0.5],
+               linetype = "dashed",
+               alpha = 0.7,
+               linewidth = .8)
+
 w_s_range_proc_plot2 <- 
   ggplot() + 
   geom_tile(data = w_s_range_proc %>% 
@@ -416,24 +350,25 @@ w_s_range_proc_plot2 <-
              mutate(price_title = case_when(
                p_s == 2 ~ "Strong stock price = 2"
              )),
-           aes(x = vuln_ratio_w, y = w_stock_rev, fill = b_v_k_w, width = .04)) +
-  geom_vline(xintercept = 1.4,
+           aes(x = vuln_ratio_w, y = w_stock_rev, fill = b_bmsy_w, width = .1)) +
+  geom_vline(xintercept = 1.47,
              color = "black",
-             linewidth = .5,
+             linewidth = .8,
              linetype = "dashed") +
   facet_wrap(~ price_title) +
-  scale_fill_paletteer_c("grDevices::Blues 3",
-                         # rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.6, 0.1),
-                         direction = -1,
-                         limits = col_limit) +
-  scale_x_continuous(breaks = seq(0, 4, 0.5),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 8, 1),
-                     expand = c(0,0)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nB/B<sub>MSY</sub>") +
+  scale_x_continuous(breaks = seq(1, 3, 0.5),
+                     limits = c(1, 3),
+                     expand = c(0, 0)) +
+  scale_y_continuous(breaks = seq(1, 8, 1),
+                     expand = c(0, 0)) +
   labs(x = "",
-       y = "",
-       fill = "Weak stock biomass\n(B/K)") +
+       y = "") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -441,8 +376,9 @@ w_s_range_proc_plot2 <-
         axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
-        panel.spacing = unit(3, "mm"))
-
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) 
 ```
 
 ### Vulnerability ratios vs revenue stream with prices as constants
@@ -464,8 +400,8 @@ plot_1 <- grid.arrange(patchworkGrob(range_plot_1 /
     plot_layout(guides = "collect")),
   bottom = "Vulnerability ratios\n(Vw/Vs)")
   
-#ggsave(file.path(outdir, "plot_1.png"), plot = plot_1,
-#      width = 12, height = 8, bg = "white", dpi = 300)
+# ggsave(file.path(outdir, "plot_1.png"), plot = plot_1,
+#       width = 12, height = 8, bg = "white", dpi = 300)
 ```
 
 
@@ -498,108 +434,6 @@ w_s_range_proc %>%
 
 ### Tests for management at MSY for the strong stock
 
-```{r, echo = FALSE}
-# msy1_s_proc_plot <-
-#   ggplot(data = output_msy1_proc %>% 
-#            filter(p_w < 1)) +
-#   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-#   scale_fill_paletteer_c("viridis::viridis",
-#                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-#                          breaks = seq(0, 0.5, 0.1)) +
-#   facet_wrap(~ c,)
-#   scale_x_continuous(expand = c(0,0)) +
-#   scale_y_continuous(expand = c(0,0)) +
-#   labs(x = "Vw/Vs",
-#        y = "Strong stock revenue stream",
-#        fill = "log(B/K)") +
-#   theme_bw() +
-#   theme(panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         axis.title = element_text(size = 12, color = "black"),
-#         axis.text = element_text(size = 10, color = "black"),
-#         strip.background = element_rect(fill = "transparent"),
-#         panel.spacing = unit(3, "mm"))
-# 
-# 
-# msy1_s_proc_plot2 <-
-#   ggplot(data = output_msy1_proc %>% 
-#            filter(p_w == 1)) +
-#   geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-#   scale_fill_paletteer_c("viridis::viridis",
-#                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-#                          breaks = seq(0, 0.35, 0.1)) +
-#   scale_x_continuous(expand = c(0,0)) +
-#   scale_y_continuous(expand = c(0,0)) +
-#   labs(x = "Vw/Vs",
-#        y = "Strong stock revenue stream",
-#        fill = "log(B/K)") +
-#   theme_bw() +
-#   theme(panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         axis.title = element_text(size = 12, color = "black"),
-#         axis.text = element_text(size = 10, color = "black"),
-#         strip.background = element_rect(fill = "transparent"),
-#         panel.spacing = unit(3, "mm"))
-# 
-# 
-# msy2_w_proc_plot1 <-
-#   ggplot(data = output_msy2_proc %>%
-#            filter(p_s == 1)) + 
-#   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-#   scale_fill_paletteer_c("viridis::viridis",
-#                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-#                          breaks = seq(0, 0.4, 0.1)) +
-#   scale_x_continuous(expand = c(0,0)) +
-#   scale_y_continuous(expand = c(0,0)) +
-#   labs(x = "Vw/Vs",
-#        y = "Weak stock revenue stream",
-#        fill = "log(B/K)") +
-#   theme_bw() +
-#   theme(panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         axis.title = element_text(size = 12, color = "black"),
-#         axis.text = element_text(size = 10, color = "black"),
-#         strip.background = element_rect(fill = "transparent"),
-#         panel.spacing = unit(3, "mm"))
-#   
-# msy2_w_proc_plot2 <- 
-#   ggplot(data = output_msy2_proc %>% 
-#            filter(p_s == 2)) + 
-#   geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-#   scale_fill_paletteer_c("viridis::viridis",
-#                           rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-#                          breaks = seq(0, 0.25, 0.05)) +
-#   scale_x_continuous(expand = c(0,0)) +
-#   scale_y_continuous(expand = c(0,0)) +
-#   labs(x = "Vw/Vs",
-#        y = "Weak stock revenue stream",
-#        fill = "log(B/K)") +
-#   theme_bw() +
-#   theme(panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         axis.title = element_text(size = 12, color = "black"),
-#         axis.text = element_text(size = 10, color = "black"),
-#         strip.background = element_rect(fill = "transparent"),
-#         panel.spacing = unit(3, "mm"))
-```
-
-
-```{r, echo = FALSE, fig.height=8, fig.width=8}
-# msy_plot_1 <- 
-#   (msy1_s_proc_plot +
-#   msy1_s_proc_plot2)  
-# 
-# msy_plot_2 <-
-#   (msy2_w_proc_plot1 +
-#   msy2_w_proc_plot2) 
-# 
-# msy_gather <-
-#   msy_plot_1 / 
-#   msy_plot_2 +
-#   plot_annotation(tag_levels = "A")
-# 
-# msy_gather
-```
 
 ```{r calculate minimum values}
 output_subs1_min <- 
@@ -626,34 +460,28 @@ sub1_label1 <- c("25% subsidy; Weak stock price = 1")
 names(sub1_label1) <- c("0.0375")
 
 
-col_limit <- c(0, 0.63)
-
-
 subs1_s_proc_plot2.1 <-
   ggplot(data = output_subs1_proc %>% 
-           filter(p_w == 1 & c == 0.0375 & st_stock_rev <= 12 & vuln_ratio_w <= 4)) + 
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("grDevices::Blues 3",
-                         direction = -1,
-                         limits = col_limit,
-                         breaks = seq(0, 0.6, 0.1)) +
-  geom_smooth(data = output_subs1_min,
-              aes(x = vuln_ratio_w, y = st_stock_rev, color = min),
-              color = "black",
-              se = FALSE,
-              linetype = "dashed",
-              linewidth = .5) +
+           filter(p_w == 1 & vuln_ratio_w <= 3 & st_stock_rev <= 8)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
              labeller = labeller(c = sub1_label1)) +
-  scale_x_continuous(breaks = seq(1, 4, .5),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 12, 2),
-                     expand = c(0,0)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nB/B<sub>MSY</sub>") +
+  scale_x_continuous(breaks = seq(1, 3, 0.5),
+                     limits = c(1, 3),
+                     expand = c(0, 0)) +
+  scale_y_continuous(limits = c(2, 8),
+                     breaks = seq(1, 8, 1),
+                     expand = c(0, 0)) +
   labs(x = "",
-       y = "",
-       fill = "Weak stock biomass\n(B/K)") +
+       y = "Strong stock economic potential") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -661,7 +489,17 @@ subs1_s_proc_plot2.1 <-
         axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
-        panel.spacing = unit(3, "mm"))
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) +
+  # Add contours
+  geom_contour(data = output_subs1_proc,
+               aes(x = vuln_ratio_w, y = st_stock_rev, z = b_bmsy_w),
+               color = "black",
+               breaks = thresholds[thresholds > 0],
+               linetype = "dashed",
+               alpha = 0.7,
+               linewidth = .8)
 
 ```
 
@@ -745,29 +583,26 @@ names(sub1_label2) <- c("0.0375")
 
 subs2_s_proc_plot2.1 <-
   ggplot(data = output_subs1_proc %>% 
-           filter(p_w < 1 & c == 0.0375 & vuln_ratio_w <= 4 & st_stock_rev <= 12)) + 
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = b_v_k_w, height = 1.2, width = .1)) +
-  geom_smooth(data = output_subs1_min2,
-              aes(x = vuln_ratio_w, y = st_stock_rev, color = min),
-              color = "black",
-              se = FALSE,
-              linetype = "dashed",
-              linewidth = .5) +
-  scale_fill_paletteer_c("grDevices::Blues 3",
-                         direction = -1,
-                         limits = col_limit,
-                         breaks = seq(0, .6, .1)) +
+           filter(p_w < 1 & c == 0.0375 & vuln_ratio_w <= 3 & st_stock_rev <= 8)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
              labeller = labeller(c = sub1_label2)) +
-  scale_x_continuous(breaks = seq(1, 4, .5),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 12, 2),
-                     expand = c(0,0)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nB/B<sub>MSY</sub>") +
+  scale_x_continuous(breaks = seq(1, 3, 0.5),
+                     limits = c(1, 3),
+                     expand = c(0, 0)) +
+  scale_y_continuous(limits = c(2, 8),
+                     breaks = seq(1, 8, 1),
+                     expand = c(0, 0)) +
   labs(x = "",
-       y = "Strong stock revenue potential",
-       fill = "Weak stock biomass\n(B/K)") +
+       y = "") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -775,7 +610,17 @@ subs2_s_proc_plot2.1 <-
         axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
-        panel.spacing = unit(3, "mm"))
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) +
+  # Add contours
+  geom_contour(data = output_subs1_proc,
+               aes(x = vuln_ratio_w, y = st_stock_rev, z = b_bmsy_w),
+               color = "black",
+               breaks = thresholds[thresholds > 0],
+               linetype = "dashed",
+               alpha = 0.7,
+               linewidth = .8)
 
 ```
 
@@ -790,35 +635,49 @@ names(sub1_label_ps1) <- c("0.0375")
 # Create plots for a smaller range of Vw/Vs
 subs1_w_proc_plot2.1 <-
   ggplot(data = output_subs2_proc %>% 
-           filter(p_s == 1 & c == 0.0375  & vuln_ratio_w <= 4)) + 
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("grDevices::Blues 3",
-                         direction = -1,
-                         limits = col_limit, 
-                         breaks = seq(0, .6, .1)) +
-  geom_vline(xintercept = 1.9,
-             color = "black",
-             size = .5,
-             linetype = "dashed") +
+           filter(p_s == 1 & vuln_ratio_w <= 3)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
+  geom_vline(xintercept = 1.88,
+            color = "black",
+            linewidth = .8,
+            linetype = "dashed") +
   facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
              labeller = labeller(c = sub1_label_ps1)) +
-  scale_x_continuous(breaks = seq(1, 4, .5),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 12, 2),
-                     expand = c(0,0)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nB/B<sub>MSY</sub>") +
+  scale_x_continuous(breaks = seq(1, 3, 0.5),
+                     limits = c(1, 3),
+                     expand = c(0, 0)) +
+  scale_y_continuous(limits = c(2, 8),
+                     breaks = seq(1, 8, 1),
+                     expand = c(0, 0)) +
   labs(x = "",
        y = "Weak stock revenue potential",
-       fill = "Weak stock biomass\n(B/K)") +
+       fill = "Weak stock B/B<sub>MSY</sub>") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title = element_text(size = 12, color = "black"),
         axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),,
+        strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
-        panel.spacing = unit(3, "mm"))
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) 
+  # Add contours
+  # geom_contour(data = output_subs2_proc,
+  #              aes(x = vuln_ratio_w, y = st_stock_rev, z = b_bmsy_w),
+  #              color = "black",
+  #              breaks = thresholds_2[thresholds_2 > 0],
+  #              linetype = "dashed",
+  #              alpha = 0.7,
+  #              linewidth = .8)
 ```
 
 - 0.045 = 10% subsidy
@@ -831,31 +690,36 @@ subs1_w_proc_plot2.1 <-
 sub1_label_ps2 <- c("25% subsidy; Strong stock price = 2")
 names(sub1_label_ps2) <- c("0.0375")
 
+
 # Create series of plots for pw = 0.1 with vulnerabilities ranging from 1 to 4
 
 subs2_w_proc_plot2.1 <-
   ggplot(data = output_subs2_proc %>% 
-           filter(p_s == 2 & c == 0.0375 & vuln_ratio_w <= 4)) + 
+           filter(p_s == 2 & vuln_ratio_w <= 3)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = b_v_k_w, height = 1.2, width = .1)) +
-  scale_fill_paletteer_c("grDevices::Blues 3",
-                         direction = -1,
-                         limits = col_limit,
-                         breaks = seq(0, .6, .1)) +
-  geom_vline(xintercept = 1.3,
-             size = .5,
+  geom_vline(xintercept = 1.31,
+             size = .8,
              color = "black",
              linetype = "dashed") +
-  facet_wrap(~ c,
+    facet_wrap(~ c,
              nrow = 1,
              scales = "free_y",
              labeller = labeller(c = sub1_label_ps2)) +
-  scale_x_continuous(breaks = seq(1, 4, .5),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 12, 2),
-                     expand = c(0,0)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nB/B<sub>MSY</sub>") +
+  scale_x_continuous(breaks = seq(1, 3, 0.5),
+                     limits = c(1, 3),
+                     expand = c(0, 0)) +
+  scale_y_continuous(limits = c(2, 8),
+                     breaks = seq(1, 8, 1),
+                     expand = c(0, 0)) +
   labs(x = "",
        y = "",
-       fill = "Weak stock biomass\n(B/K)") +
+       fill = "Weak stock B/B<sub>MSY</sub>") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -863,7 +727,18 @@ subs2_w_proc_plot2.1 <-
         axis.text = element_text(size = 10, color = "black"),
         strip.background = element_rect(fill = "transparent"),
         strip.text = element_text(color = "black", size = 11),
-        panel.spacing = unit(3, "mm"))
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) 
+  # Add contours
+  # geom_contour(data = output_subs2_proc %>% 
+  #          filter(p_s == 2 & vuln_ratio_w <= 3),
+  #              aes(x = vuln_ratio_w, y = st_stock_rev, z = b_bmsy_w),
+  #              color = "black",
+  #              breaks = thresholds_2[thresholds_2 > 0],
+  #              linetype = "dashed",
+  #              alpha = 0.7,
+  #              linewidth = .8)
 ```
 
 ```{r, fig.height=8, fig.width=8}
@@ -942,89 +817,5 @@ elas2_final # 0.3763%
 elas_ave <- (elas0_final + elas2_final)/2
 elas_ave
 ```
-
-
-```{r, echo = FALSE, include = FALSE}
-#msy1_w_proc_plot1 <-
-  ggplot(data = output_msy1_proc %>%
-           filter(p_w < 1 & vuln_ratio_w <= 3)) + 
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Strong stock revenue stream",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-  
-msy1_w_proc_plot2 <- 
-  ggplot(data = output_msy1_proc %>% 
-           filter(p_w == 1)) + 
-  geom_tile(aes(x = vuln_ratio_w, y = st_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Strong stock revenue stream",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-
-#msy2_w_proc_plot1 <-
-  ggplot(data = output_msy2_proc %>%
-           filter(p_s == 1)) + 
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.4, 0.1)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Weak stock revenue stream",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-  
-msy2_w_proc_plot2 <- 
-  ggplot(data = output_msy2_proc %>% 
-           filter(p_s == 2)) + 
-  geom_tile(aes(x = vuln_ratio_w, y = w_stock_rev, fill = log1p(b_v_k_w), width = .1)) +
-  scale_fill_paletteer_c("viridis::viridis",
-                          rescaler = ~ scales::rescale_mid(.x, mid = 0.1),
-                         breaks = seq(0, 0.25, 0.05)) +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  labs(x = "Vw/Vs",
-       y = "Weak stock revenue stream",
-       fill = "log(B/K)") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 12, color = "black"),
-        axis.text = element_text(size = 10, color = "black"),
-        strip.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(3, "mm"))
-```
-
-
 
 
