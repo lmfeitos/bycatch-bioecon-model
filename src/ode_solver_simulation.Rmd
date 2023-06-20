@@ -1499,7 +1499,7 @@ df_cpue <- data.frame(N = rep(N, 2),
 
 # Create the plot using ggplot2
 v_beta_plot <-
-  ggplot(df_v,
+  ggplot(df_v %>% filter(N <= 3),
        aes(x = N, y = V, color = beta)) + 
   geom_line(linewidth = 1,
             alpha = .7) +
@@ -1521,7 +1521,7 @@ v_beta_plot <-
 #         width = 8, height = 6, bg = "white", dpi = 300)
 
 cpue_beta_plot <-
-  ggplot(df_cpue %>% filter(N <= 2, CPUE <= 2),
+  ggplot(df_cpue %>% filter(N <= 3, CPUE <= 3),
        aes(x = N, y = CPUE, color = beta)) + 
   geom_line(linewidth = 1,
             alpha = .7) +
@@ -1553,8 +1553,8 @@ beta_cpue_plot <-
 
 beta_cpue_plot
 
-# ggsave(file.path(outdir, "beta_cpue_plot.png"), plot = beta_cpue_plot,
-#        width = 8, height = 6, bg = "white", dpi = 300)
+#ggsave(file.path(outdir, "beta_cpue_plot.png"), plot = beta_cpue_plot,
+#       width = 8, height = 6, bg = "white", dpi = 300)
 ```
 
 
