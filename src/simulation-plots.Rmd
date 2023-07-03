@@ -22,6 +22,7 @@ library(ggnewscale)
 library(geomtextpath)
 library(RColorBrewer)
 library(ggtext)
+
 # file path
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
 outdir <- file.path(basedir, "model_outs") # calls present data from raster files
@@ -84,7 +85,7 @@ w_s_range_proc <- output_w_ranges_s_one %>%
   mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
   mutate(c = as.factor(c)) %>% 
   mutate(b_bmsy_s = N_s/(k_s/2),
-         b_bmsy_w = N_w/(k_w/2))
+         b_bmsy_w = N_w/(k_w/2)) 
 
 
 
@@ -98,7 +99,7 @@ output_subs1_proc <- output_subs1 %>%
   mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
   mutate(c = as.factor(c)) %>% 
   mutate(b_bmsy_s = N_s/(k_s/2),
-         b_bmsy_w = N_w/(k_w/2))
+         b_bmsy_w = N_w/(k_w/2)) 
 
 # wrangling dataset with outputs from the test with prices constant (strong stock price varying) and cost varying (subsidies)
 output_subs2_proc <- output_subs2 %>%  
@@ -217,13 +218,20 @@ Red for B/K < 0.375
 #Contour thresholds
 thresholds <- c(1, 0.5, 0.0051)
 
+thresholds_2 <- c(0.5, 0.25, 0.1)
+
+label1 <- "B/B[MSY] == 0.25"
+
+label2 <- "B/B[MSY] == 0.1"
+
 # Fill scale limits
 col_limit <- c(0, 1.25)
 
 s_w_range_proc_plot <-
   ggplot() +
-  geom_tile(data = s_w_range_proc_test %>% 
-           filter(p_w == 0 & st_stock_rev <= 8 & vuln_ratio_w <= 3),
+  geom_tile(data = s_w_range_proc %>% 
+           filter(p_w == 0 & st_stock_rev <= 8 & vuln_ratio_w <= 3) %>% 
+             mutate(price_title = "Weak stock price = 0"),
             aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_bmsy_w, width = .1)) +
   annotate(geom = "text", 
            x = 1.2, y = 2,
@@ -262,7 +270,8 @@ s_w_range_proc_plot <-
         legend.title = element_markdown()) +
   guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) +
   # Add contours
-  geom_contour(data = s_w_range_proc_test,
+  geom_contour(data = s_w_range_proc %>% 
+                 filter(p_w == 0 & st_stock_rev <= 8 & vuln_ratio_w <= 3),
                aes(x = vuln_ratio_w, y = st_stock_rev, z = b_bmsy_w),
                color = "black",
                breaks = thresholds[thresholds > 0],
@@ -274,9 +283,7 @@ s_w_range_proc_plot2 <-
   ggplot() +
   geom_tile(data = s_w_range_proc %>% 
            filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 3) %>%
-             mutate(price_title = case_when(
-               p_w == 1 ~ "Weak stock price = 1"
-             )),
+             mutate(price_title = "Weak stock price = 1"),
            aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_bmsy_w, width = .1)) +
   annotate(geom = "text", 
            x = 1.4, y = 2,
@@ -325,14 +332,20 @@ w_s_range_proc_plot1 <-
   ggplot() + 
   geom_tile(data = w_s_range_proc %>%
            filter(p_s == 1 & vuln_ratio_w <= 3) %>% 
-             mutate(price_title = case_when(
-               p_s == 1 ~ "Strong stock price = 1"
-             )),
+             mutate(price_title = "Strong stock price = 1"),
            aes(x = vuln_ratio_w, y = w_stock_rev, fill = b_bmsy_w, width = .1)) +
   annotate(geom = "text",
            x = 1.3, y = 1.8,
            label = "Overfished", size = 3.5, color = "black",
            angle = 330) +
+  annotate(geom = "text",
+           x = 1.8, y = 2,
+           label = label1, size = 3.5, color = "black",
+           angle = 325, parse = TRUE) +
+  annotate(geom = "text",
+           x = 2.25, y = 2.1,
+           label = label2, size = 3.5, color = "black",
+           angle = 310, parse = TRUE) +
   annotate(geom = "text",
            x = 2.85, y = 4.4,
            label = "Extinct", size = 3.5, color = "black") +
@@ -340,7 +353,7 @@ w_s_range_proc_plot1 <-
              color = "black",
              linewidth = .8,
              linetype = "dashed") +
-  facet_wrap(~ price_title) +
+  facet_wrap(~ factor(price_title)) +
   scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
                        breaks = c(1, 0.5, 0),
                        labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
@@ -369,7 +382,7 @@ w_s_range_proc_plot1 <-
                  filter(p_s == 1 & vuln_ratio_w <= 3),
                aes(x = vuln_ratio_w, y = w_stock_rev, z = b_bmsy_w),
                color = "black",
-               breaks = thresholds[thresholds == 0.5],
+               breaks = thresholds_2[thresholds_2 > 0],
                linetype = "dashed",
                alpha = 0.7,
                linewidth = .8)
@@ -378,14 +391,19 @@ w_s_range_proc_plot2 <-
   ggplot() + 
   geom_tile(data = w_s_range_proc %>% 
            filter(p_s == 2 & vuln_ratio_w <= 4) %>% 
-           distinct_all() %>% 
-             mutate(price_title = case_when(
-               p_s == 2 ~ "Strong stock price = 2"
-             )),
+             mutate(price_title = "Strong stock price = 2"),
            aes(x = vuln_ratio_w, y = w_stock_rev, fill = b_bmsy_w, width = .1)) +
   annotate(geom = "text",
            x = 1.6, y = 4.4,
            label = "Extinct", color = "black", size = 3.5) +
+  annotate(geom = "text",
+           x = 1.15, y = 3,
+           label = label1, size = 3.5, color = "black",
+           angle = 285, parse = TRUE) +
+  annotate(geom = "text",
+           x = 1.35, y = 4,
+           label = label2, size = 3.5, color = "black",
+           angle = 270, parse = TRUE) +
   geom_vline(xintercept = 1.47,
              color = "black",
              linewidth = .8,
@@ -413,7 +431,15 @@ w_s_range_proc_plot2 <-
         strip.text = element_text(color = "black", size = 11),
         panel.spacing = unit(3, "mm"),
         legend.title = element_markdown()) +
-  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) 
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) +
+  geom_contour(data = w_s_range_proc %>% 
+                 filter(p_s == 2 & vuln_ratio_w <= 3),
+               aes(x = vuln_ratio_w, y = w_stock_rev, z = b_bmsy_w),
+               color = "black",
+               breaks = thresholds_2[thresholds_2 > 0],
+               linetype = "dashed",
+               alpha = 0.7,
+               linewidth = .8)
 ```
 
 ### Vulnerability ratios vs revenue stream with prices as constants
@@ -435,7 +461,7 @@ plot_1 <- grid.arrange(patchworkGrob(range_plot_1 /
     plot_layout(guides = "collect")),
   bottom = "Vulnerability ratios\n(Vw/Vs)")
   
-# ggsave(file.path(outdir, "plot_1.png"), plot = plot_1,
+#ggsave(file.path(outdir, "plot_1.png"), plot = plot_1,
 #      width = 12, height = 8, bg = "white", dpi = 300)
 ```
 

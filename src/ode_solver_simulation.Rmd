@@ -12,7 +12,7 @@ library(deSolve)
 library(patchwork)
 library(gridExtra)
 
-basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1/analyses/"
+basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
 outdir <- file.path(basedir, "model_outs") # calls present data from raster files
 ```
 
@@ -1487,15 +1487,16 @@ q <- 1
 r <- 1
 beta_1 <- 1
 beta_2 <- 0.56
+beta_3 <- 1.5
 
 # Create a data frame with N and CPUE values for both scenarios
-df_v <- data.frame(N = rep(N, 2), 
-                 V = c(N^(beta_1-1), N^(beta_2-1)),
-                 beta = rep(c("Not hyperstable", "Hyperstable"), each = length(N)))
+df_v <- data.frame(N = rep(N, 3), 
+                 V = c(N^(beta_1-1), N^(beta_2-1), N^(beta_3 - 1)),
+                 beta = rep(c("Not hyperstable", "Hyperstable", "Hyperdepleted"), each = length(N)))
 
-df_cpue <- data.frame(N = rep(N, 2), 
-                 CPUE = c(q * N^beta_1, q * N^beta_2),
-                 beta = rep(c("Not hyperstable", "Hyperstable"), each = length(N)))
+df_cpue <- data.frame(N = rep(N, 3), 
+                 CPUE = c(q * N^beta_1, q * N^beta_2, q * N^beta_3),
+                 beta = rep(c("Not hyperstable", "Hyperstable", "Hyperdepleted"), each = length(N)))
 
 # Create the plot using ggplot2
 v_beta_plot <-
@@ -1553,8 +1554,8 @@ beta_cpue_plot <-
 
 beta_cpue_plot
 
-#ggsave(file.path(outdir, "beta_cpue_plot.png"), plot = beta_cpue_plot,
-#       width = 8, height = 6, bg = "white", dpi = 300)
+# ggsave(file.path(outdir, "beta_cpue_plot2.png"), plot = beta_cpue_plot,
+#        width = 8, height = 6, bg = "white", dpi = 300)
 ```
 
 
