@@ -711,11 +711,23 @@ names(sub1_label_ps1) <- c("0.0375")
 # Create plots for a smaller range of Vw/Vs
 subs1_w_proc_plot2.1 <-
   ggplot(data = output_subs2_proc %>% 
-           filter(p_s == 1 & vuln_ratio_w <= 3)) + 
+           filter(p_s == 1 & vuln_ratio_w <= 3 & w_stock_rev <= 8)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
   annotate(geom = "text",
            x = 2, y = 4.8,
            label = "Extinct", size = 3.5, color = "black") +
+  annotate(geom = "text",
+           x = 1.12, y = 1.8,
+           label = "Overfished", size = 3.5, color = "black",
+           angle = 310, parse = TRUE) +
+  annotate(geom = "text",
+           x = 1.27, y = 3.5,
+           label = label1, size = 3.5, color = "black",
+           angle = 300, parse = TRUE) +
+  annotate(geom = "text",
+           x = 1.6, y = 4,
+           label = label2, size = 3.5, color = "black",
+           angle = 285, parse = TRUE) +
   geom_vline(xintercept = 1.88,
             color = "black",
             linewidth = .8,
@@ -733,8 +745,7 @@ subs1_w_proc_plot2.1 <-
   scale_x_continuous(breaks = seq(1, 3, 0.5),
                      limits = c(1, 3),
                      expand = c(0, 0)) +
-  scale_y_continuous(limits = c(2, 8),
-                     breaks = seq(1, 8, 1),
+  scale_y_continuous(breaks = seq(1, 8, 1),
                      expand = c(0, 0)) +
   labs(x = "",
        y = "Weak stock revenue potential",
@@ -748,15 +759,16 @@ subs1_w_proc_plot2.1 <-
         strip.text = element_text(color = "black", size = 11),
         panel.spacing = unit(3, "mm"),
         legend.title = element_markdown()) +
-  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) 
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) +
   # Add contours
-  # geom_contour(data = output_subs2_proc,
-  #              aes(x = vuln_ratio_w, y = st_stock_rev, z = b_bmsy_w),
-  #              color = "black",
-  #              breaks = thresholds_2[thresholds_2 > 0],
-  #              linetype = "dashed",
-  #              alpha = 0.7,
-  #              linewidth = .8)
+  geom_contour(data = output_subs2_proc %>% 
+                 filter(p_s == 1 & vuln_ratio_w <= 3 & w_stock_rev <= 8),
+               aes(x = vuln_ratio_w, y = w_stock_rev, z = b_bmsy_w),
+               color = "black",
+               breaks = thresholds_2[thresholds_2 > 0],
+               linetype = "dashed",
+               alpha = 0.7,
+               linewidth = .8)
 ```
 
 - 0.045 = 10% subsidy
@@ -774,11 +786,19 @@ names(sub1_label_ps2) <- c("0.0375")
 
 subs2_w_proc_plot2.1 <-
   ggplot(data = output_subs2_proc %>% 
-           filter(p_s == 2 & vuln_ratio_w <= 3)) + 
+           filter(p_s == 2 & vuln_ratio_w <= 3 & w_stock_rev <= 8)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
   annotate(geom = "text",
-           x = 1.5, y = 4.8,
+           x = 1.45, y = 4.8,
            label = "Extinct", size = 3.5, color = "black") +
+  annotate(geom = "text",
+           x = 1.12, y = 2.35,
+           label = label1, size = 3.5, color = "black",
+           angle = 280, parse = TRUE) +
+  annotate(geom = "text",
+           x = 1.24, y = 3,
+           label = label2, size = 3.5, color = "black",
+           angle = 275, parse = TRUE) +
   geom_vline(xintercept = 1.31,
              size = .8,
              color = "black",
@@ -796,8 +816,7 @@ subs2_w_proc_plot2.1 <-
   scale_x_continuous(breaks = seq(1, 3, 0.5),
                      limits = c(1, 3),
                      expand = c(0, 0)) +
-  scale_y_continuous(limits = c(2, 8),
-                     breaks = seq(1, 8, 1),
+  scale_y_continuous(breaks = seq(1, 8, 1),
                      expand = c(0, 0)) +
   labs(x = "",
        y = "",
@@ -811,16 +830,16 @@ subs2_w_proc_plot2.1 <-
         strip.text = element_text(color = "black", size = 11),
         panel.spacing = unit(3, "mm"),
         legend.title = element_markdown()) +
-  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) 
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) +
   # Add contours
-  # geom_contour(data = output_subs2_proc %>% 
-  #          filter(p_s == 2 & vuln_ratio_w <= 3),
-  #              aes(x = vuln_ratio_w, y = st_stock_rev, z = b_bmsy_w),
-  #              color = "black",
-  #              breaks = thresholds_2[thresholds_2 > 0],
-  #              linetype = "dashed",
-  #              alpha = 0.7,
-  #              linewidth = .8)
+  geom_contour(data = output_subs2_proc %>%  
+           filter(p_s == 2 & vuln_ratio_w <= 3 & w_stock_rev <= 8),
+              aes(x = vuln_ratio_w, y = w_stock_rev, z = b_bmsy_w),
+              color = "black",
+              breaks = thresholds_2[thresholds_2 > 0],
+              linetype = "dashed",
+              alpha = 0.7,
+              linewidth = .8)
 ```
 
 ```{r, fig.height=8, fig.width=8}
