@@ -31,11 +31,16 @@ outdir <- file.path(basedir, "model_outs") # calls present data from raster file
 ```{r, include = FALSE}
 # Results from the parameter per parameter simulations
 
+## data for figure 1 panels A and B
 output_s_ranges_w_one <- read_csv(file.path(outdir, "output_s_ranges_w_one.csv"))
 
+## data for figure 1 panels C and D
 output_w_ranges_s_one <- read_csv(file.path(outdir, "output_w_ranges_s_one.csv"))
 
+## data for figure 2 panels A and B
 output_subs1 <- read_csv(file.path(outdir, "output_sub1.csv"))
+
+## data for figure 2 panels C and d
 
 output_subs2 <- read_csv(file.path(outdir, "output_sub2.csv"))
 ```
@@ -226,8 +231,10 @@ label2 <- "B/B[MSY] == 0.1"
 
 # Fill scale limits
 col_limit <- c(0, 1.25)
+```
 
-s_w_range_proc_plot <-
+```{r}
+plot_1A <-
   ggplot() +
   geom_tile(data = s_w_range_proc %>% 
            filter(p_w == 0 & st_stock_rev <= 8 & vuln_ratio_w <= 3) %>% 
@@ -278,11 +285,14 @@ s_w_range_proc_plot <-
                linetype = "dashed",
                alpha = 0.7,
                linewidth = .8) 
+```
 
-s_w_range_proc_plot2 <-
+
+```{r}
+plot_1B <-
   ggplot() +
   geom_tile(data = s_w_range_proc %>% 
-           filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 3) %>%
+           filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 3.1) %>%
              mutate(price_title = "Weak stock price = 1"),
            aes(x = vuln_ratio_w, y = st_stock_rev, fill = b_bmsy_w, width = .1)) +
   annotate(geom = "text", 
@@ -319,16 +329,18 @@ s_w_range_proc_plot2 <-
   guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) +
   # Add contours
   geom_contour(data = s_w_range_proc %>% 
-                 filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 3),
+                 filter(p_w == 1 & st_stock_rev <= 8 & vuln_ratio_w <= 3.1),
                aes(x = vuln_ratio_w, y = st_stock_rev, z = b_bmsy_w),
                color = "black",
                breaks = thresholds[thresholds > 0],
                linetype = "dashed",
                alpha = 0.7,
                linewidth = .8)
+```
 
 
-w_s_range_proc_plot1 <-
+```{r}
+plot_1C <-
   ggplot() + 
   geom_tile(data = w_s_range_proc %>%
            filter(p_s == 1 & vuln_ratio_w <= 3) %>% 
@@ -386,8 +398,11 @@ w_s_range_proc_plot1 <-
                linetype = "dashed",
                alpha = 0.7,
                linewidth = .8)
+```
 
-w_s_range_proc_plot2 <- 
+
+```{r}
+plot_1D <- 
   ggplot() + 
   geom_tile(data = w_s_range_proc %>% 
            filter(p_s == 2 & vuln_ratio_w <= 4) %>% 
@@ -447,22 +462,23 @@ w_s_range_proc_plot2 <-
 - in the bottom plots, $p_s$ = 1
 
 ```{r, fig.height=8, fig.width=12, echo = FALSE}
-range_plot_1 <- 
-  (s_w_range_proc_plot +
-  s_w_range_proc_plot2)  
-
-range_plot_2 <-
-  (w_s_range_proc_plot1 +
-  w_s_range_proc_plot2) 
-
-plot_1 <- grid.arrange(patchworkGrob(range_plot_1 /
-                                       range_plot_2 +
+plot_1_gather <- 
+  plot_1A +
+  plot_1B +
+  plot_1C + 
+  plot_1D +
   plot_annotation(tag_levels = "A") +
-    plot_layout(guides = "collect")),
-  bottom = "Vulnerability ratios\n(Vw/Vs)")
+  plot_layout(ncol = 2,
+              guides = "collect") 
+
+plot_1_gather_test <- 
+  wrap_elements(panel = plot_1_gather) +
+  labs(tag = "Vulnerability ratios\n(Vw / Vs)") +
+  theme(plot.tag = element_text(size = 12, vjust = 10),
+        plot.tag.position = "bottom")
   
-#ggsave(file.path(outdir, "plot_1.png"), plot = plot_1,
-#      width = 12, height = 8, bg = "white", dpi = 300)
+# ggsave(file.path(outdir, "plot_1.png"), plot = plot_1_gather_test,
+#       width = 12, height = 8, bg = "white", dpi = 300)
 ```
 
 
@@ -517,11 +533,11 @@ output_subs1_min2 <-
 
 ```{r plot first scenario of fishery subsidies where the strong stock price increases and weak stock price remains constabt, echo = FALSE, include = FALSE}
 # Create facet labels
-sub1_label1 <- c("25% subsidy; Weak stock price = 1")
+sub1_label1 <- c("Weak stock price = 1")
 names(sub1_label1) <- c("0.0375")
 
 
-subs1_s_proc_plot2.1 <-
+plot_2A <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w == 1 & vuln_ratio_w <= 3 & st_stock_rev <= 8)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
@@ -550,7 +566,7 @@ subs1_s_proc_plot2.1 <-
                      breaks = seq(1, 8, 1),
                      expand = c(0, 0)) +
   labs(x = "",
-       y = "") +
+       y = "Strong stock economic potential") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -634,22 +650,12 @@ elas0_final # 1.206944%
 ```
 
 
-```{r}
-s_w_range_proc_test %>% 
-  ggplot() +
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = b_v_k_w, height = 1.2, width = .1))
-
-output_subs1_proc_test %>% 
-  ggplot() +
-  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = b_v_k_w, height = 1.2, width = .1))
-```
-
 
 ```{r, echo = FALSE, include = FALSE}
-sub1_label2 <- c("25% subsidy; Weak stock price = 0")
+sub1_label2 <- c("Weak stock price = 0")
 names(sub1_label2) <- c("0.0375")
 
-subs2_s_proc_plot2.1 <-
+plot_2B <-
   ggplot(data = output_subs1_proc %>% 
            filter(p_w < 1 & c == 0.0375 & vuln_ratio_w <= 3 & st_stock_rev <= 8)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
@@ -678,7 +684,7 @@ subs2_s_proc_plot2.1 <-
                      breaks = seq(1, 8, 1),
                      expand = c(0, 0)) +
   labs(x = "",
-       y = "Strong stock economic potential") +
+       y = "") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -704,12 +710,12 @@ subs2_s_proc_plot2.1 <-
 
 ```{r plot second scenario of fishery subsidies where the weak stock price increases and strong stock price remains constabt, echo = FALSE, include = FALSE}
 # Create facet labels
-sub1_label_ps1 <- c("25% subsidy; Strong stock price = 1")
+sub1_label_ps1 <- c("Strong stock price = 1")
 names(sub1_label_ps1) <- c("0.0375")
 
 
 # Create plots for a smaller range of Vw/Vs
-subs1_w_proc_plot2.1 <-
+plot_2C <-
   ggplot(data = output_subs2_proc %>% 
            filter(p_s == 1 & vuln_ratio_w <= 3 & w_stock_rev <= 8)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
@@ -778,13 +784,13 @@ subs1_w_proc_plot2.1 <-
 
 ```{r, echo = FALSE, include = FALSE}
 # Create series of plots for pw = 0.1 with full range of vulnerabilities
-sub1_label_ps2 <- c("25% subsidy; Strong stock price = 2")
+sub1_label_ps2 <- c("Strong stock price = 2")
 names(sub1_label_ps2) <- c("0.0375")
 
 
 # Create series of plots for pw = 0.1 with vulnerabilities ranging from 1 to 4
 
-subs2_w_proc_plot2.1 <-
+plot_2D <-
   ggplot(data = output_subs2_proc %>% 
            filter(p_s == 2 & vuln_ratio_w <= 3 & w_stock_rev <= 8)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
@@ -843,17 +849,23 @@ subs2_w_proc_plot2.1 <-
 ```
 
 ```{r, fig.height=8, fig.width=8}
-sub_plot_25pct <- grid.arrange(patchworkGrob(subs2_s_proc_plot2.1 / 
-                                               subs1_s_proc_plot2.1 /
-                                               subs1_w_proc_plot2.1 /
-                                               subs2_w_proc_plot2.1 +
-                                plot_layout(ncol = 2,
-                                            guides = "collect") +
-                                  plot_annotation(tag_levels = "A")),
-                               bottom = "Vulnerability ratios\n(Vw/Vs)")
+sub_plot <- 
+  plot_2A + 
+   plot_2B + 
+  plot_2C +
+   plot_2D +
+  plot_layout(ncol = 2,
+              guides = "collect") +
+  plot_annotation(tag_levels = "A")
 
-ggsave(file.path(outdir, "sub_plot_25pct.png"), plot = sub_plot_25pct,
-     width = 12, height = 8, bg = "white", dpi = 300)
+sub_plot_final <- 
+  wrap_elements(panel = sub_plot) +
+  labs(tag = "Vulnerability ratios\n(Vw / Vs)") +
+  theme(plot.tag = element_text(size = 12, vjust = 10),
+        plot.tag.position = "bottom")
+
+ ggsave(file.path(outdir, "sub_plot_25pct.png"), plot = sub_plot_final,
+      width = 12, height = 8, bg = "white", dpi = 300)
 ```
 
 ```{r, echo = FALSE}

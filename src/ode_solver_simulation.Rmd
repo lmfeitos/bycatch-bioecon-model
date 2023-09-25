@@ -113,7 +113,7 @@ out1 <- out1 %>%
                names_to = "stock_profit",
                values_to = "profit_level") %>% 
   mutate(scenario_id = "1") %>% 
-  mutate(scenario_label = "No hyperstability")
+  mutate(scenario_label = "None")
 
 out1_stock <- out1 %>% 
   select(time, stock, stock_size, scenario_label)
@@ -195,7 +195,7 @@ out2 <- out2 %>%
                names_to = "stock_profit",
                values_to = "profit_level") %>% 
   mutate(scenario_id = "2") %>% 
-  mutate(scenario_label = "Strong stock hyperstable")
+  mutate(scenario_label = "Strong stock")
 
 out2_stock <- out2 %>% 
   select(time, stock, stock_size, scenario_label)
@@ -298,7 +298,7 @@ out3 <- out3 %>% as.data.frame() %>%
                names_to = "stock_profit",
                values_to = "profit_level") %>% 
   mutate(scenario_id = "3") %>% 
-  mutate(scenario_label = "Weak stock hyperstable")
+  mutate(scenario_label = "Weak stock")
 
 out3_stock <- out3 %>% 
   select(time, stock, stock_size, scenario_label)
@@ -401,7 +401,7 @@ out4 <- out4 %>%
                names_to = "stock_profit",
                values_to = "profit_level") %>% 
   mutate(scenario_id = "4") %>% 
-  mutate(scenario_label = "Both stocks hyperstable")
+  mutate(scenario_label = "Both stocks")
 
 out4_stock <- out4 %>% 
   select(time, stock, stock_size, scenario_label)
@@ -487,10 +487,10 @@ ggplot() +
 tag_text <- data.frame(time = c(190, 190, 190, 190), 
                        b_v_k = c(0.96, 0.96, 0.96, 0.96),
                        label = c("A", "B", "C", "D"),
-                       scenario_label = c("No hyperstability",
-                                          "Strong stock hyperstable",
-                                          "Weak stock hyperstable",
-                                          "Both stocks hyperstable"))
+                       scenario_label = c("None",
+                                          "Strong stock",
+                                          "Weak stock",
+                                          "Both stocks"))
 b_v_k_plot <- 
   ggplot() +
   geom_hline(yintercept = 0.5,
@@ -503,7 +503,8 @@ b_v_k_plot <-
               alpha = 0.8) +
   geom_line(data = out_stock_join, 
             aes(x = time, y = b_v_k, color = stock),
-            linewidth = 1,
+            linewidth = .8,
+            alpha = .8,
             show.legend = T) +
   geom_text(data = tag_text,
             aes(x = time, y = b_v_k, label = label),
@@ -513,10 +514,10 @@ b_v_k_plot <-
                      expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0.01)) +
   facet_wrap(~ factor(scenario_label,
-                      levels = c("No hyperstability",
-                                 "Strong stock hyperstable",
-                                 "Weak stock hyperstable",
-                                 "Both stocks hyperstable")),
+                      levels = c("None",
+                                 "Strong stock",
+                                 "Weak stock",
+                                 "Both stocks")),
              nrow = 1) +
   labs(x = "",
        y = "B/K",
@@ -544,10 +545,10 @@ effort_plot <-
             color = "black",
             show.legend = F) +
   facet_wrap(~ factor(scenario_label,
-                      levels = c("No hyperstability",
-                                 "Strong stock hyperstable",
-                                 "Weak stock hyperstable",
-                                 "Both stocks hyperstable")),
+                      levels = c("None",
+                                 "Strong stock",
+                                 "Weak stock",
+                                 "Both stocks")),
              nrow = 1) +
   scale_x_continuous(breaks = seq(0, 200, 100),
                      expand = c(0,0)) +
@@ -577,10 +578,10 @@ price_plot <-
             alpha = .8,
             show.legend = F) +
    facet_wrap(~ factor(scenario_label,
-                       levels = c("No hyperstability",
-                                  "Strong stock hyperstable",
-                                  "Weak stock hyperstable",
-                                  "Both stocks hyperstable")), 
+                       levels = c("None",
+                                 "Strong stock",
+                                 "Weak stock",
+                                 "Both stocks")), 
               nrow = 1) +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
   scale_x_continuous(breaks = seq(0, 200, 100),
@@ -612,10 +613,10 @@ catch_plot <-
             alpha = .8,
             show.legend = F) +
   facet_wrap(~ factor(scenario_label,
-                      levels = c("No hyperstability",
-                                 "Strong stock hyperstable",
-                                 "Weak stock hyperstable",
-                                 "Both stocks hyperstable")),
+                      levels = c("None",
+                                 "Strong stock",
+                                 "Weak stock",
+                                 "Both stocks")),
              nrow = 1) +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
   scale_x_continuous(breaks = seq(0, 200, 100),
@@ -646,10 +647,10 @@ cpue_plot <-
             alpha = .8,
             show.legend = F) +
   facet_wrap(~ factor(scenario_label,
-                      levels = c("No hyperstability",
-                                 "Strong stock hyperstable",
-                                 "Weak stock hyperstable",
-                                 "Both stocks hyperstable")),
+                      levels = c("None",
+                                 "Strong stock",
+                                 "Weak stock",
+                                 "Both stocks")),
              nrow = 1) +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
   scale_x_continuous(breaks = seq(0, 200, 100),
@@ -690,10 +691,10 @@ profit_plot <-
              linetype = "dashed",
              alpha = 0.5) +
   facet_wrap(~ factor(scenario_label,
-                      levels = c("No hyperstability",
-                                 "Strong stock hyperstable",
-                                 "Weak stock hyperstable",
-                                 "Both stocks hyperstable")),
+                      levels = c("None",
+                                 "Strong stock",
+                                 "Weak stock",
+                                 "Both stocks")),
              nrow = 1) +
   scale_color_manual(values = c("brown", "black")) + #"#6A9E1FFF","#052F61FF", 
   scale_x_continuous(breaks = seq(0, 200, 100),
@@ -714,36 +715,6 @@ profit_plot <-
         legend.position = "bottom")
 ```
 
-```{r create cost plot}
-cost_plot <- 
-  ggplot() +
-  geom_line(data = out_cost_join,
-            aes(x = time, y = cost),
-            color = "black",
-            linewidth = .8) +
-  facet_wrap(~ factor(scenario_label,
-                      levels = c("No hyperstability",
-                                 "Strong stock hyperstable",
-                                 "Weak stock hyperstable",
-                                 "Both stocks hyperstable")),
-             nrow = 1) +
-  scale_x_continuous(breaks = c(0, 200, 100),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 2, 0.5),
-                     expand = c(0, 0.05)) +
-  labs(x = "",
-       y = "Cost") +
-  theme_bw() +
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.spacing = unit(5, "mm"),
-        strip.background = element_rect(fill = "transparent"),
-        strip.text = element_text(color = "black", size = 11),
-        axis.title.x = element_text(color = "black", size = 12),
-        axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
-        axis.text = element_text(color = "black", size = 10),
-        legend.position = "bottom")
-```
 
 
 # Plot 
@@ -760,8 +731,8 @@ full_plot <-
 
 full_plot
 
-# ggsave(file.path(outdir, "full_ts_plot.png"), plot =  full_plot,
-#        width = 8, height = 10, bg = "white", dpi = 300)
+ # ggsave(file.path(outdir, "full_ts_plot.png"), plot =  full_plot,
+ #       width = 8, height = 10, bg = "white", dpi = 300)
 ```
 
 
