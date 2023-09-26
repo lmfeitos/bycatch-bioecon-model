@@ -316,7 +316,7 @@ plot_1B <-
   scale_y_continuous(breaks = seq(1, 8, 1),
                      expand = c(0, 0)) +
   labs(x = "",
-       y = "Strong stock economic potential") +
+       y = "") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -477,8 +477,8 @@ plot_1_gather_test <-
   theme(plot.tag = element_text(size = 12, vjust = 10),
         plot.tag.position = "bottom")
   
-# ggsave(file.path(outdir, "plot_1.png"), plot = plot_1_gather_test,
-#       width = 12, height = 8, bg = "white", dpi = 300)
+ ggsave(file.path(outdir, "plot_1.png"), plot = plot_1_gather_test,
+       width = 12, height = 8, bg = "white", dpi = 300)
 ```
 
 

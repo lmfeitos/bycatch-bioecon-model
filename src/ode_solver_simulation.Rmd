@@ -485,7 +485,7 @@ ggplot() +
 # Creating mock up dataframe to add within-plot tags
 
 tag_text <- data.frame(time = c(190, 190, 190, 190), 
-                       b_v_k = c(0.96, 0.96, 0.96, 0.96),
+                       b_v_k = c(0.94, 0.94, 0.94, 0.94),
                        label = c("A", "B", "C", "D"),
                        scenario_label = c("None",
                                           "Strong stock",
@@ -530,7 +530,9 @@ b_v_k_plot <-
         strip.text = element_text(color = "black", size = 10),
         axis.title.x = element_text(color = "black", size = 12, vjust = -2),
         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
-        axis.text = element_text(color = "black", size = 10),
+        axis.text.y = element_text(color = "black", size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
         legend.position = "bottom")
 
 ```
@@ -561,11 +563,13 @@ effort_plot <-
   theme(panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
         panel.spacing = unit(5, "mm"),
-        strip.background = element_rect(fill = "transparent"),
-        strip.text = element_text(color = "black", size = 11),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
         axis.title.x = element_text(color = "black", size = 12),
         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
-        axis.text = element_text(color = "black", size = 10),
+        axis.text.y = element_text(color = "black", size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
         legend.position = "bottom")
 ```
 
@@ -595,11 +599,13 @@ price_plot <-
   theme(panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
         panel.spacing = unit(5, "mm"),
-        strip.background = element_rect(fill = "transparent"),
-        strip.text = element_text(color = "black", size = 11),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
         axis.title.x = element_text(color = "black", size = 12),
         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
-        axis.text = element_text(color = "black", size = 10),
+        axis.text.y = element_text(color = "black", size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
         legend.position = "bottom")
 ```
 
@@ -630,11 +636,13 @@ catch_plot <-
   theme(panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
         panel.spacing = unit(5, "mm"),
-        strip.background = element_rect(fill = "transparent"),
-        strip.text = element_text(color = "black", size = 11),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
         axis.title.x = element_text(color = "black", size = 12),
         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
-        axis.text = element_text(color = "black", size = 10),
+        axis.text.y = element_text(color = "black", size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
         legend.position = "bottom")
 ```
 
@@ -664,11 +672,13 @@ cpue_plot <-
   theme(panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
         panel.spacing = unit(5, "mm"),
-        strip.background = element_rect(fill = "transparent"),
-        strip.text = element_text(color = "black", size = 11),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
         axis.title.x = element_text(color = "black", size = 12),
         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
-        axis.text = element_text(color = "black", size = 10),
+        axis.text.y = element_text(color = "black", size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
         legend.position = "bottom")
 ```
 
@@ -707,32 +717,46 @@ profit_plot <-
   theme(panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
         panel.spacing = unit(5, "mm"),
-        strip.background = element_rect(fill = "transparent"),
-        strip.text = element_text(color = "black", size = 11),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
         axis.title.x = element_text(color = "black", size = 12, face = "bold"),
         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
         axis.text = element_text(color = "black", size = 10),
         legend.position = "bottom")
 ```
 
+```{r}
+  b_v_k_plot +
+  plot_spacer() +
+  cpue_plot +
+  plot_layout(ncol = 1,
+              guides = "collect",
+              heights = c(4, -1.1, 4)) &
+  theme(legend.position = "bottom")
+```
 
 
 # Plot 
 ```{r, fig.width=10, fig.height=15}
 full_plot <- 
-  b_v_k_plot /
-  cpue_plot /
-  effort_plot /
-  price_plot /
+  b_v_k_plot +
+  plot_spacer() +
+  cpue_plot +
+  plot_spacer() +
+  effort_plot +
+  plot_spacer() + 
+  price_plot +
+  plot_spacer() +
   profit_plot +
   plot_layout(ncol = 1,
-              guides = "collect") &
+              guides = "collect",
+              heights = c(4, -0.6, 4, -0.6, 4, -0.6, 4, -0.6, 4)) &
   theme(legend.position = "bottom")
 
 full_plot
 
- # ggsave(file.path(outdir, "full_ts_plot.png"), plot =  full_plot,
- #       width = 8, height = 10, bg = "white", dpi = 300)
+  ggsave(file.path(outdir, "full_ts_plot.png"), plot =  full_plot,
+        width = 8, height = 10, bg = "white", dpi = 300)
 ```
 
 
