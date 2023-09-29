@@ -53,7 +53,7 @@ f_w3 <- 0.22
 f_w4 <- 0.22
 
 # time steps
-times <- seq(0, 200, by = .01)
+times <- seq(0, 400, by = .01)
 ```
 
 
@@ -80,7 +80,7 @@ parameters_1 <- c(q_s = 0.02, q_w = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.99,
 # Define the time interval and solve the ODEs
 out1 <- ode(y = state, times = times, func = scenario_1, parms = parameters_1)
 
-out1 <- out1 %>% 
+out1_df <- out1 %>% 
   as.data.frame() %>% 
   mutate(catch_s1 = q_s * N_s1^beta_s1 * E1,
          catch_w1 = q_w * N_w1^beta_w1 * E1,
@@ -89,8 +89,7 @@ out1 <- out1 %>%
          cpue_s1 = catch_s1 / E1,
          cpue_w1 = catch_w1 / E1,
          cost1 = cost * E1,
-         pi_sum1 = E1 * ((price_s1 * q_s * N_s1^beta_s1) + (price_w1 * q_w * N_w1^beta_w1) - cost),
-         pi_per_e1 = (price_s1 * q_s * N_s1^beta_s1) + (price_w1 * q_w * N_w1^beta_w1) - cost) %>% 
+         pi_sum1 = E1 * ((price_s1 * q_s * N_s1^beta_s1) + (price_w1 * q_w * N_w1^beta_w1) - cost)) %>% 
   pivot_longer(cols = dplyr::starts_with("N_"),
                names_to = "stock",
                values_to = "stock_size") %>% 
@@ -115,25 +114,25 @@ out1 <- out1 %>%
   mutate(scenario_id = "1") %>% 
   mutate(scenario_label = "None")
 
-out1_stock <- out1 %>% 
+out1_stock <- out1_df %>% 
   select(time, stock, stock_size, scenario_label)
 
-out1_effort <- out1 %>% 
+out1_effort <- out1_df %>% 
   select(time, effort, effort_level, scenario_label)
 
-out1_catch <- out1 %>% 
+out1_catch <- out1_df %>% 
   select(time, stock_catch, catch_size, scenario_label)
 
-out1_price <- out1 %>% 
+out1_price <- out1_df %>% 
   select(time, stock_price, price, scenario_label)
 
-out1_cpue <- out1 %>% 
+out1_cpue <- out1_df %>% 
   select(time, stock_cpue, cpue_level, scenario_label)
 
-out1_cost <- out1 %>% 
+out1_cost <- out1_df %>% 
   select(time, cost_scenario, cost, scenario_label)
 
-out1_profit <- out1 %>% 
+out1_profit <- out1_df %>% 
   select(time, stock_profit, profit_level, scenario_label)
 
 ```
@@ -162,7 +161,7 @@ parameters_2 <- c(q_s = 0.02, q_w = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.99,
 
 out2 <- ode(y = state2, times = times, func = scenario_2, parms = parameters_2)
 
-out2 <- out2 %>% 
+out2_df <- out2 %>% 
   as.data.frame() %>% 
   mutate(catch_s2 = q_s * N_s2^beta_s2 * E2,
          catch_w2 = q_w * N_w2^beta_w2 * E2,
@@ -171,8 +170,7 @@ out2 <- out2 %>%
          cpue_s2 = catch_s2 / E2,
          cpue_w2 = catch_w2 / E2,
          cost2 = cost * E2,
-         pi_sum2 = E2 * ((price_s2 * q_s * N_s2^beta_s2) + (price_w2 * q_w * N_w2^beta_w2) - cost),
-         pi_per_e2 = (price_s2 * q_s * N_s2^beta_s2) + (price_w2 * q_w * N_w2^beta_w2) - cost) %>% 
+         pi_sum2 = E2 * ((price_s2 * q_s * N_s2^beta_s2) + (price_w2 * q_w * N_w2^beta_w2) - cost)) %>% 
   pivot_longer(cols = dplyr::starts_with("N_"),
                names_to = "stock",
                values_to = "stock_size") %>% 
@@ -197,25 +195,25 @@ out2 <- out2 %>%
   mutate(scenario_id = "2") %>% 
   mutate(scenario_label = "Strong stock")
 
-out2_stock <- out2 %>% 
+out2_stock <- out2_df %>% 
   select(time, stock, stock_size, scenario_label)
 
-out2_effort <- out2 %>% 
+out2_effort <- out2_df %>% 
   select(time, effort, effort_level, scenario_label)
 
-out2_catch <- out2 %>% 
+out2_catch <- out2_df %>% 
   select(time, stock_catch, catch_size, scenario_label)
 
-out2_price <- out2 %>% 
+out2_price <- out2_df %>% 
   select(time, stock_price, price, scenario_label)
 
-out2_cpue <- out2 %>% 
+out2_cpue <- out2_df %>% 
   select(time, stock_cpue, cpue_level,scenario_label)
 
-out2_cost <- out2 %>% 
+out2_cost <- out2_df %>% 
   select(time, cost_scenario, cost, scenario_label)
 
-out2_profit <- out2 %>% 
+out2_profit <- out2_df %>% 
   select(time, stock_profit, profit_level, scenario_label)
 
   
@@ -255,7 +253,8 @@ parameters_3 <- c(q_s = 0.02, q_w = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.99,
 out3 <- ode(y = state3, times = times, func = scenario_3, parms = parameters_3)
 
   
-out3 <- out3 %>% as.data.frame() %>% 
+out3_df <- out3 %>% 
+  as.data.frame() %>% 
   mutate(N_w3 = case_when(
     N_w3 < 0 ~ 0,
     TRUE ~ N_w3
@@ -268,14 +267,9 @@ out3 <- out3 %>% as.data.frame() %>%
          cpue_w3 = catch_w3 / E3,
          cost3 = cost * E3,
          pi_st3 = E3 * ((price_s3 * q_s * N_s3^beta_s3) - cost),
-         pi_st_e3 = (price_s3 * q_s * N_s3^beta_s3) - cost,
-         pi_w3 = E3 * ((price_w3 * q_w * N_w3^beta_w3) - cost),
-         pi_sum3 = E3 * ((price_s3 * q_s * N_s3^beta_s3) + (price_w3 * q_w * N_w3^beta_w3) - cost),
-         pi_per_e3 = (price_s3 * q_s * N_s3^beta_s3) + (price_w3 * q_w * N_w3^beta_w3) - cost) %>% 
-  mutate_at(vars(pi_w3), ~ replace(., is.nan(.), 0)) %>% #, fishing_w3
-  mutate_at(vars(pi_sum3), ~ replace(., is.nan(.), pi_st3)) %>% #, fishing_w3
-  mutate_at(vars(pi_per_e3), ~ replace(., is.nan(.), pi_st_e3)) %>% 
+         pi_sum3 = E3 * ((price_s3 * q_s * N_s3^beta_s3) + (price_w3 * q_w * N_w3^beta_w3) - cost)) %>% 
   mutate_at(vars(price_w3), ~ replace(., is.infinite(.), 0)) %>% 
+  mutate(pi_sum3 = ifelse(N_w3 > 0, pi_sum3, pi_st3)) %>% 
   pivot_longer(cols = dplyr::starts_with("N_"),
                names_to = "stock",
                values_to = "stock_size") %>% 
@@ -300,25 +294,25 @@ out3 <- out3 %>% as.data.frame() %>%
   mutate(scenario_id = "3") %>% 
   mutate(scenario_label = "Weak stock")
 
-out3_stock <- out3 %>% 
+out3_stock <- out3_df %>% 
   select(time, stock, stock_size, scenario_label)
 
-out3_effort <- out3 %>% 
+out3_effort <-out3_df %>% 
   select(time, effort, effort_level, scenario_label) 
 
-out3_catch <- out3 %>% 
+out3_catch <- out3_df %>% 
   select(time, stock_catch, catch_size, scenario_label)
 
-out3_price <- out3 %>% 
+out3_price <- out3_df %>% 
   select(time, stock_price, price, scenario_label)
 
-out3_cpue <- out3 %>% 
+out3_cpue <- out3_df %>% 
   select(time, stock_cpue, cpue_level, scenario_label)
 
-out3_cost <- out3 %>% 
+out3_cost <- out3_df %>% 
   select(time, cost_scenario, cost,scenario_label)
 
-out3_profit <- out3 %>% 
+out3_profit <- out3_df %>% 
   select(time, stock_profit, profit_level, scenario_label)
 
 ```
@@ -357,7 +351,7 @@ parameters_4 <- c(q_s = 0.02, q_w = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.99,
 # Solve ODEs
 out4 <- ode(y = state4, times = times, func = scenario_4, parms = parameters_4)
 
-out4 <- out4 %>% 
+out4_df <- out4 %>% 
   as.data.frame() %>% 
   mutate(N_w4 = case_when(
     N_w4 < 0 ~ 0,
@@ -371,14 +365,9 @@ out4 <- out4 %>%
          cpue_w4 = catch_w4 / E4,
          cost4 = cost * E4,
          pi_st4 = E4 * ((price_s4 * q_s * N_s4^beta_s4) - cost),
-         pi_st_e4 = (price_s4 * q_s * N_s4^beta_s4) - cost,
-         pi_w4 = E4 * ((price_w4 * q_w * N_w4^beta_w4) - cost),
-         pi_sum4 = E4 * ((price_s4 * q_s * N_s4^beta_s4) + (price_w4 * q_w * N_w4^beta_w4) - cost),
-         pi_per_e4 = (price_s4 * q_s * N_s4^beta_s4) + (price_w4 * q_w * N_w4^beta_w4) - cost) %>% 
-  mutate_at(vars(pi_w4), ~replace(., is.nan(.), 0)) %>% 
-  mutate_at(vars(pi_sum4), ~replace(., is.nan(.), pi_st4)) %>% 
-  mutate_at(vars(pi_per_e4), ~replace(., is.nan(.), pi_st_e4)) %>% 
+         pi_sum4 = E4 * ((price_s4 * q_s * N_s4^beta_s4) + (price_w4 * q_w * N_w4^beta_w4) - cost)) %>% 
   mutate_at(vars(price_w4), ~ replace(., is.infinite(.), 0)) %>% 
+  mutate(pi_sum4 = ifelse(N_w4 > 0, pi_sum4, pi_st4)) %>% 
   pivot_longer(cols = dplyr::starts_with("N_"),
                names_to = "stock",
                values_to = "stock_size") %>% 
@@ -403,25 +392,25 @@ out4 <- out4 %>%
   mutate(scenario_id = "4") %>% 
   mutate(scenario_label = "Both stocks")
 
-out4_stock <- out4 %>% 
+out4_stock <- out4_df %>% 
   select(time, stock, stock_size, scenario_label)
 
-out4_effort <- out4 %>% 
+out4_effort <- out4_df %>% 
   select(time, effort, effort_level, scenario_label)
 
-out4_catch <- out4 %>% 
+out4_catch <- out4_df %>% 
   select(time, stock_catch, catch_size, scenario_label)
 
-out4_price <- out4 %>% 
+out4_price <- out4_df %>% 
   select(time, stock_price, price, scenario_label)
 
-out4_cpue <- out4 %>% 
+out4_cpue <- out4_df %>% 
   select(time, stock_cpue, cpue_level, scenario_label)
 
-out4_cost <- out4 %>% 
+out4_cost <- out4_df %>% 
   select(time, cost_scenario, cost, scenario_label)
 
-out4_profit <- out4 %>% 
+out4_profit <- out4_df %>% 
   select(time, stock_profit, profit_level, scenario_label)
 
 ```
@@ -459,32 +448,21 @@ out_cpue_join <- bind_rows(out1_cpue, out2_cpue, out3_cpue, out4_cpue) %>% #, ou
 
 out_cost_join <- bind_rows(out1_cost, out2_cost, out3_cost, out4_cost) #, out5_cost
 
-out_profit_join <- bind_rows(out1_profit, out2_profit, out3_profit, out4_profit) %>% #, out5_profit
+out_profit_join <- bind_rows(out1_profit, out2_profit, out3_profit, out4_profit)  %>% #, out5_profit
   mutate(stock_profit = case_when(
     str_detect(stock_profit, "_st") ~ "Strong stock",
-    str_detect(stock_profit, "_w") ~ "Weak stock",
-    str_detect(stock_profit, "_sum") ~ "Total profit",
-    str_detect(stock_profit, "_per_e") ~ "Profit per unit of effort"
+    str_detect(stock_profit, "_sum") ~ "Profit"
   )) %>% 
-  filter(stock_profit %in% c("Profit per unit of effort"))
+  filter(stock_profit %in% c("Profit"))
 
 ```
 
-
-```{r}
-ggplot() +
-  geom_line(data = out2 %>% 
-              mutate(b_v_k = case_when(
-    str_detect(stock, "N_s") ~ stock_size/k_s,
-    str_detect(stock, "N_w") ~ stock_size/k_w)),
-            aes(x = time, y = b_v_k, color = stock))
-```
 
 
 ```{r create stock plots, fig.width=8}
 # Creating mock up dataframe to add within-plot tags
 
-tag_text <- data.frame(time = c(190, 190, 190, 190), 
+tag_text <- data.frame(time = c(380, 380, 380, 380), 
                        b_v_k = c(0.94, 0.94, 0.94, 0.94),
                        label = c("A", "B", "C", "D"),
                        scenario_label = c("None",
@@ -510,7 +488,7 @@ b_v_k_plot <-
             aes(x = time, y = b_v_k, label = label),
             fontface = "bold") +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
-  scale_x_continuous(breaks = seq(0, 200, 100),
+  scale_x_continuous(breaks = seq(0, 400, 100),
                      expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0.01)) +
   facet_wrap(~ factor(scenario_label,
@@ -552,7 +530,7 @@ effort_plot <-
                                  "Weak stock",
                                  "Both stocks")),
              nrow = 1) +
-  scale_x_continuous(breaks = seq(0, 200, 100),
+  scale_x_continuous(breaks = seq(0, 400, 100),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 30, 10),
                      expand = c(0, 0.5)) +
@@ -588,7 +566,7 @@ price_plot <-
                                  "Both stocks")), 
               nrow = 1) +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
-  scale_x_continuous(breaks = seq(0, 200, 100),
+  scale_x_continuous(breaks = seq(0, 400, 100),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 10, by = 2),
                      expand = c(0,0.01)) +
@@ -625,7 +603,7 @@ catch_plot <-
                                  "Both stocks")),
              nrow = 1) +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
-  scale_x_continuous(breaks = seq(0, 200, 100),
+  scale_x_continuous(breaks = seq(0, 400, 100),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 1, by = 0.25),
                      expand = c(0,0.01)) +
@@ -661,7 +639,7 @@ cpue_plot <-
                                  "Both stocks")),
              nrow = 1) +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
-  scale_x_continuous(breaks = seq(0, 200, 100),
+  scale_x_continuous(breaks = seq(0, 400, 100),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 0.1, 0.02),
                      expand = c(0, 0.001)) +
@@ -685,10 +663,6 @@ cpue_plot <-
 
 
 ```{r create profit plot, fig.width=8, fig.height=6}
-out_profit_join$stock_profit <-
-  factor(out_profit_join$stock_profit,
-         levels = c("Strong stock", "Weak stock", "Total profit", "Profit per unit of effort"))
-
 profit_plot <- 
   ggplot() +
   geom_line(data = out_profit_join,
@@ -706,8 +680,8 @@ profit_plot <-
                                  "Weak stock",
                                  "Both stocks")),
              nrow = 1) +
-  scale_color_manual(values = c("brown", "black")) + #"#6A9E1FFF","#052F61FF", 
-  scale_x_continuous(breaks = seq(0, 200, 100),
+  scale_color_manual(values = c("brown")) +  
+  scale_x_continuous(breaks = seq(0, 400, 100),
                      expand = c(0,0)) +
   scale_y_continuous(expand = c(0, 0.01)) +
   labs(x = "Time",
@@ -725,15 +699,6 @@ profit_plot <-
         legend.position = "bottom")
 ```
 
-```{r}
-  b_v_k_plot +
-  plot_spacer() +
-  cpue_plot +
-  plot_layout(ncol = 1,
-              guides = "collect",
-              heights = c(4, -1.1, 4)) &
-  theme(legend.position = "bottom")
-```
 
 
 # Plot 
@@ -755,8 +720,8 @@ full_plot <-
 
 full_plot
 
-  ggsave(file.path(outdir, "full_ts_plot.png"), plot =  full_plot,
-        width = 8, height = 10, bg = "white", dpi = 300)
+ ggsave(file.path(outdir, "full_ts_plot.png"), plot =  full_plot,
+       width = 8, height = 10, bg = "white", dpi = 300)
 ```
 
 
