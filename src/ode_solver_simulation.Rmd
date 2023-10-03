@@ -498,7 +498,7 @@ b_v_k_plot <-
                                  "Both stocks")),
              nrow = 1) +
   labs(x = "",
-       y = "B/K",
+       y = "N/K",
        color = "") +
   theme_bw() +
   theme(panel.grid.minor = element_blank(),
