@@ -722,6 +722,9 @@ full_plot
 
  ggsave(file.path(outdir, "full_ts_plot.png"), plot =  full_plot,
        width = 8, height = 10, bg = "white", dpi = 300)
+ 
+ ggsave(file.path(outdir, "pub_ready", "figure_4.pdf"), plot =  full_plot,
+       width = 8, height = 10, bg = "white", dpi = 600)
 ```
 
 
@@ -746,7 +749,7 @@ df_cpue <- data.frame(N = rep(N, 2),
 
 # Create the plot using ggplot2
 v_beta_plot <-
-  ggplot(df_v %>% filter(N <= 2),
+  ggplot(df_v %>% filter(N <= 2 & V <= 8),
        aes(x = N, y = V, color = beta)) + 
   geom_line(linewidth = 1,
             alpha = .7) +
@@ -754,7 +757,7 @@ v_beta_plot <-
        y = "Vulnerability",
        color = "Catch flexibility") +
   scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 6, 1), 
+  scale_y_continuous(breaks = seq(0, 8, 1), 
                      expand = c(0,0)) +
   scale_color_brewer(palette = "Dark2") +
   theme_bw() +
@@ -802,6 +805,9 @@ beta_cpue_plot
 
 # ggsave(file.path(outdir, "beta_cpue_plot2.png"), plot = beta_cpue_plot,
 #        width = 8, height = 6, bg = "white", dpi = 300)
+
+ ggsave(file.path(outdir, "pub_ready", "beta_cpue_plot2.pdf"), plot = beta_cpue_plot,
+        width = 8, height = 6, bg = "white", dpi = 600)
 ```
 
 
