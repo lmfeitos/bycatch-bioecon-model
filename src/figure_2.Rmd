@@ -1,0 +1,357 @@
+---
+title: "figure_2"
+author: "Leonardo Feitosa"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+library(tidyverse)
+library(here)
+library(patchwork)
+library(gt)
+library(paletteer)
+library(gridExtra)
+library(janitor)
+library(plotly)
+library(ggthemes)
+library(ggnewscale)
+library(geomtextpath)
+library(RColorBrewer)
+library(ggtext)
+
+# file path
+basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
+outdir <- file.path(basedir, "model_outs") # calls present data from raster files
+```
+
+```{r}
+## data for figure 2 panels A and B
+output_subs1 <- read_csv(file.path(outdir, "output_sub1.csv"))
+
+## data for figure 2 panels C and d
+
+output_subs2 <- read_csv(file.path(outdir, "output_sub2.csv"))
+```
+
+```{r}
+
+# wrangling dataset with outputs from the test with prices constant (strong stock price varying) and cost varying (subsidies)
+output_subs1_proc <- output_subs1 %>%  
+   mutate(b_v_k_s = N_s / k_s,
+         b_v_k_w = N_w / k_w) %>%  
+  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+  mutate(vuln_ratio_w = round(vuln_ratio_w, 5)) %>% 
+  mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
+  mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
+  mutate(c = as.factor(c)) %>% 
+  mutate(b_bmsy_s = N_s/(k_s/2),
+         b_bmsy_w = N_w/(k_w/2)) 
+
+# wrangling dataset with outputs from the test with prices constant (strong stock price varying) and cost varying (subsidies)
+output_subs2_proc <- output_subs2 %>%  
+   mutate(b_v_k_s = N_s / k_s,
+         b_v_k_w = N_w / k_w) %>%  
+  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+  mutate(vuln_ratio_w = round(vuln_ratio_w, 5)) %>% 
+  mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
+  mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
+  mutate(c = as.factor(c)) %>% 
+  mutate(b_bmsy_s = N_s/(k_s/2),
+         b_bmsy_w = N_w/(k_w/2))
+
+```
+
+```{r, echo = FALSE}
+#Contour thresholds
+thresholds <- c(1, 0.5, 0.0051)
+
+thresholds_2 <- c(0.5, 0.25, 0.1)
+
+label1 <- "N/N[MSY] == 0.25"
+
+label2 <- "N/N[MSY] == 0.1"
+
+# Fill scale limits
+col_limit <- c(0, 1.25)
+```
+
+
+## Fisheries subsidy analyses
+
+```{r plot first scenario of fishery subsidies where the strong stock price increases and weak stock price remains constabt, echo = FALSE, include = FALSE}
+# Create facet labels
+sub1_label1 <- c("Weak stock price = 1")
+names(sub1_label1) <- c("0.0375")
+
+
+plot_2A <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w == 1 & vuln_ratio_w <= 3 & st_stock_rev <= 8)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
+  annotate(geom = "text",
+           x = 1.15, y = 2.7,
+           label = "Overfished", size = 3.5, color = "black",
+           angle = 310) +
+  annotate(geom = "text",
+           x = 1.6,y = 3.1,
+           label = "Extinct", size = 3.5, color = "black",
+           angle = 317) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label1)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nN/N<sub>MSY</sub>") +
+  scale_x_continuous(breaks = seq(1, 3, 0.5),
+                     limits = c(1, 3),
+                     expand = c(0, 0)) +
+  scale_y_continuous(limits = c(2, 8),
+                     breaks = seq(1, 8, 1),
+                     expand = c(0, 0)) +
+  labs(x = "",
+       y = "Strong stock economic potential") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) +
+  # Add contours
+  geom_contour(data = output_subs1_proc,
+               aes(x = vuln_ratio_w, y = st_stock_rev, z = b_bmsy_w),
+               color = "black",
+               breaks = thresholds[thresholds > 0],
+               linetype = "dashed",
+               linewidth = .8) 
+
+```
+
+
+
+```{r, echo = FALSE, include = FALSE}
+sub1_label2 <- c("Weak stock price = 0")
+names(sub1_label2) <- c("0.0375")
+
+plot_2B <-
+  ggplot(data = output_subs1_proc %>% 
+           filter(p_w < 1 & c == 0.0375 & vuln_ratio_w <= 3 & st_stock_rev <= 8)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
+  annotate(geom = "text",
+           x = 1.15, y = 2.7,
+           label = "Overfished", size = 3.5, color = "black",
+           angle = 310) +
+  annotate(geom = "text",
+           x = 1.6,y = 3.1,
+           label = "Extinct", size = 3.5, color = "black",
+           angle = 317) +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label2)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nN/N<sub>MSY</sub>") +
+  scale_x_continuous(breaks = seq(1, 3, 0.5),
+                     limits = c(1, 3),
+                     expand = c(0, 0)) +
+  scale_y_continuous(limits = c(2, 8),
+                     breaks = seq(1, 8, 1),
+                     expand = c(0, 0)) +
+  labs(x = "",
+       y = "") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) +
+  # Add contours
+  geom_contour(data = output_subs1_proc,
+               aes(x = vuln_ratio_w, y = st_stock_rev, z = b_bmsy_w),
+               color = "black",
+               breaks = thresholds[thresholds > 0],
+               linetype = "dashed",
+               alpha = 0.7,
+               linewidth = .8)
+
+```
+
+
+
+```{r plot second scenario of fishery subsidies where the weak stock price increases and strong stock price remains constabt, echo = FALSE, include = FALSE}
+# Create facet labels
+sub1_label_ps1 <- c("Strong stock price = 1")
+names(sub1_label_ps1) <- c("0.0375")
+
+
+# Create plots for a smaller range of Vw/Vs
+plot_2C <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 1 & vuln_ratio_w <= 3 & w_stock_rev <= 8)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
+  annotate(geom = "text",
+           x = 2, y = 4.8,
+           label = "Extinct", size = 3.5, color = "black") +
+  annotate(geom = "text",
+           x = 1.12, y = 1.8,
+           label = "Overfished", size = 3.5, color = "black",
+           angle = 310, parse = TRUE) +
+  annotate(geom = "text",
+           x = 1.27, y = 3.5,
+           label = label1, size = 3.5, color = "black",
+           angle = 300, parse = TRUE) +
+  annotate(geom = "text",
+           x = 1.6, y = 4,
+           label = label2, size = 3.5, color = "black",
+           angle = 285, parse = TRUE) +
+  geom_vline(xintercept = 1.88,
+            color = "black",
+            linewidth = .8,
+            linetype = "dashed") +
+  facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label_ps1)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nN/N<sub>MSY</sub>") +
+  scale_x_continuous(breaks = seq(1, 3, 0.5),
+                     limits = c(1, 3),
+                     expand = c(0, 0)) +
+  scale_y_continuous(breaks = seq(1, 8, 1),
+                     expand = c(0, 0)) +
+  labs(x = "",
+       y = "Weak stock revenue potential",
+       fill = "Weak stock B/B<sub>MSY</sub>") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) +
+  # Add contours
+  geom_contour(data = output_subs2_proc %>% 
+                 filter(p_s == 1 & vuln_ratio_w <= 3 & w_stock_rev <= 8),
+               aes(x = vuln_ratio_w, y = w_stock_rev, z = b_bmsy_w),
+               color = "black",
+               breaks = thresholds_2[thresholds_2 > 0],
+               linetype = "dashed",
+               alpha = 0.7,
+               linewidth = .8)
+```
+
+
+```{r, echo = FALSE, include = FALSE}
+# Create series of plots for pw = 0.1 with full range of vulnerabilities
+sub1_label_ps2 <- c("Strong stock price = 2")
+names(sub1_label_ps2) <- c("0.0375")
+
+
+# Create series of plots for pw = 0.1 with vulnerabilities ranging from 1 to 4
+
+plot_2D <-
+  ggplot(data = output_subs2_proc %>% 
+           filter(p_s == 2 & vuln_ratio_w <= 3 & w_stock_rev <= 8)) + 
+  geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(w_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
+  annotate(geom = "text",
+           x = 1.45, y = 4.8,
+           label = "Extinct", size = 3.5, color = "black") +
+  annotate(geom = "text",
+           x = 1.12, y = 2.35,
+           label = label1, size = 3.5, color = "black",
+           angle = 280, parse = TRUE) +
+  annotate(geom = "text",
+           x = 1.24, y = 3,
+           label = label2, size = 3.5, color = "black",
+           angle = 275, parse = TRUE) +
+  geom_vline(xintercept = 1.31,
+             linewidth = .8,
+             color = "black",
+             linetype = "dashed") +
+    facet_wrap(~ c,
+             nrow = 1,
+             scales = "free_y",
+             labeller = labeller(c = sub1_label_ps2)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nN/N<sub>MSY</sub>") +
+  scale_x_continuous(breaks = seq(1, 3, 0.5),
+                     limits = c(1, 3),
+                     expand = c(0, 0)) +
+  scale_y_continuous(breaks = seq(1, 8, 1),
+                     expand = c(0, 0)) +
+  labs(x = "",
+       y = "",
+       fill = "Weak stock B/B<sub>MSY</sub>") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black")) +
+  # Add contours
+  geom_contour(data = output_subs2_proc %>%  
+           filter(p_s == 2 & vuln_ratio_w <= 3 & w_stock_rev <= 8),
+              aes(x = vuln_ratio_w, y = w_stock_rev, z = b_bmsy_w),
+              color = "black",
+              breaks = thresholds_2[thresholds_2 > 0],
+              linetype = "dashed",
+              alpha = 0.7,
+              linewidth = .8)
+```
+
+```{r, fig.height=8, fig.width=8}
+sub_plot <- 
+  plot_2A + 
+   plot_2B + 
+  plot_2C +
+   plot_2D +
+  plot_layout(ncol = 2,
+              guides = "collect") +
+  plot_annotation(tag_levels = "A")
+
+sub_plot_final <- 
+  wrap_elements(panel = sub_plot) +
+  labs(tag = "Vulnerability ratios\n(Vw / Vs)") +
+  theme(plot.tag = element_text(size = 12, vjust = 10),
+        plot.tag.position = "bottom")
+
+ ggsave(file.path(outdir, "sub_plot_25pct.png"), plot = sub_plot_final,
+      width = 12, height = 8, bg = "white", dpi = 300)
+ 
+  ggsave(file.path(outdir, "pub_ready", "figure_2.pdf"), plot = sub_plot_final,
+      width = 12, height = 8, bg = "white", dpi = 600)
+```

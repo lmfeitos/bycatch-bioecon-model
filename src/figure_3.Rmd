@@ -1,0 +1,105 @@
+---
+title: "figure_3"
+author: "Leonardo Feitosa"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(patchwork)
+
+basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
+outdir <- file.path(basedir, "model_outs") # calls present data from raster files
+```
+
+```{r simulate the effect of hyperstability on CPUE}
+# Define the values of N
+N <- seq(0, 5, by = 0.01)
+
+# Define the values of q and beta for the two scenarios
+q <- 1
+r <- 1
+beta_1 <- 1
+beta_2 <- 0.56
+
+# Create a data frame with N and CPUE values for both scenarios
+df_v <- data.frame(N = rep(N, 2), 
+                 V = c(N^(beta_1-1), N^(beta_2-1)),
+                 beta = rep(c("Not hyperstable", "Hyperstable"), each = length(N)))
+
+df_cpue <- data.frame(N = rep(N, 2), 
+                 CPUE = c(q * N^beta_1, q * N^beta_2),
+                 beta = rep(c("Not hyperstable", "Hyperstable"), each = length(N)))
+
+# Create the plot using ggplot2
+v_beta_plot <-
+  ggplot(df_v %>% filter(N <= 2 & V <= 8),
+       aes(x = N, y = V, color = beta)) + 
+  geom_line(linewidth = 1,
+            alpha = .7) +
+  labs(x = "Abundance",
+       y = "Vulnerability",
+       color = "Catch flexibility") +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0, 8, 1), 
+                     expand = c(0,0)) +
+  scale_color_brewer(palette = "Dark2") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom",
+        legend.text = element_text(color = "black", size = 10))
+
+# ggsave(file.path(outdir, "v_beta_plot.png"), plot = v_beta_plot,
+#         width = 8, height = 6, bg = "white", dpi = 300)
+
+cpue_beta_plot <-
+  ggplot(df_cpue %>% filter(N <= 2, CPUE <= 2),
+       aes(x = N, y = CPUE, color = beta)) + 
+  geom_line(linewidth = 1,
+            alpha = .7) +
+  labs(x = "Abundance",
+       y = "CPUE",
+       color = "Catch flexibility") +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  scale_color_brewer(palette = "Dark2") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10),
+        legend.position = "bottom",
+        legend.text = element_text(color = "black", size = 10))
+
+# ggsave(file.path(outdir, "cpue_beta_plot.png"), plot = cpue_beta_plot,
+#         width = 8, height = 6, bg = "white", dpi = 300)
+```
+
+# Plot 3
+```{r, fig.height=6, fig.width=8}
+beta_cpue_plot <-
+  v_beta_plot +
+  cpue_beta_plot +
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "A") &
+  theme(legend.position = "bottom")
+
+beta_cpue_plot
+
+# ggsave(file.path(outdir, "beta_cpue_plot2.png"), plot = beta_cpue_plot,
+#        width = 8, height = 6, bg = "white", dpi = 300)
+
+ ggsave(file.path(outdir, "pub_ready", "figure_3.pdf"), plot = beta_cpue_plot,
+        width = 8, height = 6, bg = "white", dpi = 600)
+```
+
+
+
+
+
+
+
+

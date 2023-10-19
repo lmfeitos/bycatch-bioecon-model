@@ -1,0 +1,254 @@
+---
+title: "elasticity_calculations"
+author: "Leonardo Feitosa"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+
+basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
+outdir <- file.path(basedir, "model_outs") # calls present data from raster files
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+library(tidyverse)
+library(here)
+
+# file path
+basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
+outdir <- file.path(basedir, "model_outs") # calls present data from raster files
+```
+
+```{r, include = FALSE}
+# Results from the parameter per parameter simulations
+
+## data for figure 1 panels A and B
+output_s_ranges_w_one <- read_csv(file.path(outdir, "output_s_ranges_w_one.csv"))
+
+## data for figure 1 panels C and D
+output_w_ranges_s_one <- read_csv(file.path(outdir, "output_w_ranges_s_one.csv"))
+
+## data for figure 2 panels A and B
+output_subs1 <- read_csv(file.path(outdir, "output_sub1.csv"))
+
+## data for figure 2 panels C and d
+
+output_subs2 <- read_csv(file.path(outdir, "output_sub2.csv"))
+```
+
+
+```{r data wrangling, echo = FALSE}
+
+# wrangling dataset with outputs from the test with strong stock price as a function of catch
+s_w_range_proc <- output_s_ranges_w_one %>% 
+  mutate(b_v_k_s = N_s / k_s,
+         b_v_k_w = N_w / k_w) %>% 
+  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+  mutate(vuln_ratio_w = round(vuln_ratio_w, 5)) %>% 
+  mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
+  mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
+  mutate(c = as.factor(c)) %>% 
+  mutate(b_bmsy_s = N_s/(k_s/2),
+         b_bmsy_w = N_w/(k_w/2)) %>% 
+  mutate(label = case_when(
+    b_bmsy_w > 0.5 ~ "At MSY",
+    b_bmsy_w < 0.5 & b_bmsy_w > 0.05 ~ "Overfished",
+    b_bmsy_w < 0.05 ~ "Extinct",
+  ))
+
+checK <- s_w_range_proc %>% 
+  filter(p_w < 1) %>% 
+  count(vuln_ratio_w, st_stock_rev)
+
+
+# wrangling dataset with outputs from the test with strong stock price as a function of catch
+w_s_range_proc <- output_w_ranges_s_one %>% 
+  mutate(b_v_k_s = N_s / k_s,
+         b_v_k_w = N_w / k_w) %>% 
+  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+  mutate(vuln_ratio_w = round(vuln_ratio_w, 5)) %>% 
+  mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
+  mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
+  mutate(c = as.factor(c)) %>% 
+  mutate(b_bmsy_s = N_s/(k_s/2),
+         b_bmsy_w = N_w/(k_w/2)) 
+
+
+
+# wrangling dataset with outputs from the test with prices constant (strong stock price varying) and cost varying (subsidies)
+output_subs1_proc <- output_subs1 %>%  
+   mutate(b_v_k_s = N_s / k_s,
+         b_v_k_w = N_w / k_w) %>%  
+  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+  mutate(vuln_ratio_w = round(vuln_ratio_w, 5)) %>% 
+  mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
+  mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
+  mutate(c = as.factor(c)) %>% 
+  mutate(b_bmsy_s = N_s/(k_s/2),
+         b_bmsy_w = N_w/(k_w/2)) 
+
+# wrangling dataset with outputs from the test with prices constant (strong stock price varying) and cost varying (subsidies)
+output_subs2_proc <- output_subs2 %>%  
+   mutate(b_v_k_s = N_s / k_s,
+         b_v_k_w = N_w / k_w) %>%  
+  mutate(vuln_ratio_w = (q_w/r_w) / (q_s/r_s)) %>% 
+  mutate(vuln_ratio_w = round(vuln_ratio_w, 5)) %>% 
+  mutate(st_stock_rev = (p_s * q_s * k_s) / c) %>% 
+  mutate(w_stock_rev = (p_w * q_w * k_w) / c) %>% 
+  mutate(c = as.factor(c)) %>% 
+  mutate(b_bmsy_s = N_s/(k_s/2),
+         b_bmsy_w = N_w/(k_w/2))
+```
+
+
+
+
+```{r, echo = FALSE, include = FALSE}
+# maximum values of vulnerability ratio for which the weak stock does not go extinct in each scenario
+# weak stock price = 0 and no subsidy
+s_w_range_proc_test0 <- s_w_range_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_w < 1 & extinct == "no")
+
+max_vw_sw_range0 <- max(s_w_range_proc_test0$vuln_ratio_w)
+
+# weak stock price = 0 and 25% subsidy
+output_subs1_proc_test0 <- output_subs1_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_w < 1 & c == 0.0375 & extinct == "no")
+
+max_vw_sub1_test0 <- max(output_subs1_proc_test0$vuln_ratio_w)
+
+# weak stock price = 1 and no subsidy
+
+s_w_range_proc_test1 <- s_w_range_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_w == 1 & extinct == "no")  
+
+max_vw_sw_range1 <- max(s_w_range_proc_test0$vuln_ratio_w)
+  
+# weak stock price = 1 and 25% subsidy
+output_subs1_proc_test1 <- output_subs1_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_w == 1 & c == 0.0375 & extinct == "no")
+
+max_vw_sub1_test1 <- max(output_subs1_proc_test1$vuln_ratio_w)
+```
+
+```{r calculating elasticities of subsidies on vulnerability ratios}
+cost_full = 0.05
+cost_sub = 0.0375
+
+# Elasticity following the mid-point formula:
+## deltaQ = Q2 - Q1 / (Q2 + Q1) / 2 * 100 # Q = vulnerabilities
+## deltaP = P2 - P1 / (P2 + P1) / 2 * 100 # P = fishing costs per unit of effort
+## deltaQ / deltaP
+
+## Vulnerability elasticity:
+e_vuln0 <- (max_vw_sub1_test0 - max_vw_sw_range0)/ (max_vw_sub1_test0 + max_vw_sw_range0) / 2
+
+e_vuln0_pct <- e_vuln0 * 100
+
+## Subsidy elasticity
+e_sub0 <- (cost_sub - cost_full) /  (cost_sub + cost_full)/ 2
+
+e_sub0_pct <- e_sub0 * 100
+
+elas0_final <- e_vuln0_pct/e_sub0_pct
+elas0_final # 1.217396%
+```
+
+
+
+```{r, echo = FALSE}
+# maximum values of vulnerability ratio for which the weak stock does not go extinct in each scenario
+# strong stock price = 1 and no subsidy
+w_s_range_proc_test1 <- w_s_range_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_s == 1 & extinct == "no")
+
+max_vw_ws_range_ps1 <- max(w_s_range_proc_test1$vuln_ratio_w)
+
+# strong stock price = 2 and no subsidy
+w_s_range_proc_test2 <- w_s_range_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_s == 2 & extinct == "no")
+
+max_vw_ws_range_ps2 <- max(w_s_range_proc_test2$vuln_ratio_w)
+
+# strong stock price = 1 and 25% subsidy
+output_subs2_proc_test1 <- output_subs2_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_s == 1 & c == 0.0375 & extinct == "no")
+
+max_vw_ws_range_sub1 <- max(output_subs2_proc_test1$vuln_ratio_w)
+
+# strong stock price = 2 and 25% subsidy
+
+output_subs2_proc_test2 <- output_subs2_proc %>% 
+  mutate(extinct = case_when(
+    b_v_k_w == 0 ~ "yes",
+    b_v_k_w > 0 ~ "no",
+  )) %>% 
+  filter(p_s == 2 & c == 0.0375 & extinct == "no")
+
+max_vw_ws_range_sub2 <- max(output_subs2_proc_test2$vuln_ratio_w)
+```
+
+```{r calculating elasticities of subsidies on vulnerability ratios for non-synergistic scenarios}
+cost_full = 0.05
+cost_sub = 0.0375
+
+# Elasticity following the mid-point formula:
+## deltaQ = Q2 - Q1 / (Q2 + Q1) / 2 * 100
+## deltaP = P2 - P1 / (P2 + P1) / 2 * 100
+## deltaQ / deltaP
+
+## Vulnerability elasticity:
+e_vuln2 <- (max_vw_ws_range_sub1 - max_vw_ws_range_ps1)/ (max_vw_ws_range_sub1 + max_vw_ws_range_ps1) / 2
+
+e_vuln2_pct <- e_vuln2 * 100
+
+## Subsidy elasticity
+e_sub2 <- (cost_sub - cost_full) /  (cost_sub + cost_full)/ 2
+
+e_sub2_pct <- e_sub2 * 100
+
+elas2_final <- e_vuln2_pct/e_sub2_pct
+elas2_final # 0.3763%
+```
+
+```{r}
+# average elasticity of subsidies
+elas_ave <- (elas0_final + elas2_final)/2
+elas_ave
+```

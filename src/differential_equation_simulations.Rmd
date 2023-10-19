@@ -9,8 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(deSolve)
-library(patchwork)
-library(gridExtra)
 
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
 outdir <- file.path(basedir, "model_outs") # calls present data from raster files
@@ -416,7 +414,9 @@ out4_profit <- out4_df %>%
 ```
 
 ```{r}
-out_stock_join <- bind_rows(out1_stock, out2_stock, out3_stock, out4_stock) %>% #, out5_stock 
+# create subsets of variable data outputs for all sub-scenarios 
+## stock size
+out_stock_join <- bind_rows(out1_stock, out2_stock, out3_stock, out4_stock) %>%
   mutate(b_v_k = case_when(
     str_detect(stock, "N_s") ~ stock_size/k_s,
     str_detect(stock, "N_w") ~ stock_size/k_w
@@ -426,394 +426,51 @@ out_stock_join <- bind_rows(out1_stock, out2_stock, out3_stock, out4_stock) %>% 
     str_detect(stock, "N_w") ~ "Weak stock"
   ))
 
-out_effort_join <- bind_rows(out1_effort, out2_effort, out3_effort, out4_effort) #, out5_effort
+write_csv(out_stock_join, file = file.path(outdir, "stock_sim.csv"), col_names = TRUE)
 
-out_catch_join <- bind_rows(out1_catch, out2_catch, out3_catch, out4_catch) %>% #, out5_catch
+## fishing effort
+out_effort_join <- bind_rows(out1_effort, out2_effort, out3_effort, out4_effort)
+
+write_csv(out_effort_join, file = file.path(outdir, "effort_sim.csv"), col_names = TRUE)
+
+## catch
+out_catch_join <- bind_rows(out1_catch, out2_catch, out3_catch, out4_catch) %>% 
   mutate(stock_catch = case_when(
     str_detect(stock_catch, "_s") ~ "Strong stock",
     str_detect(stock_catch, "_w") ~ "Weak stock"
   ))
 
+write_csv(out_catch_join, file = file.path(outdir, "catch_sim.csv"), col_names = TRUE)
+
+## price
 out_price_join <- bind_rows(out1_price, out2_price, out3_price, out4_price) %>%  
   mutate(stock_price = case_when(
     str_detect(stock_price, "_s") ~ "Strong stock",
     str_detect(stock_price, "_w") ~ "Weak stock"
   ))
 
-out_cpue_join <- bind_rows(out1_cpue, out2_cpue, out3_cpue, out4_cpue) %>% #, out5_cpue 
+write_csv(out_price_join, file = file.path(outdir, "price_sim.csv"), col_names = TRUE)
+
+
+## CPUE
+out_cpue_join <- bind_rows(out1_cpue, out2_cpue, out3_cpue, out4_cpue) %>% 
   mutate(stock_cpue = case_when(
     str_detect(stock_cpue, "_s") ~ "Strong stock",
     str_detect(stock_cpue, "_w") ~ "Weak stock"
   ))
 
-out_cost_join <- bind_rows(out1_cost, out2_cost, out3_cost, out4_cost) #, out5_cost
+write_csv(out_cpue_join, file = file.path(outdir, "cpue_sim.csv"), col_names = TRUE)
 
-out_profit_join <- bind_rows(out1_profit, out2_profit, out3_profit, out4_profit)  %>% #, out5_profit
+## profits
+out_profit_join <- bind_rows(out1_profit, out2_profit, out3_profit, out4_profit)  %>% 
   mutate(stock_profit = case_when(
     str_detect(stock_profit, "_st") ~ "Strong stock",
     str_detect(stock_profit, "_sum") ~ "Profit"
   )) %>% 
   filter(stock_profit %in% c("Profit"))
 
+write_csv(out_profit_join, file = file.path(outdir, "profit_sim.csv"), col_names = TRUE)
 ```
-
-
-
-```{r create stock plots, fig.width=8}
-# Creating mock up dataframe to add within-plot tags
-
-tag_text <- data.frame(time = c(380, 380, 380, 380), 
-                       b_v_k = c(0.94, 0.94, 0.94, 0.94),
-                       label = c("A", "B", "C", "D"),
-                       scenario_label = c("None",
-                                          "Strong stock",
-                                          "Weak stock",
-                                          "Both stocks"))
-b_v_k_plot <- 
-  ggplot() +
-  geom_hline(yintercept = 0.5,
-              linetype = "dashed",
-              color = "grey40",
-              alpha = 0.8) +
-  geom_hline(yintercept = 0.25,
-              linetype = "dotted",
-              color = "grey40",
-              alpha = 0.8) +
-  geom_line(data = out_stock_join, 
-            aes(x = time, y = b_v_k, color = stock),
-            linewidth = .8,
-            alpha = .8,
-            show.legend = T) +
-  geom_text(data = tag_text,
-            aes(x = time, y = b_v_k, label = label),
-            fontface = "bold") +
-  scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
-  scale_x_continuous(breaks = seq(0, 400, 100),
-                     expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0.01)) +
-  facet_wrap(~ factor(scenario_label,
-                      levels = c("None",
-                                 "Strong stock",
-                                 "Weak stock",
-                                 "Both stocks")),
-             nrow = 1) +
-  labs(x = "",
-       y = "N/K",
-       color = "") +
-  theme_bw() +
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.spacing = unit(5, "mm"),
-        strip.background = element_rect(fill = "transparent"),
-        strip.text = element_text(color = "black", size = 10),
-        axis.title.x = element_text(color = "black", size = 12, vjust = -2),
-        axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
-        axis.text.y = element_text(color = "black", size = 10),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        legend.position = "bottom")
-
-```
-
-```{r create effort plot}
-effort_plot <-
-  ggplot() +
-  geom_line(data = out_effort_join,
-            aes(x = time, y = effort_level),
-            linewidth = .8,
-            alpha = .8,
-            color = "black",
-            show.legend = F) +
-  facet_wrap(~ factor(scenario_label,
-                      levels = c("None",
-                                 "Strong stock",
-                                 "Weak stock",
-                                 "Both stocks")),
-             nrow = 1) +
-  scale_x_continuous(breaks = seq(0, 400, 100),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 30, 10),
-                     expand = c(0, 0.5)) +
-  labs(x = "",
-       y = "Fishing Effort",
-       color = "") +
-  theme_bw() +
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.spacing = unit(5, "mm"),
-        strip.background = element_blank(),
-        strip.text = element_blank(),
-        axis.title.x = element_text(color = "black", size = 12),
-        axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
-        axis.text.y = element_text(color = "black", size = 10),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        legend.position = "bottom")
-```
-
-```{r create price plot}
-price_plot <- 
-  ggplot() +
-  geom_line(data = out_price_join,
-            aes(x = time, y = price, color = stock_price),
-            linewidth = .8,
-            alpha = .8,
-            show.legend = F) +
-   facet_wrap(~ factor(scenario_label,
-                       levels = c("None",
-                                 "Strong stock",
-                                 "Weak stock",
-                                 "Both stocks")), 
-              nrow = 1) +
-  scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
-  scale_x_continuous(breaks = seq(0, 400, 100),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 10, by = 2),
-                     expand = c(0,0.01)) +
-  labs(x = "",
-       y = "Price",
-       color = "") +
-  theme_bw() +
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.spacing = unit(5, "mm"),
-        strip.background = element_blank(),
-        strip.text = element_blank(),
-        axis.title.x = element_text(color = "black", size = 12),
-        axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
-        axis.text.y = element_text(color = "black", size = 10),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        legend.position = "bottom")
-```
-
-
-```{r create catch plot}
-catch_plot <- 
-  ggplot() +
-  geom_line(data = out_catch_join,
-            aes(x = time, y = catch_size, color = stock_catch),
-            linewidth = .8,
-            alpha = .8,
-            show.legend = F) +
-  facet_wrap(~ factor(scenario_label,
-                      levels = c("None",
-                                 "Strong stock",
-                                 "Weak stock",
-                                 "Both stocks")),
-             nrow = 1) +
-  scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
-  scale_x_continuous(breaks = seq(0, 400, 100),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 1, by = 0.25),
-                     expand = c(0,0.01)) +
-  labs(x = "",
-       y = "Catch",
-       color = "") +
-  theme_bw() +
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.spacing = unit(5, "mm"),
-        strip.background = element_blank(),
-        strip.text = element_blank(),
-        axis.title.x = element_text(color = "black", size = 12),
-        axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
-        axis.text.y = element_text(color = "black", size = 10),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        legend.position = "bottom")
-```
-
-```{r create cpue plot}
-cpue_plot <- 
-  ggplot() +
-  geom_line(data = out_cpue_join,
-            aes(x = time, y = cpue_level, color = stock_cpue),
-            linewidth = .8,
-            alpha = .8,
-            show.legend = F) +
-  facet_wrap(~ factor(scenario_label,
-                      levels = c("None",
-                                 "Strong stock",
-                                 "Weak stock",
-                                 "Both stocks")),
-             nrow = 1) +
-  scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
-  scale_x_continuous(breaks = seq(0, 400, 100),
-                     expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 0.1, 0.02),
-                     expand = c(0, 0.001)) +
-  labs(x = "",
-       y = "CPUE",
-       color = "") +
-  theme_bw() +
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.spacing = unit(5, "mm"),
-        strip.background = element_blank(),
-        strip.text = element_blank(),
-        axis.title.x = element_text(color = "black", size = 12),
-        axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
-        axis.text.y = element_text(color = "black", size = 10),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        legend.position = "bottom")
-```
-
-
-
-```{r create profit plot, fig.width=8, fig.height=6}
-profit_plot <- 
-  ggplot() +
-  geom_line(data = out_profit_join,
-            aes(x = time, y = profit_level, color = stock_profit),
-            linewidth = .8,
-            alpha = .8,
-            show.legend = F) +
-  geom_hline(yintercept = 0,
-             color = "gray30",
-             linetype = "dashed",
-             alpha = 0.5) +
-  facet_wrap(~ factor(scenario_label,
-                      levels = c("None",
-                                 "Strong stock",
-                                 "Weak stock",
-                                 "Both stocks")),
-             nrow = 1) +
-  scale_color_manual(values = c("brown")) +  
-  scale_x_continuous(breaks = seq(0, 400, 100),
-                     expand = c(0,0)) +
-  scale_y_continuous(expand = c(0, 0.01)) +
-  labs(x = "Time",
-       y = "Profits",
-       color = "") +
-  theme_bw() +
-  theme(panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.spacing = unit(5, "mm"),
-        strip.background = element_blank(),
-        strip.text = element_blank(),
-        axis.title.x = element_text(color = "black", size = 12, face = "bold"),
-        axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
-        axis.text = element_text(color = "black", size = 10),
-        legend.position = "bottom")
-```
-
-
-
-# Plot 
-```{r, fig.width=10, fig.height=15}
-full_plot <- 
-  b_v_k_plot +
-  plot_spacer() +
-  cpue_plot +
-  plot_spacer() +
-  effort_plot +
-  plot_spacer() + 
-  price_plot +
-  plot_spacer() +
-  profit_plot +
-  plot_layout(ncol = 1,
-              guides = "collect",
-              heights = c(4, -0.6, 4, -0.6, 4, -0.6, 4, -0.6, 4)) &
-  theme(legend.position = "bottom")
-
-full_plot
-
- ggsave(file.path(outdir, "full_ts_plot.png"), plot =  full_plot,
-       width = 8, height = 10, bg = "white", dpi = 300)
- 
- ggsave(file.path(outdir, "pub_ready", "figure_4.pdf"), plot =  full_plot,
-       width = 8, height = 10, bg = "white", dpi = 600)
-```
-
-
-```{r simulate the effect of hyperstability on CPUE}
-# Define the values of N
-N <- seq(0, 5, by = 0.01)
-
-# Define the values of q and beta for the two scenarios
-q <- 1
-r <- 1
-beta_1 <- 1
-beta_2 <- 0.56
-
-# Create a data frame with N and CPUE values for both scenarios
-df_v <- data.frame(N = rep(N, 2), 
-                 V = c(N^(beta_1-1), N^(beta_2-1)),
-                 beta = rep(c("Not hyperstable", "Hyperstable"), each = length(N)))
-
-df_cpue <- data.frame(N = rep(N, 2), 
-                 CPUE = c(q * N^beta_1, q * N^beta_2),
-                 beta = rep(c("Not hyperstable", "Hyperstable"), each = length(N)))
-
-# Create the plot using ggplot2
-v_beta_plot <-
-  ggplot(df_v %>% filter(N <= 2 & V <= 8),
-       aes(x = N, y = V, color = beta)) + 
-  geom_line(linewidth = 1,
-            alpha = .7) +
-  labs(x = "Biomass",
-       y = "Vulnerability",
-       color = "Catch flexibility") +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 8, 1), 
-                     expand = c(0,0)) +
-  scale_color_brewer(palette = "Dark2") +
-  theme_bw() +
-  theme(panel.grid = element_blank(),
-        axis.title = element_text(color = "black", size = 12),
-        axis.text = element_text(color = "black", size = 10),
-        legend.position = "bottom",
-        legend.text = element_text(color = "black", size = 10))
-
-# ggsave(file.path(outdir, "v_beta_plot.png"), plot = v_beta_plot,
-#         width = 8, height = 6, bg = "white", dpi = 300)
-
-cpue_beta_plot <-
-  ggplot(df_cpue %>% filter(N <= 2, CPUE <= 2),
-       aes(x = N, y = CPUE, color = beta)) + 
-  geom_line(linewidth = 1,
-            alpha = .7) +
-  labs(x = "Biomass",
-       y = "CPUE",
-       color = "Catch flexibility") +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0)) +
-  scale_color_brewer(palette = "Dark2") +
-  theme_bw() +
-  theme(panel.grid = element_blank(),
-        axis.title = element_text(color = "black", size = 12),
-        axis.text = element_text(color = "black", size = 10),
-        legend.position = "bottom",
-        legend.text = element_text(color = "black", size = 10))
-
-# ggsave(file.path(outdir, "cpue_beta_plot.png"), plot = cpue_beta_plot,
-#         width = 8, height = 6, bg = "white", dpi = 300)
-```
-
-# Plot 3
-```{r, fig.height=6, fig.width=8}
-beta_cpue_plot <-
-  v_beta_plot +
-  cpue_beta_plot +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom")
-
-beta_cpue_plot
-
-# ggsave(file.path(outdir, "beta_cpue_plot2.png"), plot = beta_cpue_plot,
-#        width = 8, height = 6, bg = "white", dpi = 300)
-
- ggsave(file.path(outdir, "pub_ready", "beta_cpue_plot2.pdf"), plot = beta_cpue_plot,
-        width = 8, height = 6, bg = "white", dpi = 600)
-```
-
-
-
-
-
 
 
 
