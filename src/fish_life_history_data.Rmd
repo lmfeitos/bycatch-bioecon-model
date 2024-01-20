@@ -1,0 +1,48 @@
+---
+title: "r_values"
+author: "Leonardo Feitosa"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(FishLife)
+```
+
+```{r}
+col_names <- c("class", "order", "family", "genus", "species")
+
+fish_data = FishLife::FishBase_and_RAM$beta_gv %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "taxa") %>%
+  separate_wider_delim(cols = taxa,
+                       delim = "_",
+                       names = col_names,
+                       too_few = "debug") %>% 
+  drop_na() %>% 
+  unite("scientific_name", genus:species, sep = " ") %>% 
+  filter(class %in% c("Actinopterygii", "Elasmobranchii")) 
+
+data_filled <- data.frame()
+```
+
+
+```{r}
+# plot r data
+fish_data %>% 
+  ggplot() +
+  geom_point(aes(x = class, y = r, color = class),
+              show.legend = F,
+             position = position_jitterdodge(jitter.width = .4)) +
+  geom_boxplot(aes(x = class, y = r, fill = class),
+               show.legend = F,
+               outlier.shape = NA,
+               alpha = 0.7) +
+  labs(x = "",
+       y = "Estimated intrinsic population growth rate (r)") +
+  theme_bw()
+```
+
