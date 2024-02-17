@@ -10,6 +10,8 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(deSolve)
+library(patchwork)
+library(janitor)
 
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
 outdir <- file.path(basedir, "model_outs") # calls present data from raster files
@@ -28,9 +30,7 @@ q_w2 <- 0.02
 k_s <- 4
 k_w <- 2
 r_s <- 1
-r_w <- 0.99
-weight_s <- 1
-weight_w <- 1
+r_w <- 0.67
 
 # define parameters that switch per scenario
 beta_s1 <- 1
@@ -54,7 +54,7 @@ f_w3 <- 0.22
 f_w4 <- 0.22
 
 # time steps
-times <- seq(0, 400, by = .1)
+times <- seq(0, 500, by = .1)
 ```
 
 ```{r}
@@ -63,17 +63,17 @@ scenario_1 <- function(time, state, parameters) {
   with(as.list(c(state, parameters)), {
     if(N_w1 > 0){
     # Calculate the derivatives
-    dN_s1 <- r_s * N_s1 * (1 - (N_s1/k_s)) - (q_s1 * N_s1^beta_s1 * E1_A) - (q_w1 * N_s1^beta_s1 * E1_B)   
-    dN_w1 <- r_w * N_w1 * (1 - (N_w1/k_w)) - (q_w2 * N_w1^beta_w1 * E1_B) - (q_s2 * N_w1^beta_w1 * E1_A)  
-    dE1_A <- alpha * E1_A * (A_s * (q_s1 * N_s1^beta_s1 * E1_A)^-f_s1 * q_s1 * N_s1^beta_s1 +
-                        A_w * (q_w1 * N_w1^beta_w1 * E1_A)^-f_w1 * q_s2 * N_w1^beta_w1 - (c))
-    dE1_B <- alpha * E1_B * (A_s * (q_s2 * N_s1^beta_s1 * E1_B)^-f_s1 * q_w1 * N_s1^beta_s1 +
-                        A_w * (q_w2 * N_w1^beta_w1 * E1_B)^-f_w1 * q_w2 * N_w1^beta_w1 - (c))
+    dN_s1 <- N_s1 * (r_s * (1 - (N_s1/k_s))) - (q_s1 * (N_s1^beta_s1) * E1_A) - (q_s2 * (N_s1^beta_s1) * E1_B)   
+    dN_w1 <- N_w1 * (r_w * (1 - (N_w1/k_w))) - (q_w1 * (N_w1^beta_w1) * E1_A) - (q_w2 * (N_w1^beta_w1) * E1_B)  
+    dE1_A <- alpha * E1_A * ((A_s * (q_s1 * (N_s1^beta_s1) * E1_A)^-f_s1) * q_s1 * (N_s1^beta_s1) +
+                        (A_w * (q_w1 * (N_w1^beta_w1) * E1_A)^-f_w1) * q_w1 * (N_w1^beta_w1) - (c))
+    dE1_B <- alpha * E1_B * ((A_s * (q_s2 * (N_s1^beta_s1) * E1_B)^-f_s1) * q_s2 * (N_s1^beta_s1) +
+                        (A_w * (q_w2 * (N_w1^beta_w1) * E1_B)^-f_w1) * q_w2 * (N_w1^beta_w1) - (c))
     } else {
-      dN_s1 <- r_s * N_s1 * (1 - (N_s1/k_s)) - (q_s1 * N_s1^beta_s1 * E1_A) - (q_w1 * N_s1^beta_s1 * E1_B)   
+      dN_s1 <- r_s * N_s1 * (1 - (N_s1/k_s)) - (q_s1 * (N_s1^beta_s1) * E1_A) - (q_w1 * (N_s1^beta_s1) * E1_B)   
       dN_w1 <- 0
-      dE1_A <- alpha * E1_A * (A_s * (q_s1 * N_s1^beta_s1 * E1_A)^-f_s1 * q_s1 * N_s1^beta_s1 - (c))
-      dE1_B <- alpha * E1_B * (A_s * (q_s1 * N_s1^beta_s1 * E1_B)^-f_s1 * q_s1 * N_s1^beta_s1 - (c))
+      dE1_A <- alpha * E1_A * ((A_s * (q_s1 * (N_s1^beta_s1) * E1_A)^-f_s1) * q_s1 * (N_s1^beta_s1) - (c))
+      dE1_B <- alpha * E1_B * ((A_s * (q_s1 * (N_s1^beta_s1) * E1_B)^-f_s1) * q_s1 * (N_s1^beta_s1) - (c))
     }
     # Return the derivatives as a list
     return(list(c(dN_s1, dN_w1, dE1_A, dE1_B)))
@@ -81,8 +81,8 @@ scenario_1 <- function(time, state, parameters) {
 }
 
 # Define the initial state and parameters
-state <- c(N_s1 = 4, N_w1 = 2, E1_A = 0.5, E1_B = 0.5)
-parameters_1 <- c(q_s1 = 0.02, q_w1 = 0.01, q_s2 = 0.01, q_w2 = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.99, alpha = 1,
+state <- c(N_s1 = 4, N_w1 = 2, E1_A = 0.01, E1_B = 0.01)
+parameters_1 <- c(q_s1 = 0.02, q_w1 = 0.01, q_s2 = 0.01, q_w2 = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.67, alpha = 1,
                 c = 0.05, A_w = 1, A_s = 1, beta_w1 = 1, beta_s1 = 1, f_w1 = 0, f_s1 = 0)
 
 # Define the time interval and solve the ODEs
@@ -94,16 +94,16 @@ out1_df <- out1 %>%
     N_w1 < 0 ~ 0,
     TRUE ~ N_w1
   )) %>% 
-  mutate(catch_s1 = (q_s1 * N_s1^beta_s1 * E1_A) + (q_s2 * N_s1^beta_s1 * E1_B),
-         catch_w1 = (q_w2 * N_w1^beta_w1 * E1_B) + (q_w1 * N_w1^beta_w1 * E1_A),
+  mutate(catch_s1 = (q_s1 * (N_s1^beta_s1) * E1_A) + (q_s2 * (N_s1^beta_s1) * E1_B),
+         catch_w1 = (q_w1 * (N_w1^beta_w1) * E1_A) + (q_w2 * (N_w1^beta_w1) * E1_B),
          cpue_s1 = catch_s1 / (E1_A + E1_B),
          cpue_w1 = catch_w1 / (E1_A + E1_B),
          cost1_A = cost * E1_A,
          cost1_B = cost * E1_B,
-         price_s1 = (A_s * (q_s1 * N_s1^beta_s1 * E1_A)^-f_s1) + (A_s * (q_s2 * N_s1^beta_s1 * E1_B)^-f_s1),
-         price_w1 = (A_w * (q_w2 * N_w1^beta_w1 * E1_B)^-f_w1) + (A_w * (q_w1 * N_w1^beta_w1 * E1_A)^-f_w1),
-         pi_sum1_A = E1_A * ((price_s1 * q_s1 * N_s1^beta_s1) + (price_w1 * q_s2 * N_w1^beta_w1) - cost),
-         pi_sum1_B = E1_B * ((price_w1 * q_w1 * N_w1^beta_w1) + (price_s1 * q_w2 * N_w1^beta_w1) - cost),
+         price_s1 = (A_s * (q_s1 * (N_s1^beta_s1) * E1_A)^-f_s1) + (A_s * (q_s2 * (N_s1^beta_s1) * E1_B)^-f_s1),
+         price_w1 = (A_w * (q_w1 * (N_w1^beta_w1) * E1_A)^-f_w1) + (A_w * (q_w2 * (N_w1^beta_w1) * E1_B)^-f_w1),
+         pi_sum1_A = E1_A * ((price_s1 * q_s1 * (N_s1^beta_s1)) + (price_w1 * q_s2 * (N_w1^beta_w1)) - cost),
+         pi_sum1_B = E1_B * ((price_w1 * q_w1 * (N_w1^beta_w1)) + (price_s1 * q_w2 * (N_w1^beta_w1)) - cost),
          pi_sum1 = pi_sum1_A + pi_sum1_B) %>% 
   pivot_longer(cols = dplyr::starts_with("N_"),
                names_to = "stock",
@@ -162,14 +162,16 @@ out1_profit <- out1_df %>%
 ggplot() +
   geom_line(data = out1_stock, 
             aes(x = time, y = stock_size, color = stock)) +
-  geom_line(data = out1_profit, 
-            aes(x = time, y = profit_level, color = stock_profit))
+  geom_line(data = out1_effort, 
+            aes(x = time, y = effort_level, color = effort)) +
+  scale_y_continuous(limits = c(0, 30),
+                     breaks = seq(0, 30, 5))
 
-ggplot() +
-  geom_line(data = out1_price, 
-            aes(x = time, y = price, color = stock_price)) +
-  geom_line(data = out1_profit, 
-            aes(x = time, y = profit_level, color = stock_profit))
+# ggplot() +
+#   geom_line(data = out1_price, 
+#             aes(x = time, y = price, color = stock_price)) +
+#   geom_line(data = out1_profit, 
+#             aes(x = time, y = profit_level, color = stock_profit))
 ```
 
 
@@ -179,19 +181,17 @@ scenario_2 <- function(time, state, parameters) {
   with(as.list(c(state, parameters)), {
     if(N_w2 > 0){
     # Calculate the derivatives
-    dN_s2 <- r_s * N_s2 * (1 - (N_s2/k_s)) - (q_s1 * N_s2^beta_s2 * E2_A) - (q_w1 * N_s2^beta_s2 * E2_B)   
-    dN_w2 <- r_w * N_w2 * (1 - (N_w2/k_w)) - (q_w2 * N_w2^beta_w2 * E2_B) - (q_s2 * N_w2^beta_w2 * E2_A)  
-    
-    dE2_A <- alpha * E2_A * (A_s * (q_s1 * N_s2^beta_s2 * E2_A)^-f_s2 * q_s1 * N_s2^beta_s2 +
-                        A_w * (q_w1 * N_w2^beta_w2 * E2_A)^-f_w2 * q_s2 * N_w2^beta_w2 - (c))
-    
-    dE2_B <- alpha * E2_B * (A_s * (q_s2 * N_s2^beta_s2 * E2_B)^-f_s2 * q_w1 * N_s2^beta_s2 +
-                        A_w * (q_w2 * N_w2^beta_w2 * E2_B)^-f_w2 * q_w2 * N_w2^beta_w2 - (c))
+    dN_s2 <- N_s2 * (r_s * (1 - (N_s2/k_s))) - (q_s1 * (N_s2^beta_s2) * E2_A) - (q_s2 * (N_s2^beta_s2) * E2_B)   
+    dN_w2 <- N_w2 * (r_w * (1 - (N_w2/k_w))) - (q_w1 * (N_w2^beta_w2) * E2_A) - (q_w2 * (N_w2^beta_w2) * E2_B)  
+    dE2_A <- alpha * E2_A * ((A_s * (q_s1 * (N_s2^beta_s2) * E2_A)^-f_s2) * q_s1 * (N_s2^beta_s2) +
+                             (A_w * (q_w1 * (N_w2^beta_w2) * E2_A)^-f_w2) * q_w1 * (N_w2^beta_w2) - (c))
+    dE2_B <- alpha * E2_B * ((A_s * (q_s2 * (N_s2^beta_s2) * E2_B)^-f_s2) * q_s2 * (N_s2^beta_s2) +
+                             (A_w * (q_w2 * (N_w2^beta_w2) * E2_B)^-f_w2) * q_w2 * (N_w2^beta_w2) - (c))
     } else {
-      dN_s2 <- r_s * N_s2 * (1 - (N_s2/k_s)) - (q_s1 * N_s2^beta_s2 * E2_A) - (q_w1 * N_s2^beta_s2 * E2_B)   
+      dN_s2 <- r_s * N_s2 * (1 - (N_s2/k_s)) - (q_s1 * (N_s2^beta_s2) * E2_A) - (q_w1 * (N_s2^beta_s2) * E2_B)   
       dN_w2 <- 0
-      dE2_A <- alpha * E2_A * (A_s * (q_s1 * N_s2^beta_s2 * E2_A)^-f_s2 * q_s1 * N_s2^beta_s2 - (c))
-      dE2_B <- alpha * E2_B * (A_s * (q_s1 * N_s2^beta_s2 * E2_B)^-f_s2 * q_s1 * N_s2^beta_s2 - (c))
+      dE2_A <- alpha * E2_A * ((A_s * (q_s1 * (N_s2^beta_s2) * E2_A)^-f_s2) * q_s1 * (N_s2^beta_s2) - (c))
+      dE2_B <- alpha * E2_B * ((A_s * (q_s1 * (N_s2^beta_s2) * E2_B)^-f_s2) * q_s1 * (N_s2^beta_s2) - (c))
     }
     # Return the derivatives as a list
     return(list(c(dN_s2, dN_w2, dE2_A, dE2_B)))
@@ -199,9 +199,9 @@ scenario_2 <- function(time, state, parameters) {
 }
 
 # Define the initial state and parameters
-state2 <- c(N_s2 = 4, N_w2 = 2, E2_A = 0.5, E2_B = 0.5)
-parameters_2 <- c(q_s1 = 0.02, q_w1 = 0.01, q_s2 = 0.01, q_w2 = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.99, alpha = 1,
-                c = 0.05, A_w = 1, A_s = 1, beta_w1 = 1, beta_s1 = 0.56, f_w1 = 0.22, f_s1 = 0.22)
+state2 <- c(N_s2 = 4, N_w2 = 2, E2_A = 0.01, E2_B = 0.01)
+parameters_2 <- c(q_s1 = 0.02, q_w1 = 0.01, q_s2 = 0.01, q_w2 = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.67, alpha = 1,
+                c = 0.05, A_w = 1, A_s = 1, beta_w2 = 1, beta_s2 = 0.56, f_w2 = 0.22, f_s2 = 0.22)
 
 
 out2 <- ode(y = state2, times = times, func = scenario_2, parms = parameters_2)
@@ -212,22 +212,17 @@ out2_df <- out2 %>%
     N_w2 < 0 ~ 0,
     TRUE ~ N_w2
   )) %>% 
-  mutate(catch_A_s2 = q_s1 * N_s2^beta_s2 * E2_A,
-         catch_A_w2 = q_w1 * N_w2^beta_w2 * E2_A,
-         price_A_s2 = A_s * (q_s1 * N_s2^beta_s2 * E2_A)^-f_s2, 
-         price_A_w2 = A_w * (q_w1 * N_w2^beta_w2 * E2_A)^-f_w2,
-         cpue_A_s2 = catch_A_s2 / E2_A,
-         cpue_A_w2 = catch_A_w2 / E2_A,
+  mutate(catch_s2 = (q_s1 * (N_s2^beta_s2) * E2_A) + (q_s2 * (N_s2^beta_s2) * E2_B),
+         catch_w2 = (q_w1 * (N_w2^beta_w2) * E2_A) + (q_w2 * (N_w2^beta_w2) * E2_B),
+         cpue_s2 = catch_s2 / (E2_A + E2_B),
+         cpue_w2 = catch_w2 / (E2_A + E2_B),
          cost2_A = cost * E2_A,
-         pi_sum2_A = E2_A * ((price_A_s2 * q_s1 * N_s2^beta_s2) + (price_A_w2 * q_s2 * N_w2^beta_w2) - cost),
-         catch_B_s2 = q_s2 * N_s2^beta_s2 * E2_B,
-         catch_B_w2 = q_w2 * N_w2^beta_w2 * E2_B,
-         price_B_s2 = A_s * (q_s2 * N_s2^beta_s2 * E2_B)^-f_s2, 
-         price_B_w2 = A_w * (q_w2 * N_w2^beta_w2 * E2_B)^-f_w2,
-         cpue_B_s2 = catch_B_s2 / E2_B,
-         cpue_B_w2 = catch_B_w2 / E2_B,
          cost2_B = cost * E2_B,
-         pi_sum2_B = E2_B * ((price_B_s2 * q_w1 * N_s2^beta_s2) + (price_B_w2 * q_w2 * N_w2^beta_w2) - cost)) %>% 
+         price_s2 = (A_s * (q_s1 * (N_s2^beta_s2) * E2_A)^-f_s2) + (A_s * (q_s2 * (N_s2^beta_s2) * E2_B)^-f_s2),
+         price_w2 = (A_w * (q_w1 * (N_w2^beta_w2) * E2_A)^-f_w2) + (A_w * (q_w2 * (N_w2^beta_w2) * E2_B)^-f_w2),
+         pi_sum2_A = E2_A * ((price_s2 * q_s1 * (N_s2^beta_s2)) + (price_w2 * q_s2 * (N_w2^beta_w2)) - cost),
+         pi_sum2_B = E2_B * ((price_w2 * q_w1 * (N_w2^beta_w2)) + (price_s2 * q_w2 * (N_w2^beta_w2)) - cost),
+         pi_sum2 = pi_sum2_A + pi_sum2_B) %>% 
   pivot_longer(cols = dplyr::starts_with("N_"),
                names_to = "stock",
                values_to = "stock_size") %>% 
@@ -269,7 +264,7 @@ out2_price <- out2_df %>%
   distinct()
 
 out2_cpue <- out2_df %>% 
-  select(time, stock_cpue, cpue_level,scenario_label)%>% 
+  select(time, stock_cpue, cpue_level, scenario_label)%>% 
   distinct()
 
 out2_cost <- out2_df %>% 
@@ -282,6 +277,13 @@ out2_profit <- out2_df %>%
 
 ```
 
+```{r}
+ggplot() +
+  geom_line(data = out2_stock, 
+            aes(x = time, y = stock_size, color = stock)) +
+  geom_line(data = out2_effort, 
+            aes(x = time, y = effort_level, color = effort))
+```
 
 
 ```{r}
@@ -289,20 +291,18 @@ out2_profit <- out2_df %>%
 scenario_3 <- function(time, state, parameters) {
   with(as.list(c(state, parameters)), {
     if(N_w3 > 0){
-    # Calculate the derivatives
-    dN_s3 <- r_s * N_s3 * (1 - (N_s3/k_s)) - (q_s1 * N_s3^beta_s3 * E3_A) - (q_w1 * N_s3^beta_s3 * E3_B)   
-    dN_w3 <- r_w * N_w3 * (1 - (N_w3/k_w)) - (q_w2 * N_w3^beta_w3 * E3_B) - (q_s2 * N_w3^beta_w3 * E3_A)  
-    
-    dE3_A <- alpha * E3_A * (A_s * (q_s1 * N_s3^beta_s3 * E3_A)^-f_s3 * q_s1 * N_s3^beta_s3 +
-                        A_w * (q_w1 * N_w3^beta_w3 * E3_A)^-f_w3 * q_s2 * N_w3^beta_w3 - (c))
-    
-    dE3_B <- alpha * E3_B * (A_s * (q_s2 * N_s3^beta_s3 * E3_B)^-f_s3 * q_w1 * N_s3^beta_s3 +
-                        A_w * (q_w2 * N_w3^beta_w3 * E3_B)^-f_w3 * q_w2 * N_w3^beta_w3 - (c))
+      # Calculate derivatives
+    dN_s3 <- N_s3 * (r_s * (1 - (N_s3/k_s))) - (q_s1 * (N_s3^beta_s3) * E3_A) - (q_s2 * (N_s3^beta_s3) * E3_B)   
+    dN_w3 <- N_w3 * (r_w * (1 - (N_w3/k_w))) - (q_w1 * (N_w3^beta_w3) * E3_A) - (q_w2 * (N_w3^beta_w3) * E3_B)  
+    dE3_A <- alpha * E3_A * ((A_s * (q_s1 * (N_s3^beta_s3) * E3_A)^-f_s3) * q_s1 * (N_s3^beta_s3) +
+                        (A_w * (q_w1 * (N_w3^beta_w3) * E3_A)^-f_w3) * q_w1 * (N_w3^beta_w3) - (c))
+    dE3_B <- alpha * E3_B * ((A_s * (q_s2 * (N_s3^beta_s3) * E3_B)^-f_s3) * q_s2 * (N_s3^beta_s3) +
+                        (A_w * (q_w2 * (N_w3^beta_w3) * E3_B)^-f_w3) * q_w2 * (N_w3^beta_w3) - (c))
     } else {
-      dN_s3 <- r_s * N_s3 * (1 - (N_s3/k_s)) - (q_s1 * N_s3^beta_s3 * E3_A) - (q_w1 * N_s3^beta_s3 * E3_B)   
+      dN_s3 <- r_s * N_s3 * (1 - (N_s3/k_s)) - (q_s1 * (N_s3^beta_s3) * E3_A) - (q_w1 * (N_s3^beta_s3) * E3_B)   
       dN_w3 <- 0
-      dE3_A <- alpha * E3_A * (A_s * (q_s1 * N_s3^beta_s3 * E3_A)^-f_s3 * q_s1 * N_s3^beta_s3 - (c))
-      dE3_B <- alpha * E3_B * (A_s * (q_s1 * N_s3^beta_s3 * E3_B)^-f_s3 * q_s1 * N_s3^beta_s3 - (c))
+      dE3_A <- alpha * E3_A * ((A_s * (q_s1 * (N_s3^beta_s3) * E3_A)^-f_s3) * q_s1 * (N_s3^beta_s3) - (c))
+      dE3_B <- alpha * E3_B * ((A_s * (q_s1 * (N_s3^beta_s3) * E3_B)^-f_s3) * q_s1 * (N_s3^beta_s3) - (c))
     }
     # Return the derivatives as a list
     return(list(c(dN_s3, dN_w3, dE3_A, dE3_B)))
@@ -310,9 +310,9 @@ scenario_3 <- function(time, state, parameters) {
 }
 
 # Define the initial state and parameters
-state3 <- c(N_s3 = 4, N_w3 = 2, E3_A = 0.5, E3_B = 0.5)
-parameters_3 <- c(q_s1 = 0.02, q_w1 = 0.01, q_s2 = 0.01, q_w2 = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.99, alpha = 1,
-                c = 0.05, A_w = 1, A_s = 1, beta_w1 = 0.56, beta_s1 = 1, f_w1 = 0.22, f_s1 = 0.22)
+state3 <- c(N_s3 = 4, N_w3 = 2, E3_A = 0.01, E3_B = 0.01)
+parameters_3 <- c(q_s1 = 0.02, q_w1 = 0.01, q_s2 = 0.01, q_w2 = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.67, alpha = 1,
+                c = 0.05, A_w = 1, A_s = 1, beta_w3 = 0.56, beta_s3 = 1, f_w3 = 0.22, f_s3 = 0.22)
 
 out3 <- ode(y = state3, times = times, func = scenario_3, parms = parameters_3)
 
@@ -323,27 +323,23 @@ out3_df <- out3 %>%
     N_w3 < 0 ~ 0,
     TRUE ~ N_w3
   )) %>% 
-  mutate(catch_A_s3 = q_s1 * N_s3^beta_s3 * E3_A,
-         catch_A_w3 = q_w1 * N_w3^beta_w3 * E3_A,
-         price_A_s3 = A_s * (q_s1 * N_s3^beta_s3 * E3_A)^-f_s3, 
-         price_A_w3 = A_w * (q_w1 * N_w3^beta_w3 * E3_A)^-f_w3,
-         cpue_A_s3 = catch_A_s3 / E3_A,
-         cpue_A_w3 = catch_A_w3 / E3_A,
+  mutate(catch_s3 = (q_s1 * (N_s3^beta_s3) * E3_A) + (q_s2 * (N_s3^beta_s3) * E3_B),
+         catch_w3 = (q_w1 * (N_w3^beta_w3) * E3_A) + (q_w2 * (N_w3^beta_w3) * E3_B),
+         cpue_s3 = catch_s3 / (E3_A + E3_B),
+         cpue_w3 = catch_w3 / (E3_A + E3_B),
          cost3_A = cost * E3_A,
-         pi_st3_A = E3_A * ((price_A_s3 * q_s1 * N_s3^beta_s3) - cost),
-         pi_sum3_A = E3_A * ((price_A_s3 * q_s1 * N_s3^beta_s3) + (price_A_w3 * q_s2 * N_w3^beta_w3) - cost),
-         catch_B_s3 = q_s2 * N_s3^beta_s3 * E3_B,
-         catch_B_w3 = q_w2 * N_w3^beta_w3 * E3_B,
-         price_B_s3 = A_s * (q_s2 * N_s3^beta_s3 * E3_B)^-f_s3, 
-         price_B_w3 = A_w * (q_w2 * N_w3^beta_w3 * E3_B)^-f_w3,
-         cpue_B_s3 = catch_B_s3 / E3_B,
-         cpue_B_w3 = catch_B_w3 / E3_B,
          cost3_B = cost * E3_B,
-         pi_st3_B = E3_B * ((price_B_s3 * q_s2 * N_s3^beta_s3) - cost),
-         pi_sum3_B = E3_B * ((price_B_s3 * q_w1 * N_s3^beta_s3) + (price_B_w3 * q_w2 * N_w3^beta_w3) - cost)) %>% 
-  mutate_at(vars(price_A_w3, price_B_w3), ~ replace(., is.infinite(.), 0)) %>% 
+         price_s3 = (A_s * (q_s1 * (N_s3^beta_s3) * E3_A)^-f_s3) + (A_s * (q_s2 * (N_s3^beta_s3) * E3_B)^-f_s3),
+         price_w3 = (A_w * (q_w1 * (N_w3^beta_w3) * E3_A)^-f_w3) + (A_w * (q_w2 * (N_w3^beta_w3) * E3_B)^-f_w3),
+         pi_st3_A = E3_A * ((price_s3 * q_s1 * (N_s3^beta_s3))  - cost),
+         pi_st3_B = E3_B * ((price_s3 * q_s2 * (N_s3^beta_s3))  - cost),
+         pi_sum3_A = E3_A * ((price_s3 * q_s1 * (N_s3^beta_s3)) + (price_w3 * q_s2 * (N_w3^beta_w3)) - cost),
+         pi_sum3_B = E3_B * ((price_w3 * q_w1 * (N_w3^beta_w3)) + (price_s3 * q_w2 * (N_w3^beta_w3)) - cost),
+         pi_sum3 = pi_sum3_A + pi_sum3_B) %>% 
+  mutate_at(vars(price_w3), ~ replace(., is.infinite(.), 0)) %>% 
   mutate(pi_sum3_A = ifelse(N_w3 > 0, pi_sum3_A, pi_st3_A),
-         pi_sum3_B = ifelse(N_w3 > 0, pi_sum3_B, pi_st3_B)) %>% 
+         pi_sum3_B = ifelse(N_w3 > 0, pi_sum3_B, pi_st3_B),
+         pi_sum3 = pi_sum3_A + pi_sum3_B) %>% 
   pivot_longer(cols = dplyr::starts_with("N_"),
                names_to = "stock",
                values_to = "stock_size") %>% 
@@ -398,6 +394,13 @@ out3_profit <- out3_df %>%
 
 ```
 
+```{r}
+ggplot() +
+  geom_line(data = out3_stock, 
+            aes(x = time, y = stock_size, color = stock)) +
+  geom_line(data = out3_effort, 
+            aes(x = time, y = effort_level, color = effort))
+```
 
 
 ```{r}
@@ -405,19 +408,17 @@ scenario_4 <- function(time, state, parameters) {
   with(as.list(c(state, parameters)), {
     if(N_w4 > 0){
     # Calculate the derivatives
-    dN_s4 <- r_s * N_s4 * (1 - (N_s4/k_s)) - (q_s1 * N_s4^beta_s4 * E4_A) - (q_w1 * N_s4^beta_s4 * E4_B)   
-    dN_w4 <- r_w * N_w4 * (1 - (N_w4/k_w)) - (q_w2 * N_w4^beta_w4 * E4_B) - (q_s2 * N_w4^beta_w4 * E4_A)  
-    
-    dE4_A <- alpha * E4_A * (A_s * (q_s1 * N_s4^beta_s4 * E4_A)^-f_s4 * q_s1 * N_s4^beta_s4 +
-                        A_w * (q_w1 * N_w4^beta_w4 * E4_A)^-f_w4 * q_s2 * N_w4^beta_w4 - (c))
-    
-    dE4_B <- alpha * E4_B * (A_s * (q_s2 * N_s4^beta_s4 * E4_B)^-f_s4 * q_w1 * N_s4^beta_s4 +
-                        A_w * (q_w2 * N_w4^beta_w4 * E4_B)^-f_w4 * q_w2 * N_w4^beta_w4 - (c))
+    dN_s4 <- N_s4 * (r_s * (1 - (N_s4/k_s))) - (q_s1 * (N_s4^beta_s4) * E4_A) - (q_s2 * (N_s4^beta_s4) * E4_B)   
+    dN_w4 <- N_w4 * (r_w * (1 - (N_w4/k_w))) - (q_w1 * (N_w4^beta_w4) * E4_A) - (q_w2 * (N_w4^beta_w4) * E4_B)  
+    dE4_A <- alpha * E4_A * ((A_s * (q_s1 * (N_s4^beta_s4) * E4_A)^-f_s4) * q_s1 * (N_s4^beta_s4) +
+                             (A_w * (q_w1 * (N_w4^beta_w4) * E4_A)^-f_w4) * q_w1 * (N_w4^beta_w4) - (c))
+    dE4_B <- alpha * E4_B * ((A_s * (q_s2 * (N_s4^beta_s4) * E4_B)^-f_s4) * q_s2 * (N_s4^beta_s4) +
+                             (A_w * (q_w2 * (N_w4^beta_w4) * E4_B)^-f_w4) * q_w2 * (N_w4^beta_w4) - (c))
     } else {
-      dN_s4 <- r_s * N_s4 * (1 - (N_s4/k_s)) - (q_s1 * N_s4^beta_s4 * E4_A) - (q_w1 * N_s4^beta_s4 * E4_B)   
-      dN_w4 <- 0
-      dE4_A <- alpha * E4_A * (A_s * (q_s1 * N_s4^beta_s4 * E4_A)^-f_s4 * q_s1 * N_s4^beta_s4 - (c))
-      dE4_B <- alpha * E4_B * (A_s * (q_s1 * N_s4^beta_s4 * E4_B)^-f_s4 * q_s1 * N_s4^beta_s4 - (c))
+     dN_s4 <- r_s * N_s4 * (1 - (N_s4/k_s)) - (q_s1 * (N_s4^beta_s4) * E4_A) - (q_w1 * (N_s4^beta_s4) * E4_B)   
+     dN_w4 <- 0
+     dE4_A <- alpha * E4_A * ((A_s * (q_s1 * (N_s4^beta_s4) * E4_A)^-f_s4) * q_s1 * (N_s4^beta_s4) - (c))
+     dE4_B <- alpha * E4_B * ((A_s * (q_s1 * (N_s4^beta_s4) * E4_B)^-f_s4) * q_s1 * (N_s4^beta_s4) - (c))
     }
     # Return the derivatives as a list
     return(list(c(dN_s4, dN_w4, dE4_A, dE4_B)))
@@ -427,7 +428,7 @@ scenario_4 <- function(time, state, parameters) {
 
 # Define the initial state and parameters
 state4 <- c(N_s4 = 4, N_w4 = 2, E4_A = 0.5, E4_B = 0.5)
-parameters_4 <- c(q_s1 = 0.02, q_w1 = 0.01, q_s2 = 0.01, q_w2 = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.99, alpha = 1,
+parameters_4 <- c(q_s1 = 0.02, q_w1 = 0.01, q_s2 = 0.01, q_w2 = 0.02, k_s = 4, k_w = 2, r_s = 1, r_w = 0.67, alpha = 1,
                 c = 0.05, A_w = 1, A_s = 1, beta_w4 = 0.56, beta_s4 = 0.56, f_w4 = 0.22, f_s4 = 0.22)
 
 # Solve ODEs
@@ -439,27 +440,22 @@ out4_df <- out4 %>%
     N_w4 < 0 ~ 0,
     TRUE ~ N_w4
   )) %>% 
-  mutate(catch_A_s4 = q_s1 * N_s4^beta_s4 * E4_A,
-         catch_A_w4 = q_w1 * N_w4^beta_w4 * E4_A,
-         price_A_s4 = A_s * (q_s1 * N_s4^beta_s4 * E4_A)^-f_s4, 
-         price_A_w4 = A_w * (q_w1 * N_w4^beta_w4 * E4_A)^-f_w4,
-         cpue_A_s4 = catch_A_s4 / E4_A,
-         cpue_A_w4 = catch_A_w4 / E4_A,
+  mutate(catch_s4 = (q_s1 * (N_s4^beta_s4) * E4_A) + (q_s2 * (N_s4^beta_s4) * E4_B),
+         catch_w4 = (q_w1 * (N_w4^beta_w4) * E4_A) + (q_w2 * (N_w4^beta_w4) * E4_B),
+         cpue_s4 = catch_s4 / (E4_A + E4_B),
+         cpue_w4 = catch_w4 / (E4_A + E4_B),
          cost4_A = cost * E4_A,
-         pi_st4_A = E4_A * ((price_A_s4 * q_s1 * N_s4^beta_s4) - cost),
-         pi_sum4_A = E4_A * ((price_A_s4 * q_s1 * N_s4^beta_s4) + (price_A_w4 * q_s2 * N_w4^beta_w4) - cost),
-         catch_B_s4 = q_s2 * N_s4^beta_s4 * E4_B,
-         catch_B_w4 = q_w2 * N_w4^beta_w4 * E4_B,
-         price_B_s4 = A_s * (q_s2 * N_s4^beta_s4 * E4_B)^-f_s4, 
-         price_B_w4 = A_w * (q_w2 * N_w4^beta_w4 * E4_B)^-f_w4,
-         cpue_B_s4 = catch_B_s4 / E4_B,
-         cpue_B_w4 = catch_B_w4 / E4_B,
          cost4_B = cost * E4_B,
-         pi_st4_B = E4_B * ((price_B_s4 * q_s2 * N_s4^beta_s4) - cost),
-         pi_sum4_B = E4_B * ((price_B_s4 * q_w1 * N_s4^beta_s4) + (price_B_w4 * q_w2 * N_w4^beta_w4) - cost)) %>% 
-  mutate_at(vars(price_A_w4, price_B_w4), ~ replace(., is.infinite(.), 0)) %>% 
+         price_s4 = (A_s * (q_s1 * (N_s4^beta_s4) * E4_A)^-f_s4) + (A_s * (q_s2 * (N_s4^beta_s4) * E4_B)^-f_s4),
+         price_w4 = (A_w * (q_w1 * (N_w4^beta_w4) * E4_A)^-f_w4) + (A_w * (q_w2 * (N_w4^beta_w4) * E4_B)^-f_w4),
+         pi_st4_A = E4_A * ((price_s4 * q_s1 * (N_s4^beta_s4))  - cost),
+         pi_st4_B = E4_B * ((price_s4 * q_s2 * (N_s4^beta_s4))  - cost),
+         pi_sum4_A = E4_A * ((price_s4 * q_s1 * (N_s4^beta_s4)) + (price_w4 * q_s2 * (N_w4^beta_w4)) - cost),
+         pi_sum4_B = E4_B * ((price_w4 * q_w1 * (N_w4^beta_w4)) + (price_s4 * q_w2 * (N_w4^beta_w4)) - cost)) %>% 
+  mutate_at(vars(price_w4), ~ replace(., is.infinite(.), 0)) %>% 
   mutate(pi_sum4_A = ifelse(N_w4 > 0, pi_sum4_A, pi_st4_A),
-         pi_sum4_B = ifelse(N_w4 > 0, pi_sum4_B, pi_st4_B)) %>%  
+         pi_sum4_B = ifelse(N_w4 > 0, pi_sum4_B, pi_st4_B),
+         pi_sum4 = pi_sum4_A + pi_sum4_B) %>%  
   pivot_longer(cols = dplyr::starts_with("N_"),
                names_to = "stock",
                values_to = "stock_size") %>% 
@@ -510,9 +506,38 @@ out4_cost <- out4_df %>%
 
 out4_profit <- out4_df %>% 
   select(time, stock_profit, profit_level, scenario_label) %>% 
-  distinct()
+  distinct() %>% 
+  filter(stock_profit == "pi_sum4")
 
 ```
+
+```{r, fig.height=10, include = FALSE}
+stock <- 
+  ggplot() +
+  geom_line(data = out4_stock, 
+            aes(x = time, y = stock_size, color = stock)) 
+effort <- 
+  ggplot() +
+  geom_line(data = out4_effort, 
+            aes(x = time, y = effort_level, color = effort))
+price <-
+  ggplot() +
+  geom_line(data = out4_price,
+            aes(x = time, y = price, color = stock_price)) 
+
+profit <- 
+  ggplot() +
+  geom_line(data = out4_profit %>% 
+              filter(stock_profit == "pi_sum4"),
+            aes(x = time, y = profit_level, color = stock_profit)) 
+
+stock /
+  effort /
+  price / 
+  profit &
+  theme(legend.position = "none")
+```
+
 
 ```{r}
 # create subsets of variable data outputs for all sub-scenarios 
@@ -530,17 +555,15 @@ out_stock_join <- bind_rows(out1_stock, out2_stock, out3_stock, out4_stock) %>%
 #write_csv(out_stock_join, file = file.path(outdir, "stock_sim.csv"), col_names = TRUE)
 
 ## fishing effort
-out_effort_join <- bind_rows(out1_effort, out2_effort, out3_effort, out4_effort)
+out_effort_join <- bind_rows(out1_effort, out2_effort, out3_effort, out4_effort) 
 
 #write_csv(out_effort_join, file = file.path(outdir, "effort_sim.csv"), col_names = TRUE)
 
 ## catch
 out_catch_join <- bind_rows(out1_catch, out2_catch, out3_catch, out4_catch) %>% 
   mutate(stock_catch = case_when(
-    str_detect(stock_catch, "A_s") ~ "Strong stock1",
-    str_detect(stock_catch, "B_s") ~ "Strong stock2",
-    str_detect(stock_catch, "A_w") ~ "Weak stock1",
-    str_detect(stock_catch, "B_w") ~ "Weak stock2"
+    str_detect(stock_catch, "_s") ~ "Strong stock",
+    str_detect(stock_catch, "_w") ~ "Weak stock"
   ))
 
 #write_csv(out_catch_join, file = file.path(outdir, "catch_sim.csv"), col_names = TRUE)
@@ -548,10 +571,8 @@ out_catch_join <- bind_rows(out1_catch, out2_catch, out3_catch, out4_catch) %>%
 ## price
 out_price_join <- bind_rows(out1_price, out2_price, out3_price, out4_price) %>%  
   mutate(stock_price = case_when(
-    str_detect(stock_price, "A_s") ~ "Strong stock1",
-    str_detect(stock_price, "B_s") ~ "Strong stock2",
-    str_detect(stock_price, "A_w") ~ "Weak stock1",
-    str_detect(stock_price, "B_w") ~ "Weak stock2"
+    str_detect(stock_price, "_s") ~ "Strong stock",
+    str_detect(stock_price, "_w") ~ "Weak stock"
   )) %>% 
   distinct()
 
@@ -561,22 +582,15 @@ out_price_join <- bind_rows(out1_price, out2_price, out3_price, out4_price) %>%
 ## CPUE
 out_cpue_join <- bind_rows(out1_cpue, out2_cpue, out3_cpue, out4_cpue) %>% 
   mutate(stock_cpue = case_when(
-    str_detect(stock_cpue, "A_s") ~ "Strong stock1",
-    str_detect(stock_cpue, "B_s") ~ "Strong stock2",
-    str_detect(stock_cpue, "A_w") ~ "Weak stock1",
-    str_detect(stock_cpue, "B_w") ~ "Weak stock2"
+    str_detect(stock_cpue, "_s") ~ "Strong stock",
+    str_detect(stock_cpue, "_w") ~ "Weak stock"
   ))
 
 #write_csv(out_cpue_join, file = file.path(outdir, "cpue_sim.csv"), col_names = TRUE)
 
 ## profits
-out_profit_join <- bind_rows(out1_profit, out2_profit, out3_profit, out4_profit) %>%
-  filter(str_detect(stock_profit, "_sum")) %>% 
-  mutate(stock_profit = case_when(
-    str_detect(stock_profit, "_A") ~ "Profit 1",
-    str_detect(stock_profit, "_B") ~ "Profit 2"))
-  # )) %>% 
-  # filter(stock_profit %in% c("Profit"))
+out_profit_join <- bind_rows(out1_profit, out2_profit, out3_profit, out4_profit) %>% 
+  filter(stock_profit %in% c("pi_sum1", "pi_sum2", "pi_sum3", "pi_sum4"))
 
 #write_csv(out_profit_join, file = file.path(outdir, "profit_sim.csv"), col_names = TRUE)
 ```
@@ -585,7 +599,7 @@ out_profit_join <- bind_rows(out1_profit, out2_profit, out3_profit, out4_profit)
 ```{r create stock plots, fig.width=8}
 # Creating mock up dataframe to add within-plot tags
 
-tag_text <- data.frame(time = c(380, 380, 380, 380), 
+tag_text <- data.frame(time = c(480, 480, 480, 480), 
                        b_v_k = c(0.94, 0.94, 0.94, 0.94),
                        label = c("A", "B", "C", "D"),
                        scenario_label = c("None",
@@ -611,7 +625,7 @@ b_v_k_plot <-
             aes(x = time, y = b_v_k, label = label),
             fontface = "bold") +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
-  scale_x_continuous(breaks = seq(0, 400, 100),
+  scale_x_continuous(breaks = seq(0, 500, 100),
                      expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0.01)) +
   facet_wrap(~ factor(scenario_label,
@@ -644,8 +658,8 @@ effort_plot <-
   ggplot() +
   geom_line(data = out_effort_join %>% 
               mutate(effort = case_when(
-                str_detect(effort, "_A") ~ "E1",
-                str_detect(effort, "_B") ~ "E2"
+                str_detect(effort, "_A") ~ "Fleet 1",
+                str_detect(effort, "_B") ~ "Fleet 2"
               )),
             aes(x = time, y = effort_level, color = effort),
             linewidth = .8,
@@ -656,9 +670,11 @@ effort_plot <-
                                  "Weak stock",
                                  "Both stocks")),
              nrow = 1) +
-  scale_x_continuous(breaks = seq(0, 400, 100),
+  scale_color_manual(values = c("black", "grey")) +
+  scale_x_continuous(breaks = seq(0, 500, 100),
                      expand = c(0,0)) +
-  scale_y_continuous(breaks = seq(0, 30, 10),
+  scale_y_continuous(breaks = c(0, 10, 20, 30),
+                     limits = c(0, 30),
                      expand = c(0, 0.5)) +
   labs(x = "",
        y = "Fishing Effort",
@@ -694,10 +710,10 @@ price_plot <-
                                  "Both stocks")), 
               nrow = 1) +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF", "red", "black")) +
-  scale_x_continuous(breaks = seq(0, 400, 100),
+  scale_x_continuous(breaks = seq(0, 500, 100),
                      expand = c(0,0)) +
-  # scale_y_continuous(breaks = seq(0, 10, by = 2),
-  #                    expand = c(0,0.01)) +
+  scale_y_continuous(breaks = seq(0, 10, by = 2),
+                    expand = c(0,0.01)) +
   labs(x = "",
        y = "Price",
        color = "") +
@@ -733,7 +749,7 @@ catch_plot <-
                                  "Both stocks")),
              nrow = 1) +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF", "red", "black")) +
-  scale_x_continuous(breaks = seq(0, 400, 100),
+  scale_x_continuous(breaks = seq(0, 500, 100),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 1, by = 0.25),
                      expand = c(0,0.01)) +
@@ -770,8 +786,8 @@ cpue_plot <-
                                  "Weak stock",
                                  "Both stocks")),
              nrow = 1) +
-  scale_color_manual(values = c("#6A9E1FFF", "#052F61FF", "red", "black")) +
-  scale_x_continuous(breaks = seq(0, 400, 100),
+  scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
+  scale_x_continuous(breaks = seq(0, 500, 100),
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 0.1, 0.02),
                      expand = c(0, 0.001)) +
@@ -800,26 +816,26 @@ cpue_plot
 profit_plot <- 
   ggplot() +
   geom_line(data = out_profit_join,
-            aes(x = time, y = profit_level, color = stock_profit),
+            aes(x = time, y = profit_level),
             linewidth = .8,
             alpha = .8,
+            color = "brown",
             show.legend = F) +
-  geom_hline(yintercept = 0,
-             color = "gray30",
-             linetype = "dashed",
-             alpha = 0.5) +
+  # geom_hline(yintercept = 0,
+  #            color = "gray30",
+  #            linetype = "dashed",
+  #            alpha = 0.5) +
   facet_wrap(~ factor(scenario_label,
                       levels = c("None",
                                  "Strong stock",
                                  "Weak stock",
                                  "Both stocks")),
              nrow = 1) +
-  scale_color_manual(values = c("brown", "black")) +  
-  scale_x_continuous(breaks = seq(0, 400, 100),
+  scale_x_continuous(breaks = seq(0, 500, 100),
                      expand = c(0,0)) +
   scale_y_continuous(expand = c(0, 0.01)) +
   labs(x = "Time",
-       y = "Profits",
+       y = "Fishery profit",
        color = "") +
   theme_bw() +
   theme(panel.grid.minor = element_blank(),
@@ -862,8 +878,53 @@ full_plot
  #       width = 8, height = 10, bg = "white", dpi = 600)
 ```
 
+# create plot with isoclines mimicking Burgess (2015)
 
+```{r}
+out_stock_join_wide <- out_stock_join %>% 
+  select(-b_v_k) %>% 
+  pivot_wider(names_from = "stock",
+              values_from = "stock_size") %>% 
+  distinct() %>% 
+  clean_names()
 
+out_effort_join_wide <- out_effort_join %>% 
+  mutate(effort_join = case_when(
+    str_detect(effort, "1") ~ "effort_1",
+    str_detect(effort, "2") ~ "effort_2",
+    str_detect(effort, "3") ~ "effort_3",
+    str_detect(effort, "4") ~ "effort_4"  
+  )) %>% 
+  group_by(scenario_label, time) %>% 
+  mutate(effort_sum = sum(effort_level)) %>% 
+  select(-c(effort, effort_level)) %>% 
+  distinct() 
+
+# join effort and stock datasets
+out_stock_effort <- out_stock_join_wide %>% 
+  left_join(out_effort_join_wide, by = c("time", "scenario_label"))
+```
+
+```{r, fig.width=8, fig.height=10}
+ggplot() +
+   geom_point(data = out_stock_effort,
+              aes(x = strong_stock, y = weak_stock),
+              alpha = 0.6) +
+  geom_point(data = out_stock_effort,
+            aes(x = effort_sum, y = weak_stock, color ),
+            color = "blue",
+            alpha = 0.6) +
+  facet_wrap(~ factor(scenario_label,
+                      levels = c("None",
+                                 "Strong stock",
+                                 "Weak stock",
+                                 "Both stocks"))) +
+  scale_x_continuous(expand = c(0,0),
+                     limits = c(0, 30)) +
+  scale_y_continuous(expand = c(0,0),
+                     limits = c(0, 20)) +
+  theme_bw()
+```
 
 
 
