@@ -96,18 +96,16 @@ run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
 ```{r}
 run_model_test <- function(r_s, k_s, q_s1, q_s2, p_s, r_w, k_w, q_w1, q_w2, p_w, c){
   # Weak stock equilibrium points when prices are constants
-  N_w_multi <- (c * q_s1 - c * q_w2) / 
-    (p_w * q_s1 * q_w1 - p_w * q_s2 * q_w2)
+  N_w_multi <- (c * (- q_s1 + q_s2)) / (p_w * (q_s2 * q_w1 - q_s1 * q_w2))
   
   # Strong stock equilibrium points when prices are constants 
-  N_s_multi <- (c * (- q_s2 + q_w1)) /
-    (p_s * (q_s1 * q_w1 - q_s2 * q_w2))
+  N_s_multi <- ((c * q_w1) - (c * q_w2)) / (p_s * q_s2 * q_w1 - p_s * q_s1 * q_w2)
   
   # First effort equilibrium point when prices are constants
-  E_multi_1 <- (c * k_w * p_w * (q_s2 - q_w1) * q_w2 * r_s + c * k_s * p_s * q_w1 * (q_s1 - q_w2) * r_w - k_s * k_w * p_s * p_w * (q_s1 * q_w1 - q_s2 * q_w2) * (-q_w2 * r_s + q_w1 * r_w)) / (k_s * k_w * p_s * p_w * (q_s2 * q_w1 - q_s1 * q_w2) * (-q_s1 * q_w1 + q_s2 * q_w2))
+  E_multi_1 <- (c * k_w * p_w * (q_w1 - q_w2) * q_w2 * r_s + c * k_s * p_s * (q_s1 - q_s2) * q_s2 * r_w + k_s * k_w * p_s * p_w * (q_s2 * q_w1 - q_s1 * q_w2) * (-q_w2 * r_s + q_s2 * r_w)) / (k_s * k_w * p_s * p_w * (q_s2 * q_w1 - q_s1 * q_w2)^2)
     
   # Second effort equilibrium point when prices are constants
-  E_multi_2 <- ((c * k_w * p_w * q_s2 * (-q_s2 + q_w1) * r_s + c * k_s * p_s * q_s1 * (-q_s1 + q_w2) * r_w + k_s * k_w * p_s * p_w * (q_s1 * q_w1 - q_s2 * q_w2) * (-q_s2 * r_s + q_s1 * r_w))) / ((k_s * k_w * p_s * p_w * (q_s2 * q_w1 - q_s1 * q_w2) * (-q_s1 * q_w1 + q_s2 * q_w2)))
+  E_multi_2 <- ((c * k_w * p_w * q_w1 * (-q_w1 + q_w2) * r_s + c * k_s * p_s * q_s1 * (-q_s1 + q_s2) * r_w + k_s * k_w * p_s * p_w * (q_s2 * q_w1 - q_s1 * q_w2) * (q_w1 * r_s - q_s1 * r_w))) / (k_s * k_w * p_s * p_w * (q_s2 * q_w1 - q_s1 * q_w2)^2)
       
   # Single species equilibrium for the weak stock 
   N_w_single <- c / (p_w * q_w1)
@@ -208,8 +206,10 @@ scenarios_df <- expand.grid(p_s = seq(1, 10, 0.1),
                             p_w = c(0, 1),
                             r_s = 1,
                             r_w = seq(0.01, 0.99, 0.01),
-                            q_s = 0.02,
-                            q_w = 0.02,
+                            q_s1 = 0.02,
+                            q_s2 = 0.01,
+                            q_w1 = 0.01,
+                            q_w2 = 0.02,
                             k_s = 4,
                             k_w = 2,
                             c = 0.05) %>% 
@@ -219,7 +219,7 @@ scenarios_df <- expand.grid(p_s = seq(1, 10, 0.1),
 output_1 <- scenarios_df %>%
   rowwise() %>% 
   mutate(output = list(run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
-                                 q_s = q_s, q_w1 = q_w1, p_s = p_s, p_w = p_w, 
+                                 q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, 
                                  c = c))) %>% 
   unnest(output) %>% 
   select(-c(r_s:r_w, k_s:k_w, q_s:q_w, p_s:p_w, c)) %>% 
