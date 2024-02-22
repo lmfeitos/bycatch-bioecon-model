@@ -1,0 +1,72 @@
+---
+title: "isocline_plot"
+author: "Leonardo Feitosa"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+- Effort isocline formula
+$$
+N_s = - ((E1_A^(-1+f_w)) * q_w1^(-1+f_w) * (- c * E1_A * alpha + A_w * E1_A ^(1 - f_w) * N_w^(beta_w - beta_w * f_w) * q_w1^(1-f_w) * alpha)/ (A_s * alpha)) ^ -(1/beta_s * (-1 + f_s))
+
+N_w = ((E1_A^(-1+f_w)) * q_w1^(-1+f_w) * (- c * E1_A * alpha + A_s * E1_A ^(1 - f_s) * N_s^(beta_s - beta_s * f_s) * q_s1^(1-f_s) * alpha)/ (A_w * alpha)) ^ -(1/beta_w * (-1 + f_w))
+$$
+
+```{r}
+Nw_set <- seq(from = 0, to = 10, 0.1)
+
+Ns_set <- seq(from = 0, to = 10, 0.1)
+```
+
+```{r}
+# parameter values
+cost <- 0.05
+alpha <- 1
+A_w <- 1
+A_s <- 1
+q_s1 <- 0.02
+q_w1 <- 0.01
+q_s2 <- 0.01
+q_w2 <- 0.02
+k_s <- 4
+k_w <- 2
+r_s <- 1
+r_w <- 0.67
+
+# define parameters that switch per scenario
+beta_s1 <- 1
+beta_s2 <- 0.56
+beta_s3 <- 1
+beta_s4 <- 0.56
+
+beta_w1 <- 1
+beta_w2 <- 1
+beta_w3 <- 0.56
+beta_w4 <- 0.56
+
+f_s1 <- 0 
+f_s2 <- 0.22
+f_s3 <- 0
+f_s4 <- 0.22
+
+f_w1 <- 0
+f_w2 <- 0
+f_w3 <- 0.22
+f_w4 <- 0.22
+
+```
+
+
+```{r}
+# Calculate ZNGIs
+dNs_dt <- (-(E1_A^(-1+f_w1)) * q_w1^(-1+f_w1) * (- cost * E1_A * alpha + A_w * E1_A ^(1 - f_w1) * Nw_set^(beta_w1 - (beta_w1 * f_w1)) * q_w1^(1-f_w1) * alpha)/
+               (A_s * alpha)) ^ (-1/(beta_s1 * (-1 + f_s1)))
+
+dNw_dt <-  (-(E1_A^(-1+f_w1)) * q_w1^(-1+f_w1) * (- cost * E1_A * alpha + A_s * E1_A ^(1 - f_s1) * Ns_set^(beta_s1 - (beta_s1 * f_s1)) * q_s1^(1-f_s1) * alpha)/ (A_w * alpha)) ^ (-1/(beta_w1 * (-1 + f_w1)))
+```
+
