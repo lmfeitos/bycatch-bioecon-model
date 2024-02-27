@@ -61,10 +61,10 @@ b_v_k_plot <-
             aes(x = time, y = b_v_k, color = stock),
             linewidth = .8,
             alpha = .8,
-            show.legend = T) +
-  geom_text(data = tag_text,
-            aes(x = time, y = b_v_k, label = label),
-            fontface = "bold") +
+            show.legend = F) +
+  # geom_text(data = tag_text,
+  #           aes(x = time, y = b_v_k, label = label),
+  #           fontface = "bold") +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
   scale_x_continuous(breaks = seq(0, 400, 100),
                      expand = c(0,0)) +
@@ -91,6 +91,8 @@ b_v_k_plot <-
         axis.ticks.x = element_blank(),
         legend.position = "bottom")
 
+ggsave(plot = b_v_k_plot, file = file.path(outdir, "wfc_plots", "n_div_k_plot.png"),
+       height = 6, width = 10, bg = "white", dpi = 300)
 ```
 
 ```{r create effort plot}
@@ -136,7 +138,7 @@ price_plot <-
             aes(x = time, y = price, color = stock_price),
             linewidth = .8,
             alpha = .8,
-            show.legend = F) +
+            show.legend = T) +
    facet_wrap(~ factor(scenario_label,
                        levels = c("None",
                                  "Strong stock",
@@ -209,7 +211,7 @@ cpue_plot <-
             aes(x = time, y = cpue_level, color = stock_cpue),
             linewidth = .8,
             alpha = .8,
-            show.legend = F) +
+            show.legend = T) +
   facet_wrap(~ factor(scenario_label,
                       levels = c("None",
                                  "Strong stock",
@@ -221,7 +223,7 @@ cpue_plot <-
                      expand = c(0,0)) +
   scale_y_continuous(breaks = seq(0, 0.1, 0.02),
                      expand = c(0, 0.001)) +
-  labs(x = "",
+  labs(x = "Time",
        y = "CPUE",
        color = "") +
   theme_bw() +
@@ -233,11 +235,18 @@ cpue_plot <-
         axis.title.x = element_text(color = "black", size = 12),
         axis.title.y = element_text(color = "black", size = 12, vjust = 2, face = "bold"),
         axis.text.y = element_text(color = "black", size = 10),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
+        axis.text.x = element_text(color = "black", size = 10),
+        #axis.ticks.x = element_blank(),
         legend.position = "bottom")
 ```
 
+```{r}
+b_v_k_plot /
+  cpue_plot
+
+ggsave(file = file.path(outdir, "wfc_plots", "n_div_k_cpue_plot.png"),
+       height = 6, width = 10, bg = "white", dpi = 300)
+```
 
 
 ```{r create profit plot, fig.width=8, fig.height=6}
@@ -277,6 +286,16 @@ profit_plot <-
         legend.position = "bottom")
 ```
 
+```{r, fig.height=6, fig.width=10}
+effort_plot /
+  price_plot /
+  profit_plot &
+  theme(legend.position = c(0.07, 0.8),
+        legend.background = element_rect(fill = "transparent"))
+
+ggsave(file = file.path(outdir, "wfc_plots", "effort_profit_plot.png"),
+       height = 6, width = 10, bg = "white", dpi = 300)
+```
 
 
 # Plot 

@@ -51,7 +51,7 @@ f_w3 <- 0.22
 f_w4 <- 0.22
 
 # time steps
-times <- seq(0, 400, by = .01)
+times <- seq(0, 400, by = .1)
 ```
 
 

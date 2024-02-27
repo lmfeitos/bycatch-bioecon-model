@@ -301,8 +301,8 @@ scenario_3 <- function(time, state, parameters) {
     } else {
       dN_s3 <- r_s * N_s3 * (1 - (N_s3/k_s)) - (q_s1 * (N_s3^beta_s3) * E3_A) - (q_w1 * (N_s3^beta_s3) * E3_B)   
       dN_w3 <- 0
-      dE3_A <- alpha * E3_A * ((A_s * (q_s1 * (N_s3^beta_s3) * E3_A)^-f_s3) * q_s1 * (N_s3^beta_s3) - (c))
-      dE3_B <- alpha * E3_B * ((A_s * (q_s1 * (N_s3^beta_s3) * E3_B)^-f_s3) * q_s1 * (N_s3^beta_s3) - (c))
+      #dE3_A <- alpha * E3_A * ((A_s * (q_s1 * (N_s3^beta_s3) * E3_A)^-f_s3) * q_s1 * (N_s3^beta_s3) - (c))
+      #dE3_B <- alpha * E3_B * ((A_s * (q_s1 * (N_s3^beta_s3) * E3_B)^-f_s3) * q_s1 * (N_s3^beta_s3) - (c))
     }
     # Return the derivatives as a list
     return(list(c(dN_s3, dN_w3, dE3_A, dE3_B)))

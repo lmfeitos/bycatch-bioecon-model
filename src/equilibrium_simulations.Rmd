@@ -11,7 +11,18 @@ library(tidyverse)
 library(here)
 library(patchwork)
 library(microbenchmark)
-library(beepr)
+library(RColorBrewer)
+
+library(gt)
+library(paletteer)
+library(gridExtra)
+library(janitor)
+library(plotly)
+library(ggthemes)
+library(ggnewscale)
+library(geomtextpath)
+library(RColorBrewer)
+library(ggtext)
 
 basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
 outdir <- file.path(basedir, "model_outs") # calls present data from raster files
@@ -96,16 +107,16 @@ run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
 ```{r}
 run_model_test <- function(r_s, k_s, q_s1, q_s2, p_s, r_w, k_w, q_w1, q_w2, p_w, c){
   # Weak stock equilibrium points when prices are constants
-  N_w_multi <- (c * (- q_s1 + q_s2)) / (p_w * (q_s2 * q_w1 - q_s1 * q_w2))
+  N_w_multi <- (c * (-q_s1 + q_s2)) / (p_w * (q_s2 * q_w1 - q_s1 * q_w2))
   
   # Strong stock equilibrium points when prices are constants 
-  N_s_multi <- ((c * q_w1) - (c * q_w2)) / (p_s * q_s2 * q_w1 - p_s * q_s1 * q_w2)
+  N_s_multi <- (c * q_w1 - c * q_w2) / (p_s * q_s2 * q_w1 - p_s * q_s1 * q_w2)
   
   # First effort equilibrium point when prices are constants
-  E_multi_1 <- (c * k_w * p_w * (q_w1 - q_w2) * q_w2 * r_s + c * k_s * p_s * (q_s1 - q_s2) * q_s2 * r_w + k_s * k_w * p_s * p_w * (q_s2 * q_w1 - q_s1 * q_w2) * (-q_w2 * r_s + q_s2 * r_w)) / (k_s * k_w * p_s * p_w * (q_s2 * q_w1 - q_s1 * q_w2)^2)
+  E_multi_1 <- ((c * k_w * p_w * (q_w1 - q_w2) * q_w2 * r_s) + (c * k_s * p_s * (q_s1 - q_s2) * q_s2 * r_w) + (k_s * k_w * p_s * p_w * (q_s2 * q_w1 - q_s1 * q_w2)) * (-q_w2 * r_s + q_s2 * r_w)) / (k_s * k_w * p_s * p_w * ((q_s2 * q_w1 - q_s1 * q_w2)^2))
     
   # Second effort equilibrium point when prices are constants
-  E_multi_2 <- ((c * k_w * p_w * q_w1 * (-q_w1 + q_w2) * r_s + c * k_s * p_s * q_s1 * (-q_s1 + q_s2) * r_w + k_s * k_w * p_s * p_w * (q_s2 * q_w1 - q_s1 * q_w2) * (q_w1 * r_s - q_s1 * r_w))) / (k_s * k_w * p_s * p_w * (q_s2 * q_w1 - q_s1 * q_w2)^2)
+  E_multi_2 <- ((c * k_w * p_w * q_w1 * (-q_w1 + q_w2) * r_s) + (c * k_s * p_s * q_s1 * (-q_s1 + q_s2) * r_w) + (k_s * k_w * p_s * p_w * (q_s2 * q_w1 - q_s1 * q_w2)) * (q_w1 * r_s - q_s1 * r_w)) / (k_s * k_w * p_s * p_w * ((q_s2 * q_w1 - q_s1 * q_w2)^2))
       
   # Single species equilibrium for the weak stock 
   N_w_single <- c / (p_w * q_w1)
@@ -370,16 +381,16 @@ output_price_range %>%
 ```{r}
 # Building df of price range scenarios
 scenarios_test_df <- expand.grid(p_s = seq(1, 10, 0.1),
-                            p_w = c(0, 1),
+                            p_w = c(0.1, 1),
                             r_s = 1,
                             r_w = seq(0.01, 0.99, 0.01),
                             q_s1 = 0.02,
                             q_w1 = 0.01,
                             q_s2 = 0.01,
                             q_w2 = 0.02,
-                            k_s = 4,
-                            k_w = 2,
-                            c = 0.05) %>% 
+                            k_s = 1000,
+                            k_w = 500,
+                            c = 0.005) %>% 
   mutate(scenario_id = 1:nrow(.)) 
 
 # vectorized version
@@ -394,8 +405,302 @@ output_1 <- scenarios_test_df %>%
 
 
 output_join_test  <- output_1 %>% 
- left_join(scenarios_df, by = "scenario_id") 
- relocate(scenario_id, .before = E) 
+ left_join(scenarios_test_df, by = "scenario_id") 
+ #relocate(scenario_id, .before = E) 
 
 ```
+
+```{r}
+test <- output_join_test %>% 
+  mutate(b_v_k_s = N_s / k_s,
+         b_v_k_w = N_w / k_w) %>% 
+  mutate(vuln_ratio_w1 = (q_w1 * q_w2/r_w) / (q_s1 * q_s2/r_s)) %>% 
+  mutate(vuln_ratio_w1 = round(vuln_ratio_w1, 5)) %>% 
+  mutate(vuln_ratio_w2 = (q_w1 + q_w2/r_w) / (q_s1 + q_s2/r_s)) %>% 
+  mutate(vuln_ratio_w2 = round(vuln_ratio_w2, 5)) %>% 
+  mutate(st_stock_rev1 = (p_s * k_s * q_s1 * q_s2) / c) %>% 
+  mutate(w_stock_rev1 = (p_w * k_w * q_w1 * q_w2) / c) %>% 
+  mutate(st_stock_rev2 = (p_s * k_s * (q_s1 + q_s2)) / c) %>% 
+  mutate(w_stock_rev2 = (p_w * k_w * (q_w1 + q_w2)) / c) %>% 
+  mutate(c = as.factor(c)) %>% 
+  mutate(b_bmsy_s = N_s/(k_s/2),
+         b_bmsy_w = N_w/(k_w/2)) %>% 
+  mutate(label = case_when(
+    b_bmsy_w > 0.5 ~ "At MSY",
+    b_bmsy_w < 0.5 & b_bmsy_w > 0.05 ~ "Overfished",
+    b_bmsy_w < 0.05 ~ "Extinct",
+  ))
+```
+
+```{r}
+# Fill scale limits
+col_limit <- c(0, 1.2)
+
+test_1 <- 
+  ggplot() +
+  geom_tile(data = test %>% filter(vuln_ratio_w1 <= 3),
+            aes(x = vuln_ratio_w1, y = st_stock_rev1, fill = b_bmsy_w, width = .1)) +
+  # annotate(geom = "text", 
+  #          x = 1.2, y = 2,
+  #          label = "MSY Target", size = 3.5, color = "black",
+  #          angle = 345) +
+  # annotate(geom = "text", 
+  #          x = 1.5, y = 2.3,
+  #          label = "Overfished", size = 3.5, color = "black",
+  #          angle = 345) +
+  # annotate(geom = "text", 
+  #          x = 1.9, y = 2.4,
+  #          label = "Extinct", size = 3.5, color = "black",
+  #          angle = 345) +
+  facet_wrap(~ factor(p_w)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nN/N<sub>MSY</sub>") +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = "",
+       y = "Strong stock economic potential",
+       title = "Vulnerability = (q_w1 * q_w2/r_w) / (q_s1 * q_s2/r_s)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black"))
+
+test_2 <- 
+  ggplot() +
+  geom_tile(data = test %>% filter(vuln_ratio_w2 <= 3),
+            aes(x = vuln_ratio_w2, y = st_stock_rev1, fill = b_bmsy_w, width = .1)) +
+  # annotate(geom = "text", 
+  #          x = 1.2, y = 2,
+  #          label = "MSY Target", size = 3.5, color = "black",
+  #          angle = 345) +
+  # annotate(geom = "text", 
+  #          x = 1.5, y = 2.3,
+  #          label = "Overfished", size = 3.5, color = "black",
+  #          angle = 345) +
+  # annotate(geom = "text", 
+  #          x = 1.9, y = 2.4,
+  #          label = "Extinct", size = 3.5, color = "black",
+  #          angle = 345) +
+  facet_wrap(~ factor(p_w)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nN/N<sub>MSY</sub>") +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = "",
+       y = "Strong stock economic potential",
+       title = "Vulnerability = (q_w1 + q_w2/r_w) / (q_s1 + q_s2/r_s)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black"))
+```
+
+```{r}
+test_3 <- 
+  ggplot() +
+  geom_tile(data = test %>% filter(vuln_ratio_w1 <= 3),
+            aes(x = vuln_ratio_w1, y = st_stock_rev2, fill = b_bmsy_w, width = .1)) +
+  # annotate(geom = "text", 
+  #          x = 1.2, y = 2,
+  #          label = "MSY Target", size = 3.5, color = "black",
+  #          angle = 345) +
+  # annotate(geom = "text", 
+  #          x = 1.5, y = 2.3,
+  #          label = "Overfished", size = 3.5, color = "black",
+  #          angle = 345) +
+  # annotate(geom = "text", 
+  #          x = 1.9, y = 2.4,
+  #          label = "Extinct", size = 3.5, color = "black",
+  #          angle = 345) +
+  facet_wrap(~ factor(p_w)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nN/N<sub>MSY</sub>") +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = "",
+       y = "Strong stock economic potential",
+       title = "Vulnerability = (q_w1 * q_w2/r_w) / (q_s1 * q_s2/r_s)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black"))
+
+test_4 <- 
+  ggplot() +
+  geom_tile(data = test %>% filter(vuln_ratio_w2 <= 3),
+            aes(x = vuln_ratio_w2, y = st_stock_rev2, fill = b_bmsy_w, width = .1)) +
+  # annotate(geom = "text", 
+  #          x = 1.2, y = 2,
+  #          label = "MSY Target", size = 3.5, color = "black",
+  #          angle = 345) +
+  # annotate(geom = "text", 
+  #          x = 1.5, y = 2.3,
+  #          label = "Overfished", size = 3.5, color = "black",
+  #          angle = 345) +
+  # annotate(geom = "text", 
+  #          x = 1.9, y = 2.4,
+  #          label = "Extinct", size = 3.5, color = "black",
+  #          angle = 345) +
+  facet_wrap(~ factor(p_w)) +
+  scale_fill_gradientn(colors = brewer.pal(11, "Spectral"),
+                       breaks = c(1, 0.5, 0),
+                       labels = c("1 - MSY Target", "0.5 - Overfished", "0 - Extinct"),
+                       limits = col_limit,
+                       #rescaler = ~ scales::rescale_mid(.x, mid = 0.5),
+                       name = "Weak stock\nN/N<sub>MSY</sub>") +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = "",
+       y = "Strong stock economic potential",
+       title = "Vulnerability = (q_w1 + q_w2/r_w) / (q_s1 + q_s2/r_s)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 12, color = "black"),
+        axis.text = element_text(size = 10, color = "black"),
+        strip.background = element_rect(fill = "transparent"),
+        strip.text = element_text(color = "black", size = 11),
+        panel.spacing = unit(3, "mm"),
+        legend.title = element_markdown()) +
+  guides(fill = guide_colorbar(ticks.colour = "black", frame.colour = "black"))
+```
+
+
+```{r, fig.width=8, fig.height=8}
+test_1 /
+  test_2 /
+  test_3 / 
+  test_4
+```
+
+
+```{r}
+ggplot(data = test %>% filter(E2 > 0)) +
+  geom_point(aes(x = N_w, y = E2)) +
+  facet_wrap(~factor(p_w))
+```
+
+
+
+```{r}
+# parameter values:
+r_s = 1
+r_w = 0.99
+k_s = 4
+k_w = 2
+p_s = 1
+p_w = 1
+q_s1 = 0.02
+q_s2 = 0.01
+q_w1 = 0.01
+q_w2 = 0.02
+c = 0.005
+
+
+# Testing equilibria over time
+n_weak <- function(r_s, k_s, q_s1, q_s2, p_s, r_w, k_w, q_w1, q_w2, p_w, c){
+  # Weak stock equilibrium points when prices are constants
+  N_w_multi <- (c * (-q_s1 + q_s2)) / (p_w * (q_s2 * q_w1 - q_s1 * q_w2))
+  
+  return(N_w_multi)
+}
+
+n_strong <- function(r_s, k_s, q_s1, q_s2, p_s, r_w, k_w, q_w1, q_w2, p_w, c){
+  
+    # Strong stock equilibrium points when prices are constants 
+  N_s_multi <- (c * q_w1 - c * q_w2) / (p_s * q_s2 * q_w1 - p_s * q_s1 * q_w2)
+  
+  return(N_s_multi)
+}
+
+e1 <- function(r_s, k_s, q_s1, q_s2, p_s, r_w, k_w, q_w1, q_w2, p_w, c){
+  
+  # First effort equilibrium point when prices are constants
+  E_multi_1 <- ((c * k_w * p_w * (q_w1 - q_w2) * q_w2 * r_s) + (c * k_s * p_s * (q_s1 - q_s2) * q_s2 * r_w) + (k_s * k_w * p_s * p_w * (q_s2 * q_w1 - q_s1 * q_w2)) * (-q_w2 * r_s + q_s2 * r_w)) / (k_s * k_w * p_s * p_w * ((q_s2 * q_w1 - q_s1 * q_w2)^2))
+    
+  return(E_multi_1)
+
+}
+
+e2 <- function(r_s, k_s, q_s1, q_s2, p_s, r_w, k_w, q_w1, q_w2, p_w, c){
+  # Second effort equilibrium point when prices are constants
+  E_multi_2 <- ((c * k_w * p_w * q_w1 * (-q_w1 + q_w2) * r_s) + (c * k_s * p_s * q_s1 * (-q_s1 + q_s2) * r_w) + (k_s * k_w * p_s * p_w * (q_s2 * q_w1 - q_s1 * q_w2)) * (q_w1 * r_s - q_s1 * r_w)) / (k_s * k_w * p_s * p_w * ((q_s2 * q_w1 - q_s1 * q_w2)^2))
+  
+  return(E_multi_2)
+
+}
+```
+
+```{r}
+n_weak_val <- n_weak(r_s = 1, k_s = 4, q_s1 = 0.02, q_s2 = 0.01, p_s = 1, r_w = 0.99, k_w = 2, q_w1 = 0.01, q_w2 = 0.02, p_w = 1, c = 0.005)
+
+n_strong_val <- n_strong(r_s = 1, k_s = 4, q_s1 = 0.02, q_s2 = 0.01, p_s = 1, r_w = 0.99, k_w = 2, q_w1 = 0.01, q_w2 = 0.02, p_w = 1, c = 0.005)
+
+e1_val <- e1(r_s = 1, k_s = 4, q_s1 = 0.02, q_s2 = 0.01, p_s = 1, r_w = 0.99, k_w = 2, q_w1 = 0.01, q_w2 = 0.02, p_w = 1, c = 0.005)
+
+e2_val <- e2(r_s = 1, k_s = 4, q_s1 = 0.02, q_s2 = 0.01, p_s = 1, r_w = 0.99, k_w = 2, q_w1 = 0.01, q_w2 = 0.02, p_w = 1, c = 0.005)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
