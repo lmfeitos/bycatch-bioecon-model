@@ -424,12 +424,14 @@ out_stock_join <- bind_rows(out1_stock, out2_stock, out3_stock, out4_stock) %>%
   mutate(stock = case_when(
     str_detect(stock, "N_s") ~ "Strong stock",
     str_detect(stock, "N_w") ~ "Weak stock"
-  ))
+  )) %>% 
+  distinct()
 
 write_csv(out_stock_join, file = file.path(outdir, "stock_sim.csv"), col_names = TRUE)
 
 ## fishing effort
-out_effort_join <- bind_rows(out1_effort, out2_effort, out3_effort, out4_effort)
+out_effort_join <- bind_rows(out1_effort, out2_effort, out3_effort, out4_effort) %>% 
+  distinct()
 
 write_csv(out_effort_join, file = file.path(outdir, "effort_sim.csv"), col_names = TRUE)
 
@@ -438,16 +440,18 @@ out_catch_join <- bind_rows(out1_catch, out2_catch, out3_catch, out4_catch) %>%
   mutate(stock_catch = case_when(
     str_detect(stock_catch, "_s") ~ "Strong stock",
     str_detect(stock_catch, "_w") ~ "Weak stock"
-  ))
+  )) %>% 
+  distinct()
 
-write_csv(out_catch_join, file = file.path(outdir, "catch_sim.csv"), col_names = TRUE)
+write_csv(out_catch_join, file = file.path(outdir, "catch_sim2.csv"), col_names = TRUE)
 
 ## price
 out_price_join <- bind_rows(out1_price, out2_price, out3_price, out4_price) %>%  
   mutate(stock_price = case_when(
     str_detect(stock_price, "_s") ~ "Strong stock",
     str_detect(stock_price, "_w") ~ "Weak stock"
-  ))
+  )) %>% 
+  distinct()
 
 write_csv(out_price_join, file = file.path(outdir, "price_sim.csv"), col_names = TRUE)
 
@@ -457,7 +461,8 @@ out_cpue_join <- bind_rows(out1_cpue, out2_cpue, out3_cpue, out4_cpue) %>%
   mutate(stock_cpue = case_when(
     str_detect(stock_cpue, "_s") ~ "Strong stock",
     str_detect(stock_cpue, "_w") ~ "Weak stock"
-  ))
+  )) %>% 
+  distinct()
 
 write_csv(out_cpue_join, file = file.path(outdir, "cpue_sim.csv"), col_names = TRUE)
 
@@ -467,7 +472,8 @@ out_profit_join <- bind_rows(out1_profit, out2_profit, out3_profit, out4_profit)
     str_detect(stock_profit, "_st") ~ "Strong stock",
     str_detect(stock_profit, "_sum") ~ "Profit"
   )) %>% 
-  filter(stock_profit %in% c("Profit"))
+  filter(stock_profit %in% c("Profit")) %>% 
+  distinct()
 
 write_csv(out_profit_join, file = file.path(outdir, "profit_sim.csv"), col_names = TRUE)
 ```
