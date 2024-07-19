@@ -1,0 +1,121 @@
+---
+title: "lecture_sim"
+author: "Leonardo Feitosa"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE)
+library(tidyverse)
+library(patchwork)
+```
+
+```{r}
+# define general parameters
+c <- 0.05       # cost per unit of fishing effort
+alpha <- 1      # response rate of effort to profits
+A_byc <- 1      # response rate of price to changes in catch
+A_tgt <- 1      # response rate of price to changes in catch
+q_tgt <- 0.02   # catchability of each stock
+q_byc <- 0.02   # catchability of each stock
+k_tgt <- 4      # carrying capacity 
+k_byc <- 2      # carrying capacity 
+beta_tgt1 <- 1  # hyperstability coefficient
+beta_byc1 <- 1  # hyperstability coefficient
+f_tgt1 <- 0     # price flexibility coefficient 
+f_byc1 <- 0     # price flexibility coefficient
+
+############ YOU ONLY CHANGE THESE ##################
+r_tgt <-        # intrinsic population growth rate
+r_byc <-        # intrinsic population growth rate
+
+# time steps
+times <- seq(1, 200, by = 1)
+delta_t <- 1
+n = 200
+```
+
+```{r}
+# create place holder vectors
+exp.target <- rep(NaN, n)
+exp.bycatch <- rep(NaN, n)
+exp.effort <- rep(NaN, n)
+
+# setting initial values for each variable
+exp.target[1] <- k_tgt
+exp.bycatch[1] <- k_byc
+exp.effort[1] <- 0.5
+```
+
+
+```{r}
+# run simulation
+for(i in 2:length(exp.target)){ 
+    dN_target <- (r_tgt * exp.target[i-1] * (1 - (exp.target[i-1]/k_tgt)) - (q_tgt * exp.target[i-1]^beta_tgt1 * exp.effort[i-1])) * delta_t
+    dN_bycatch <- (r_byc * exp.bycatch[i-1] * (1 - (exp.bycatch[i-1]/k_byc)) - (q_byc * exp.bycatch[i-1]^beta_byc1 * exp.effort[i-1])) * delta_t
+    d_effort <- (alpha * exp.effort[i-1] * 
+       (A_tgt * (q_tgt * exp.target[i-1]^beta_tgt1 * exp.effort[i-1])^-f_tgt1 * q_tgt * exp.target[i-1]^beta_tgt1 +
+                         A_byc * (q_byc * exp.bycatch[i-1]^beta_byc1 * exp.effort[i-1])^-f_byc1 * q_byc * exp.bycatch[i-1]^beta_byc1 - (c))) * delta_t
+    
+    exp.target[i] <- exp.target[i-1] + dN_target
+    exp.bycatch[i] <- exp.bycatch[i-1] + dN_bycatch
+    exp.effort[i] <- exp.effort[i-1] + d_effort
+    
+}
+
+# store results in a tidy data frame
+sim_df <- data.frame(target = exp.target/k_tgt,   # divides population size per carrying capacity
+                    bycatch = exp.bycatch/k_byc, # divides population size per carrying capacity
+                    effort = exp.effort,
+                    time = times) %>% 
+  pivot_longer(cols = target:bycatch,
+               names_to = "model_vars",
+               values_to = "values") 
+```
+
+```{r}
+# plots population/carrying capacity ratio
+
+pop <- 
+  ggplot(data = sim_df %>% 
+           mutate(model_vars = str_to_sentence(model_vars))) +
+  geom_line(aes(x = time, y = values, color = model_vars),
+            linewidth = 1,
+            alpha = 0.7) +
+  geom_hline(yintercept = 0.5, linetype = "dashed") +
+  annotate(geom = "text", label = "Not overfished", x = 180, y = 0.55, size = 4) +
+  annotate(geom = "text", label = "Overfished", x = 180, y = 0.45, size = 4) +
+  scale_y_continuous(breaks = seq(0, 1, 0.25),
+                     limits = c(0, 1)) +
+  labs(x = "Time",
+       y = "N/K",
+       color = "Species") +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank())
+
+pop
+```
+
+```{r}
+# Plots change in fishing effort over time
+effort <-
+  ggplot(data = sim_df) +
+  geom_line(aes(x = time, y = effort)) +
+  labs(x = "Time",
+       y = "Fishing Effort",
+       color = "Species") +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank())
+
+```
+
+
+```{r, fig.height=8, fig.width=6}
+pop / effort
+```
+
