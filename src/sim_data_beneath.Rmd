@@ -13,7 +13,46 @@ library(tidyverse)
 library(patchwork)
 ```
 
+# Introduction
 
+  The simulation you'll carry out with the code below refers to an updated version of the traditional fisheries bioeconomic model proposed by Schaefer (1954) and Gordon (1950). This model is based on the continuous logistic population growth model you have learned in class, but now including a harvest term that controls population size - fishing effort. Since we will apply this model to two populations exploited by the same fishery simultaneously, the model consists of a system with three differential equations, simulated over time. The first two model the population size for each species (a target and a bycatch one), and the third models how fishing effort responds to the change in abundance of the two species.
+  
+  This model consists of three variables: $N_s$ - strong stock population size, $N_w$ - weak stock population size, and $E$ - fishing effort. 
+  
+  We further use 8 parameters:
+  
+  - $r_i$ = intrinsic population growth rate of species $i$
+  - $K_i$ = carrying capacity of species $i$
+  - $q_i$ = catchability coefficient of species $i$ (this denotes the proportion of stock $i$ removed by 1 unit of fishing effort).
+  - $c$ = cost of fishing (we keep this fixed for ease of analysis).
+  - $\alpha$ = rate at which effort responses to profits (when $\alpha$ = 1 effort responds instantaneously to changes in profit).
+  - $A_i$ = rate at which prices respond to changes in catch.
+  - $\beta_i$ = coefficient of catch flexibility (percent change in catch-per-unit-effort - CPUE - resulting from a 1% change in abundance).
+  - $f_i$ = coefficient of price flexibility of demand (how much price increases by when supply decreases by 1%).
+  
+  Don't worry specifically about what these parameters mean. We'll only change the values for $r_i$ in this exercise.
+
+## Model equations:
+
+- Strong stock size ($N_s$)
+
+$$
+\frac{dN_s}{dt} = r_s N_s (1 - \frac{N_s}{K_s}) - q_s N_s^{\beta_s} E
+$$
+
+- Weak stock size ($N_w$):
+
+$$
+\frac{dN_w}{dt} = r_w N_w (1 - \frac{N_w}{K_w}) - q_w N_w^{\beta_w} E
+$$
+
+- Effort ($E$):
+
+$$
+\frac{dE}{dt} = \alpha E (A_s (q_s N_s^{\beta_s} E)^{-f_s} q_s N_s^{\beta_s} + A_w (q_w N_w{^\beta_w} E) q_w N_w^{\beta_w} - c)
+$$
+
+### Setting up the time series simulation
 
 ```{r}
 # define general parameters
@@ -25,8 +64,8 @@ q_tgt <- 0.02   # catchability of each stock
 q_byc <- 0.02   # catchability of each stock
 k_tgt <- 4      # carrying capacity 
 k_byc <- 2      # carrying capacity 
-beta_tgt1 <- 1  # hyperstability coefficient
-beta_byc1 <- 1  # hyperstability coefficient
+beta_tgt1 <- 1  # catch flexibility coefficient
+beta_byc1 <- 1  # catch flexibility coefficient
 f_tgt1 <- 0     # price flexibility coefficient 
 f_byc1 <- 0     # price flexibility coefficient
 
@@ -99,18 +138,17 @@ pop <-
             linewidth = 1,
             alpha = 0.7) +
   geom_hline(yintercept = 0.5, linetype = "dashed") +
-  annotate(geom = "text", label = "Not overfished", x = 180, y = 0.55, size = 4) +
-  annotate(geom = "text", label = "Overfished", x = 180, y = 0.45, size = 4) +
+  annotate(geom = "text", label = "Not overfished", x = 160, y = 0.55, size = 4) +
+  annotate(geom = "text", label = "Overfished", x = 160, y = 0.45, size = 4) +
   scale_y_continuous(breaks = seq(0, 1, 0.25),
                      limits = c(0, 1)) +
+  scale_x_continuous(expand = c(0,0)) +
   labs(x = "Time",
        y = "N/K",
        color = "Species") +
   theme_bw() +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank())
-
-pop
 ```
 
 ```{r}
@@ -121,6 +159,7 @@ effort <-
   labs(x = "Time",
        y = "Fishing Effort",
        color = "Species") +
+  scale_x_continuous(expand = c(0,0)) +
   theme_bw() +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank())
@@ -131,7 +170,7 @@ effort <-
 ```{r, fig.height=8, fig.width=6}
 pop / effort
 ```
-
+**Figure 1.** Changes in strong and weak stock populations as a ratio of their initial biomass and effort over time.
 
 
 # Let's plot your stocks on a Kobe plot
@@ -141,31 +180,32 @@ pop / effort
 weight_tgt = 1
 weight_byc = 1
 
-
+# Get values of points at equilibrium and calculate reference points
 sim_df_kobe <- sim_df %>% 
   filter(time == 200) %>% 
   pivot_wider(names_from = "model_vars_abs",
               values_from = "abs_values")  %>% 
-  mutate(b_tgt_eq = target * weight_tgt,
-         b_byc_eq = bycatch * weight_byc,
-         f_tgt_eq = target / b_tgt_eq,
-         f_byc_eq = bycatch / b_byc_eq,
-         msy_tgt = 0.5 * b_tgt_eq * f_tgt_eq,
-         msy_byc = 0.5 * b_byc_eq * f_byc_eq,
-         b_msy_tgt = k_tgt * f_tgt_eq,
-         b_msy_byc = k_byc * f_byc_eq,
-         bs_div_bmsy = b_tgt_eq/ b_msy_tgt,
-         bw_div_bmsy = b_byc_eq/ b_msy_byc,
-         f_msy_tgt = r_tgt / (2 * q_tgt),
-         f_msy_byc = r_byc / (2 * q_byc),
-         fs_div_fmsy = f_tgt_eq / f_msy_tgt,
-         fw_div_fmsy = f_byc_eq / f_msy_byc) %>% 
+  mutate(b_tgt_eq = target * weight_tgt,          # calculates biomass for each stock
+         b_byc_eq = bycatch * weight_byc,         # calculates biomass for each stock
+         f_tgt_eq = target / b_tgt_eq,            # calculates fishing mortality rate
+         f_byc_eq = bycatch / b_byc_eq,           # calculates fishing mortality rate
+         msy_tgt = 0.5 * b_tgt_eq * f_tgt_eq,     # calculates MSY for each species
+         msy_byc = 0.5 * b_byc_eq * f_byc_eq,     # calculates MSY for each species
+         b_msy_tgt = k_tgt * f_tgt_eq,            # calculates Bmsy for each species
+         b_msy_byc = k_byc * f_byc_eq,            # calculates Bmsy for each species
+         bs_div_bmsy = b_tgt_eq/ b_msy_tgt,       # calculates B/Bmsy for each species
+         bw_div_bmsy = b_byc_eq/ b_msy_byc,       # calculates B/Bmsy for each species
+         f_msy_tgt = r_tgt / (2 * q_tgt),         # calculates Fmsy for each species
+         f_msy_byc = r_byc / (2 * q_byc),         # calculates Fmsy for each species
+         fs_div_fmsy = f_tgt_eq / f_msy_tgt,      # calculates F/Fmsy for each species
+         fw_div_fmsy = f_byc_eq / f_msy_byc) %>%  # calculates F/Fmsy for each species
   select(model_vars_rel, bs_div_bmsy, bw_div_bmsy, fs_div_fmsy, fw_div_fmsy) %>% 
   pivot_longer(cols = c(bs_div_bmsy, bw_div_bmsy, fs_div_fmsy, fw_div_fmsy),
                names_to = c("stock", "ref_point"),
                names_sep = "_div_",
                values_to = "value")
-  
+
+# create subset of reference points for the strong stock
 sim_df_kobe_st <- sim_df_kobe %>% 
   select(-model_vars_rel) %>% 
   filter(str_detect(stock, "s")) %>% 
@@ -179,6 +219,7 @@ sim_df_kobe_st <- sim_df_kobe %>%
   fill("fs", .direction = "up") %>% 
   drop_na(bs)
 
+# create subset of reference points for the weak stock
 sim_df_kobe_weak <- sim_df_kobe %>% 
   select(-model_vars_rel) %>% 
   filter(str_detect(stock, "w")) %>% 
@@ -191,13 +232,10 @@ sim_df_kobe_weak <- sim_df_kobe %>%
   select(-ref_point) %>% 
   fill("fw", .direction = "up") %>% 
   drop_na(bw)
-  
-    
-
-
 ```
 
 ```{r}
+# Make Kobe plot
 ggplot() +
   geom_point(data = sim_df_kobe_st, 
              aes(x = bs, y = fs, color = stock), 
@@ -216,26 +254,7 @@ ggplot() +
   theme(panel.grid = element_blank())
 ```
 
-
-```{r}
-ggplot(data = sim_df_kobe) +
-  geom_point(aes(x = biom_value, y = f_value, color = stocks, shape = stocks),
-             size = 2) +
-  geom_hline(yintercept = 1, linetype = "dashed", color = "black", linewidth = 1) +
-  geom_vline(xintercept = 1, linetype = "dashed", color = "black", linewidth = 1) +
-  scale_x_continuous(breaks = c(0, 2, 0.5),
-                     limits = c(0, 2)) +
-  scale_y_continuous(breaks = c(0, 2, 0.5),
-                     limits = c(0, 2)) +
-  labs(x = "B/Bmsy",
-       y = "F/Fmsy",
-       color = "Stocks",
-       shape = "Stocks",
-       title = "Kobe plot") +
-  theme_bw()
-```
-
-
+**Figure 2.** Kobe plot of fisheries reference points for each stock at equilibrium.
 
 
 
