@@ -55,6 +55,11 @@ $$
 ### Setting up the time series simulation
 
 ```{r}
+# time steps
+times <- seq(1, 200, by = 1)
+delta_t <- 1
+n = 200
+
 # define general parameters
 c <- 0.05       # cost per unit of fishing effort
 alpha <- 1      # response rate of effort to profits
@@ -65,18 +70,14 @@ q_byc <- 0.02   # catchability of each stock
 k_tgt <- 4      # carrying capacity 
 k_byc <- 2      # carrying capacity 
 beta_tgt1 <- 1  # catch flexibility coefficient
-beta_byc1 <- 1  # catch flexibility coefficient
+beta_byc1 <- 0.56  # catch flexibility coefficient
 f_tgt1 <- 0     # price flexibility coefficient 
-f_byc1 <- 0     # price flexibility coefficient
+f_byc1 <- .22     # price flexibility coefficient
 
 ############ YOU ONLY CHANGE THESE ##################
-r_tgt <- 1       # intrinsic population growth rate
-r_byc <- 0.5      # intrinsic population growth rate
+r_tgt <- 1.1      # intrinsic population growth rate
+r_byc <-  .1     # intrinsic population growth rate
 
-# time steps
-times <- seq(1, 200, by = 1)
-delta_t <- 1
-n = 200
 ```
 
 ```{r}
@@ -108,8 +109,8 @@ for(i in 2:length(exp.target)){
 }
 
 # store results in a tidy data frame
-sim_df <- data.frame(target = exp.target,   # divides population size per carrying capacity
-                    bycatch = exp.bycatch, # divides population size per carrying capacity
+sim_df <- data.frame(target = exp.target,   
+                    bycatch = exp.bycatch, 
                     tgt_div_k = exp.target/k_tgt,   # divides population size per carrying capacity
                     byc_div_k = exp.bycatch/k_byc, # divides population size per carrying capacity
                     effort = exp.effort,

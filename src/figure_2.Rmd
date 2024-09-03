@@ -83,14 +83,12 @@ col_limit <- c(0, 1.25)
 ## Fisheries subsidy analyses
 
 ```{r plot first scenario of fishery subsidies where the strong stock price increases and weak stock price remains constabt, echo = FALSE, include = FALSE}
-# Create facet labels
-sub1_label1 <- c("Weak stock price = 1")
+sub1_label1 <- c("Weak stock price = 0")
 names(sub1_label1) <- c("0.0375")
-
 
 plot_2A <-
   ggplot(data = output_subs1_proc %>% 
-           filter(p_w == 1 & vuln_ratio_w <= 3 & st_stock_rev <= 8)) + 
+           filter(p_w < 1 & c == 0.0375 & vuln_ratio_w <= 3 & st_stock_rev <= 8)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
   annotate(geom = "text",
            x = 1.15, y = 2.7,
@@ -134,19 +132,22 @@ plot_2A <-
                color = "black",
                breaks = thresholds[thresholds > 0],
                linetype = "dashed",
-               linewidth = .8) 
+               alpha = 0.7,
+               linewidth = .8)
 
 ```
 
 
 
 ```{r, echo = FALSE, include = FALSE}
-sub1_label2 <- c("Weak stock price = 0")
+# Create facet labels
+sub1_label2 <- c("Weak stock price = 1")
 names(sub1_label2) <- c("0.0375")
+
 
 plot_2B <-
   ggplot(data = output_subs1_proc %>% 
-           filter(p_w < 1 & c == 0.0375 & vuln_ratio_w <= 3 & st_stock_rev <= 8)) + 
+           filter(p_w == 1 & vuln_ratio_w <= 3 & st_stock_rev <= 8)) + 
   geom_tile(aes(x = round(vuln_ratio_w, 8), y = round(st_stock_rev, 8), fill = b_bmsy_w, width = .1)) +
   annotate(geom = "text",
            x = 1.15, y = 2.7,
@@ -190,8 +191,7 @@ plot_2B <-
                color = "black",
                breaks = thresholds[thresholds > 0],
                linetype = "dashed",
-               alpha = 0.7,
-               linewidth = .8)
+               linewidth = .8) 
 
 ```
 
@@ -243,7 +243,7 @@ plot_2C <-
   scale_y_continuous(breaks = seq(1, 8, 1),
                      expand = c(0, 0)) +
   labs(x = "",
-       y = "Weak stock revenue potential",
+       y = "Weak stock economic potential",
        fill = "Weak stock B/B<sub>MSY</sub>") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
@@ -352,6 +352,6 @@ sub_plot_final <-
  ggsave(file.path(outdir, "sub_plot_25pct.png"), plot = sub_plot_final,
       width = 12, height = 8, bg = "white", dpi = 300)
  
-  ggsave(file.path(outdir, "pub_ready", "figure_2.pdf"), plot = sub_plot_final,
+ggsave(file.path(outdir, "pub_ready", "figure_2.pdf"), plot = sub_plot_final,
       width = 12, height = 8, bg = "white", dpi = 600)
 ```

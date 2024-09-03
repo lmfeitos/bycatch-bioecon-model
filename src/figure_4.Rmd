@@ -24,7 +24,7 @@ out_stock_join <- read_csv(here(outdir, "stock_sim.csv"))
 out_effort_join <- read_csv(here(outdir, "effort_sim.csv"))
 
 ## catch
-out_catch_join <- read_csv(here(outdir, "catch_sim.csv"))
+out_catch_join <- read_csv(here(outdir, "catch_sim2.csv"))
 
 ## price
 out_price_join <- read_csv(here(outdir, "price_sim.csv"))
@@ -62,9 +62,9 @@ b_v_k_plot <-
             linewidth = .8,
             alpha = .8,
             show.legend = F) +
-  # geom_text(data = tag_text,
-  #           aes(x = time, y = b_v_k, label = label),
-  #           fontface = "bold") +
+  geom_text(data = tag_text,
+            aes(x = time, y = b_v_k, label = label),
+            fontface = "bold") +
   scale_color_manual(values = c("#6A9E1FFF", "#052F61FF")) +
   scale_x_continuous(breaks = seq(0, 400, 100),
                      expand = c(0,0)) +
@@ -320,6 +320,9 @@ full_plot
  ggsave(file.path(outdir, "full_ts_plot.png"), plot =  full_plot,
        width = 8, height = 10, bg = "white", dpi = 300)
  
- ggsave(file.path(outdir, "pub_ready", "figure_4.pdf"), plot =  full_plot,
+ggsave(file.path(outdir, "pub_ready", "figure_4.pdf"), plot = full_plot,
        width = 8, height = 10, bg = "white", dpi = 600)
+ 
+ggsave(file.path(outdir, "pub_ready", "figure_4.tiff"), plot = full_plot,
+       width = 8, height = 10, bg = "white", dpi = 600, compression = "lzw")
 ```
