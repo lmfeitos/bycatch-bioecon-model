@@ -16,25 +16,21 @@ library(gt)
 library(paletteer)
 library(gridExtra)
 library(janitor)
-library(plotly)
 library(ggthemes)
 library(ggnewscale)
 library(geomtextpath)
 library(RColorBrewer)
 library(ggtext)
 
-# file path
-basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
-outdir <- file.path(basedir, "model_outs") # calls present data from raster files
 ```
 
 ```{r}
 ## data for figure 2 panels A and B
-output_subs1 <- read_csv(file.path(outdir, "output_sub1.csv"))
+output_subs1 <- read_csv(here("data", "output_sub1.csv"))
 
 ## data for figure 2 panels C and d
 
-output_subs2 <- read_csv(file.path(outdir, "output_sub2.csv"))
+output_subs2 <- read_csv(here("data", "output_sub2.csv"))
 ```
 
 ```{r}
@@ -349,9 +345,8 @@ sub_plot_final <-
   theme(plot.tag = element_text(size = 12, vjust = 10),
         plot.tag.position = "bottom")
 
- ggsave(file.path(outdir, "sub_plot_25pct.png"), plot = sub_plot_final,
-      width = 12, height = 8, bg = "white", dpi = 300)
- 
-ggsave(file.path(outdir, "pub_ready", "figure_2.pdf"), plot = sub_plot_final,
+sub_plot_final
+
+ggsave(here("src", "figures", "figure_2.pdf"), plot = sub_plot_final,
       width = 12, height = 8, bg = "white", dpi = 600)
 ```

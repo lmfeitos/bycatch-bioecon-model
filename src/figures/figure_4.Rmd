@@ -10,30 +10,27 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(here)
 library(patchwork)
-
-basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
-outdir <- file.path(basedir, "model_outs") # calls present data from raster files
 ```
 
 ```{r}
 # call in simulation output data
 ## stock size
-out_stock_join <- read_csv(here(outdir, "stock_sim.csv"))
+out_stock_join <- read_csv(here("src", "outputs", "stock_sim.csv"))
 
 ## effort
-out_effort_join <- read_csv(here(outdir, "effort_sim.csv"))
+out_effort_join <- read_csv(here("src", "outputs", "effort_sim.csv"))
 
 ## catch
-out_catch_join <- read_csv(here(outdir, "catch_sim2.csv"))
+out_catch_join <- read_csv(here("src", "outputs", "catch_sim2.csv"))
 
 ## price
-out_price_join <- read_csv(here(outdir, "price_sim.csv"))
+out_price_join <- read_csv(here("src", "outputs", "price_sim.csv"))
 
 ## CPUE
-out_cpue_join <- read_csv(here(outdir, "cpue_sim.csv"))
+out_cpue_join <- read_csv(here("src", "outputs", "cpue_sim.csv"))
 
 ## profits
-out_profit_join <- read_csv(here(outdir, "profit_sim.csv"))
+out_profit_join <- read_csv(here("src", "outputs", "profit_sim.csv"))
 ```
 
 
@@ -90,9 +87,6 @@ b_v_k_plot <-
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
         legend.position = "bottom")
-
-ggsave(plot = b_v_k_plot, file = file.path(outdir, "wfc_plots", "n_div_k_plot.png"),
-       height = 6, width = 10, bg = "white", dpi = 300)
 ```
 
 ```{r create effort plot}
@@ -240,14 +234,6 @@ cpue_plot <-
         legend.position = "bottom")
 ```
 
-```{r}
-b_v_k_plot /
-  cpue_plot
-
-ggsave(file = file.path(outdir, "wfc_plots", "n_div_k_cpue_plot.png"),
-       height = 6, width = 10, bg = "white", dpi = 300)
-```
-
 
 ```{r create profit plot, fig.width=8, fig.height=6}
 profit_plot <- 
@@ -286,18 +272,6 @@ profit_plot <-
         legend.position = "bottom")
 ```
 
-```{r, fig.height=6, fig.width=10}
-effort_plot /
-  price_plot /
-  profit_plot &
-  theme(legend.position = c(0.07, 0.8),
-        legend.background = element_rect(fill = "transparent"))
-
-ggsave(file = file.path(outdir, "wfc_plots", "effort_profit_plot.png"),
-       height = 6, width = 10, bg = "white", dpi = 300)
-```
-
-
 # Plot 
 ```{r, fig.width=10, fig.height=15}
 full_plot <- 
@@ -317,12 +291,6 @@ full_plot <-
 
 full_plot
 
- ggsave(file.path(outdir, "full_ts_plot.png"), plot =  full_plot,
-       width = 8, height = 10, bg = "white", dpi = 300)
- 
-ggsave(file.path(outdir, "pub_ready", "figure_4.pdf"), plot = full_plot,
+ggsave(here("src", "figures", "figure_4.pdf"), plot = full_plot,
        width = 8, height = 10, bg = "white", dpi = 600)
- 
-ggsave(file.path(outdir, "pub_ready", "figure_4.tiff"), plot = full_plot,
-       width = 8, height = 10, bg = "white", dpi = 600, compression = "lzw")
 ```

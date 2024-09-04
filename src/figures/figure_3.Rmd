@@ -10,8 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(patchwork)
 
-basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
-outdir <- file.path(basedir, "model_outs") # calls present data from raster files
 ```
 
 ```{r simulate the effect of hyperstability on CPUE}
@@ -53,8 +51,6 @@ v_beta_plot <-
         legend.position = "bottom",
         legend.text = element_text(color = "black", size = 10))
 
-# ggsave(file.path(outdir, "v_beta_plot.png"), plot = v_beta_plot,
-#         width = 8, height = 6, bg = "white", dpi = 300)
 
 cpue_beta_plot <-
   ggplot(df_cpue %>% filter(N <= 2, CPUE <= 2),
@@ -74,8 +70,6 @@ cpue_beta_plot <-
         legend.position = "bottom",
         legend.text = element_text(color = "black", size = 10))
 
-# ggsave(file.path(outdir, "cpue_beta_plot.png"), plot = cpue_beta_plot,
-#         width = 8, height = 6, bg = "white", dpi = 300)
 ```
 
 # Plot 3
@@ -89,10 +83,7 @@ beta_cpue_plot <-
 
 beta_cpue_plot
 
-# ggsave(file.path(outdir, "beta_cpue_plot2.png"), plot = beta_cpue_plot,
-#        width = 8, height = 6, bg = "white", dpi = 300)
-
- ggsave(file.path(outdir, "pub_ready", "figure_3.pdf"), plot = beta_cpue_plot,
+ggsave(here("src", "figures", "figure_3.pdf"), plot = beta_cpue_plot,
         width = 8, height = 6, bg = "white", dpi = 600)
 ```
 

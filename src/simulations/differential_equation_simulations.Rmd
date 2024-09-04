@@ -10,8 +10,6 @@ knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(deSolve)
 
-basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
-outdir <- file.path(basedir, "model_outs") # calls present data from raster files
 ```
 
 ```{r}
@@ -427,13 +425,13 @@ out_stock_join <- bind_rows(out1_stock, out2_stock, out3_stock, out4_stock) %>%
   )) %>% 
   distinct()
 
-write_csv(out_stock_join, file = file.path(outdir, "stock_sim.csv"), col_names = TRUE)
+write_csv(out_stock_join, file = here("src", "outputs", "stock_sim.csv"), col_names = TRUE)
 
 ## fishing effort
 out_effort_join <- bind_rows(out1_effort, out2_effort, out3_effort, out4_effort) %>% 
   distinct()
 
-write_csv(out_effort_join, file = file.path(outdir, "effort_sim.csv"), col_names = TRUE)
+write_csv(out_effort_join, file = here("src", "outputs", "effort_sim.csv"), col_names = TRUE)
 
 ## catch
 out_catch_join <- bind_rows(out1_catch, out2_catch, out3_catch, out4_catch) %>% 
@@ -443,7 +441,7 @@ out_catch_join <- bind_rows(out1_catch, out2_catch, out3_catch, out4_catch) %>%
   )) %>% 
   distinct()
 
-write_csv(out_catch_join, file = file.path(outdir, "catch_sim2.csv"), col_names = TRUE)
+write_csv(out_catch_join, file = here("src", "outputs", "catch_sim2.csv"), col_names = TRUE)
 
 ## price
 out_price_join <- bind_rows(out1_price, out2_price, out3_price, out4_price) %>%  
@@ -453,7 +451,7 @@ out_price_join <- bind_rows(out1_price, out2_price, out3_price, out4_price) %>%
   )) %>% 
   distinct()
 
-write_csv(out_price_join, file = file.path(outdir, "price_sim.csv"), col_names = TRUE)
+write_csv(out_price_join, file = here("src", "outputs", "price_sim.csv"), col_names = TRUE)
 
 
 ## CPUE
@@ -464,7 +462,7 @@ out_cpue_join <- bind_rows(out1_cpue, out2_cpue, out3_cpue, out4_cpue) %>%
   )) %>% 
   distinct()
 
-write_csv(out_cpue_join, file = file.path(outdir, "cpue_sim.csv"), col_names = TRUE)
+write_csv(out_cpue_join, file = here("src", "outputs", "cpue_sim.csv"), col_names = TRUE)
 
 ## profits
 out_profit_join <- bind_rows(out1_profit, out2_profit, out3_profit, out4_profit)  %>% 
@@ -475,7 +473,7 @@ out_profit_join <- bind_rows(out1_profit, out2_profit, out3_profit, out4_profit)
   filter(stock_profit %in% c("Profit")) %>% 
   distinct()
 
-write_csv(out_profit_join, file = file.path(outdir, "profit_sim.csv"), col_names = TRUE)
+write_csv(out_profit_join, file = here("src", "outputs", "profit_sim.csv"), col_names = TRUE)
 ```
 
 

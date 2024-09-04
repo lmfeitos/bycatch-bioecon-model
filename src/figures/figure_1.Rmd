@@ -16,26 +16,21 @@ library(gt)
 library(paletteer)
 library(gridExtra)
 library(janitor)
-library(plotly)
 library(ggthemes)
 library(ggnewscale)
 library(geomtextpath)
 library(RColorBrewer)
 library(ggtext)
-
-# file path
-basedir <- "G:/Meu Drive/PhD Project - Fisheries bycatch/Bycatch project/Chapter 1 - Simulation model/analyses/"
-outdir <- file.path(basedir, "model_outs") # calls present data from raster files
 ```
 
 ```{r, include = FALSE}
 # Results from the parameter per parameter simulations
 
 ## data for figure 1 panels A and B
-output_s_ranges_w_one <- read_csv(file.path(outdir, "output_s_ranges_w_one.csv"))
+output_s_ranges_w_one <- read_csv(here("data", "output_s_ranges_w_one.csv"))
 
 ## data for figure 1 panels C and D
-output_w_ranges_s_one <- read_csv(file.path(outdir, "output_w_ranges_s_one.csv"))
+output_w_ranges_s_one <- read_csv(here("data", "output_w_ranges_s_one.csv"))
 
 ```
 
@@ -76,68 +71,6 @@ w_s_range_proc <- output_w_ranges_s_one %>%
   mutate(b_bmsy_s = N_s/(k_s/2),
          b_bmsy_w = N_w/(k_w/2)) 
 ```
-
-
-# Results from the parameter per parameter simulation
-
-
-## Model equations:
-
-- Strong stock size ($N_s$)
-
-$$
-\frac{dN_s}{N_wdt} = r_s (1 - \frac{N_s}{K_s}) - q_s E
-$$
-
-- Weak stock size ($N_w$):
-
-$$
-\frac{dN_w}{N_wdt} = r_w (1 - \frac{N_w}{K_w}) - q_w E
-$$
-
-- Effort ($E$):
-
-$$
-\frac{dE}{Edt} = (p_s q_s N_s + p_w q_w N_w) - C
-$$
-
-## Equilibrium points for the three variables:
-
-- Strong stock ($N_s$):
-
-$$
-N_s = \frac{K_s * (c * q_s * r_w + K_w * p_w * q_w * (q_w * r_s - q_s * r_w))} {(K_w * p_w * q_w^2 * r_s + K_s * p_s * q_s^2 * r_w)}
-$$
-
-- Weak stock ($N_w$):
-
-$$
-N_w = \frac{K_w * (c * q_w * r_s + K_s * p_s * q_s * (- q_w * r_s + q_s * r_w))} {(K_w * p_w * q_w^2 * r_s + K_s * p_s * q_s^2 * r_w)}
-$$
-
-- Effort ($E$):
-
-$$
-E = \frac{(-c + K_s * p_s * q_s + K_w * p_w * q_w) * r_s * r_w} {K_w * p_w * q_w^2 r_s + K_s * p_s * q_s^2 * r_w}
-$$
-
-### List of parameters:
-- K = carrying capacity
-- r = per capita growth rate
-- q = catchability of stocks
-- c = cost of fishing
-- p = price
-
-### Parameter space for both species:
-
-- Catchability (q) varies from 0.1 to 0.5 at intervals of 0.2 for both species.
-- Growth rate (r) varies from 0.35 to 1.05 at intervals of 0.35 for the strong stock and from 0.1 to 0.3 at intervals of 0.1 for the weak stock.
-- Carrying capacity (k) varies from 3 to 5 at intervals of 1 for the strong stock and from 1 to 3 at intervals of 1 for the weak stock.
-- Price ranges (p) from 0.1 to 10 at intervals of 0.5 for both species.
-
-
-
-
 
 
 ```{r, echo = FALSE}
@@ -392,15 +325,14 @@ plot_1_gather <-
   plot_layout(ncol = 2,
               guides = "collect") 
 
-plot_1_gather_test <- 
+plot_1_gather_final <- 
   wrap_elements(panel = plot_1_gather) +
   labs(tag = "Vulnerability ratios\n(Vw / Vs)") +
   theme(plot.tag = element_text(size = 12, vjust = 10),
         plot.tag.position = "bottom")
   
- ggsave(file.path(outdir, "plot_1.png"), plot = plot_1_gather_test,
-       width = 12, height = 8, bg = "white", dpi = 300)
- 
-  # ggsave(file.path(outdir, "pub_ready", "figure_1.pdf"), plot = plot_1_gather_test,
-  #      width = 12, height = 8, bg = "white", dpi = 600)
+plot_1_gather_final
+
+ggsave(here("src", "figures", "figure_1.pdf"), plot = plot_1_gather_final,
+       width = 12, height = 8, bg = "white", dpi = 600)
 ```

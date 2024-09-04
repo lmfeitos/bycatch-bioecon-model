@@ -31,17 +31,17 @@ outdir <- file.path(basedir, "model_outs") # calls present data from raster file
 # Results from the parameter per parameter simulations
 
 ## data for figure 1 panels A and B
-output_s_ranges_w_one <- read_csv(file.path(outdir, "output_s_ranges_w_one.csv"))
+output_s_ranges_w_one <- read_csv(here("data", "output_s_ranges_w_one.csv"))
 
 ## data for figure 1 panels C and D
-output_w_ranges_s_one <- read_csv(file.path(outdir, "output_w_ranges_s_one.csv"))
+output_w_ranges_s_one <- read_csv(here("data", "output_w_ranges_s_one.csv"))
 
 ## data for figure 2 panels A and B
-output_subs1 <- read_csv(file.path(outdir, "output_sub1.csv"))
+output_subs1 <- read_csv(here("data", "output_sub1.csv"))
 
 ## data for figure 2 panels C and d
 
-output_subs2 <- read_csv(file.path(outdir, "output_sub2.csv"))
+output_subs2 <- read_csv(here("data", "output_sub2.csv"))
 ```
 
 

@@ -1,0 +1,227 @@
+---
+title: "simulation scenarios"
+author: "Leonardo Feitosa"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+```
+
+```{r model function}
+# Code to run the single fleet model
+run_model <- function(r_s, k_s, q_s, p_s, r_w, k_w, q_w, p_w, c){
+  # Weak stock equilibrium points when prices are constants
+  N_w_multi <- (k_w * (c * q_w * r_s + k_s * p_s * q_s * (- q_w * r_s + q_s * r_w))) / 
+    (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w)
+  
+  # Effort equilibrium point when prices are constants
+  E_multi <- ((- c + k_s * p_s * q_s + k_w * p_w * q_w) * r_s * r_w)  /
+   (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+ 
+  # Strong stock equilibrium points when prices are constants 
+  N_s_multi <- (k_s * (c * q_s * r_w + k_w * p_w * q_w * (q_w * r_s - q_s * r_w))) /
+     (k_w * p_w * q_w^2 * r_s + k_s * p_s * q_s^2 * r_w) 
+  
+  # Single species equilibrium for the weak stock 
+  N_w_single <- c / (p_w * q_w)
+  
+  # Single species equilibrium for the strong stock  
+  N_s_single <- c / (p_s * q_s)
+
+  # Single species effort equilibrium for the strong stock  
+  E_s_single <- (r_s / q_s * (1 - c / (p_s * q_s * k_s)))
+  
+  
+  
+  if(N_w_multi >= 0){
+    
+    N_w = N_w_multi
+  
+  } else { 
+  
+    N_w = 0
+  }
+  
+  if(N_w_multi >= 0){
+    
+    N_s = N_s_multi
+  
+  } else {
+    
+    N_s = N_s_single
+  }
+  
+  if(N_s_multi >= 0){
+    
+    N_s = N_s_multi
+  
+  } else {
+  
+    N_s = 0
+  }
+  
+  if(N_w_multi >= 0){
+    
+    E = E_multi
+  
+  } else {
+  
+    E = E_s_single
+  }
+  
+  # Build output
+  output <- data.frame(E = E, N_s = N_s, N_w = N_w)
+  
+  # Return
+  return(output)
+ 
+ 
+}
+
+
+
+```
+
+
+```{r scenario range for 1st plot for the paper}
+# In this code chunk, I'll generate the dataset to simulate scenarios in which the weak stock has zero value and the strong and weak stocks growth rates vary in different ratios.
+
+## Building data frame
+scenarios_df <- expand.grid(p_s = seq(1, 10, 0.1),
+                            p_w = c(0, 1),
+                            r_s = 1,
+                            r_w = seq(0.01, 0.99, 0.01),
+                            q_s = 0.02,
+                            q_w = 0.02,
+                            k_s = 4,
+                            k_w = 2,
+                            c = 0.05) %>% 
+  mutate(scenario_id = 1:nrow(.)) 
+
+# vectorized run of the model and populating the data frame
+output_1 <- scenarios_df %>%
+  rowwise() %>% 
+  mutate(output = list(run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                                 q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, 
+                                 c = c))) %>% 
+  unnest(output) %>% 
+  select(-c(r_s:r_w, k_s:k_w, q_s:q_w, p_s:p_w, c)) %>% 
+  as.data.frame()
+
+# final wrangle of the output data frame
+output_join_test  <- output_1 %>% 
+ left_join(scenarios_df, by = "scenario_id") %>% 
+ relocate(scenario_id, .before = E) 
+
+write_csv(output_join_test, file = here("data", "output_s_ranges_w_one.csv"), col_names = T)
+```
+
+
+```{r}
+# In this code chunk, I'll generate the dataset to simulate scenarios in which the weak stock value ranges and the strong stock value is small and doubled.
+
+## Building data frame
+scenarios_df2 <- expand.grid(p_s = seq(1, 2, 1),
+                             p_w = seq(1, 10, 0.1),
+                             r_s = 1,
+                             r_w = seq(0.01, 0.99, 0.01),
+                             q_s = 0.02,
+                             q_w = 0.02,
+                             k_s = 4, 
+                             k_w = 2,
+                             c = 0.05) %>% 
+  mutate(scenario_id = 1:nrow(.)) 
+
+# vectorized run of the model and populating the data frame
+output_2 <- scenarios_df2 %>% 
+  rowwise() %>% 
+  mutate(output = list(run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                      q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, 
+                      c = c))) %>% 
+  unnest(output) %>% 
+  select(-c(r_s:r_w, k_s:k_w, q_s:q_w, p_s:p_w, c)) %>% 
+  as.data.frame()
+
+# final wrangle of the output data frame
+output_join_test2 <- output_2 %>% 
+   left_join(scenarios_df2, by = "scenario_id") %>% 
+   relocate(scenario_id, .before = E)
+ 
+write_csv(output_join_test2, file = here("data", "output_w_ranges_s_one.csv"), col_names = T)
+```
+
+```{r output wrangling}
+# In this code chunk, I'll generate the dataset to simulate scenarios in which the weak stock has zero value and the strong and weak stocks growth rates vary in different ratios. Now, this fishery has a subsidy decreasing fishing costs by 25%
+
+## Building data frame
+scenarios_df_subs1 <- expand.grid(p_s = seq(1, 10, 0.1),
+                                  p_w = c(0, 1),
+                                  r_s = 1,
+                                  r_w = seq(0.01, 0.99, 0.01),
+                                  q_s = 0.02,
+                                  q_w = 0.02,
+                                  k_s = 4,
+                                  k_w = 2,
+                                  c = 0.0375) %>% 
+  mutate(scenario_id = 1:nrow(.)) 
+
+# vectorized run of the model and populating the data frame
+output_sub_1 <- scenarios_df_subs1 %>% 
+  rowwise() %>% 
+  mutate(output = list(run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                                 q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, 
+                                 c = c))) %>% 
+  unnest(output) %>% 
+  select(-c(r_s:r_w, k_s:k_w, q_s:q_w, p_s:p_w, c)) %>% 
+  as.data.frame()
+
+# final wrangle of the output data frame
+output_sub1_final <- output_sub_1 %>% 
+ left_join(scenarios_df_subs1, by = "scenario_id") %>% 
+ relocate(scenario_id, .before = E)
+
+write_csv(output_sub1_final, file = here("data", "output_sub1.csv"), col_names = T)
+```
+
+
+```{r}
+# In this code chunk, I'll generate the dataset to simulate scenarios in which the weak stock value ranges and the strong stock value is small and doubled. Now, this fishery has a subsidy decreasing fishing costs by 25%
+
+## Building data frame
+scenarios_df_subs2 <- expand.grid(p_w = seq(1, 10, 0.1),
+                                  p_s = c(1, 2),
+                                  r_s = 1,
+                                  r_w = seq(0.01, 0.99, 0.01),
+                                  q_s = 0.02,
+                                  q_w = 0.02,
+                                  k_s = 4,
+                                  k_w = 2,
+                                  c = 0.0375) %>% 
+  mutate(scenario_id = 1:nrow(.)) 
+
+# vectorized run of the model and populating the data frame
+output_sub_2 <- scenarios_df_subs2 %>% 
+  rowwise() %>% 
+  mutate(output = list(run_model(r_s = r_s, r_w = r_w, k_s = k_s, k_w = k_w,
+                                 q_s = q_s, q_w = q_w, p_s = p_s, p_w = p_w, 
+                                 c = c))) %>% 
+  unnest(output) %>% 
+  select(-c(r_s:r_w, k_s:k_w, q_s:q_w, p_s:p_w, c)) %>% 
+  as.data.frame()
+
+# final wrangle of the output data frame
+output_sub2_final <- output_sub_2 %>% 
+   left_join(scenarios_df_subs2, by = "scenario_id") %>% 
+   relocate(scenario_id, .before = E)
+ 
+
+write_csv(output_sub2_final, file = here("data", "output_sub2.csv"), col_names = T)
+```
+
+
+
+
