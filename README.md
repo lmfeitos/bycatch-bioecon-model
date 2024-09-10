@@ -1,7 +1,7 @@
 # Modeling synergies between life history traits and ex-vessel prices for a multi-species open-access fishery
 
 This GitHub repository contains the data and code for the following paper:
-- Feitosa, L. M., Burgess, M. G., Free, C. M., Gaines, S. D. (2024). Synergies between price and life history enhance extinction risk in open‐access fisheries. Fish and Fisheries (*in press*).
+- Feitosa, L. M., Burgess, M. G., Free, C. M., Gaines, S. D. (2024). Synergies between price and life history enhance extinction risk in open‐access fisheries. Fish and Fisheries. http://doi.org/10.1111/faf.12858
 
 Please contact Leonardo M. Feitosa (lmfeitos@gmail.com) with any questions.
 
@@ -21,4 +21,4 @@ The repository is organized using the following architecture:
 
 Please cite the paper and model as:
 
-Feitosa, L. M., Burgess, M. G., Free, C. M., Gaines, S. D. (2024). Synergies between price and life history enhance extinction risk in open‐access fisheries. Fish and Fisheries (*in press*).
+Feitosa, L. M., Burgess, M. G., Free, C. M., Gaines, S. D. (2024). Synergies between price and life history enhance extinction risk in open‐access fisheries. Fish and Fisheries. http://doi.org/10.1111/faf.12858
